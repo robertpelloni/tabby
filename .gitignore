@@ -37,3 +37,7 @@ sentry-symbols.js
 
 crowdin.yml
 .crowdin.env
+
+# Go build output
+build/tabby-backend
+build/tabby-backend.exe
