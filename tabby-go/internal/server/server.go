@@ -18,18 +18,22 @@ import (
 	"sync"
 
 	"github.com/robertpelloni/tabby/tabby-go/pkg/api"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/pty"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/serial"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/sftp"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ssh"
 )
 
 // Server is the JSON-RPC server for Tabby's Go backend
 type Server struct {
-	sshMgr  *ssh.Manager
-	sftpMgr *sftp.Manager
-	reader  *bufio.Reader
-	writer  io.Writer
-	mu      sync.Mutex
-	running bool
+	sshMgr    *ssh.Manager
+	sftpMgr   *sftp.Manager
+	ptyMgr    *pty.Manager
+	serialMgr *serial.Manager
+	reader    *bufio.Reader
+	writer    io.Writer
+	mu        sync.Mutex
+	running   bool
 }
 
 // New creates a new Server
@@ -40,6 +44,8 @@ func New() *Server {
 	}
 	s.sshMgr = ssh.NewManager(s.sendNotification)
 	s.sftpMgr = sftp.NewManager(s.sshMgr)
+	s.ptyMgr = pty.NewManager(s.sendNotification)
+	s.serialMgr = serial.NewManager(s.sendNotification)
 	return s
 }
 
@@ -51,6 +57,8 @@ func NewWithIO(in io.Reader, out io.Writer) *Server {
 	}
 	s.sshMgr = ssh.NewManager(s.sendNotification)
 	s.sftpMgr = sftp.NewManager(s.sshMgr)
+	s.ptyMgr = pty.NewManager(s.sendNotification)
+	s.serialMgr = serial.NewManager(s.sendNotification)
 	return s
 }
 
@@ -347,28 +355,38 @@ func (s *Server) handleSFTPClose(params interface{}) error {
 	return s.sftpMgr.Close(p.SessionID)
 }
 
-// ---- PTY Handlers (stubs) ----
-// PTY management requires platform-specific code (creack/pty on Unix, ConPTY on Windows)
-// These are stub implementations that will be filled in during PTY development phase.
+// ---- PTY Handlers ----
 
 func (s *Server) handlePTYSpawn(params interface{}) (*api.PTYSpawnResult, error) {
-	// TODO: Implement using github.com/creack/pty (Unix) or ConPTY (Windows)
-	return nil, fmt.Errorf("PTY support not yet implemented")
+	var p api.PTYSpawnParams
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	return s.ptyMgr.Spawn(p)
 }
 
 func (s *Server) handlePTYResize(params interface{}) error {
-	// TODO: Implement
-	return fmt.Errorf("PTY support not yet implemented")
+	var p api.PTYResizeParams
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.ptyMgr.Resize(p.ID, p.Columns, p.Rows)
 }
 
 func (s *Server) handlePTYWrite(params interface{}) error {
-	// TODO: Implement
-	return fmt.Errorf("PTY support not yet implemented")
+	var p api.PTYWriteParams
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.ptyMgr.Write(p.ID, p.Data)
 }
 
 func (s *Server) handlePTYKill(params interface{}) error {
-	// TODO: Implement
-	return fmt.Errorf("PTY support not yet implemented")
+	var p api.PTYKillParams
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.ptyMgr.Kill(p.ID, p.Signal)
 }
 
 // ---- Serial Handlers (stubs) ----
