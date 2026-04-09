@@ -6,6 +6,44 @@
 // - Communication happens via JSON-RPC 2.0 over stdin/stdout
 // - Each line is a complete JSON-RPC message
 // - The server sends notifications for async events (data, exit, etc.)
+//
+// Registered methods:
+//   - ping                        - Health check
+//   - ssh.connect                 - Connect to SSH server
+//   - ssh.startShell              - Start shell session
+//   - ssh.resize                  - Resize terminal
+//   - ssh.write                   - Write data to session
+//   - ssh.close                   - Close session/connection
+//   - ssh.listConnections         - List active connections
+//   - ssh.addForward              - Add port forward
+//   - ssh.removeForward           - Remove port forward
+//   - ssh.listForwards            - List port forwards
+//   - ssh.verifyHostKey           - Respond to host key prompt
+//   - ssh.keyboardInteractiveResp - Respond to keyboard-interactive prompt
+//   - sftp.open                   - Open SFTP session
+//   - sftp.list                   - List directory
+//   - sftp.download               - Download file
+//   - sftp.upload                 - Upload file
+//   - sftp.delete                 - Delete file/directory
+//   - sftp.rename                 - Rename file/directory
+//   - sftp.mkdir                  - Create directory
+//   - sftp.mkdirAll               - Create directory tree
+//   - sftp.stat                   - Get file info
+//   - sftp.lstat                  - Get file info (no follow symlinks)
+//   - sftp.readDir                - Read directory with symlink info
+//   - sftp.chmod                  - Change file permissions
+//   - sftp.readlink               - Read symbolic link target
+//   - sftp.symlink                - Create symbolic link
+//   - sftp.rmdir                  - Remove directory
+//   - sftp.close                  - Close SFTP session
+//   - pty.spawn                   - Spawn local PTY
+//   - pty.resize                  - Resize PTY
+//   - pty.write                   - Write data
+//   - pty.kill                    - Kill process
+//   - serial.open                 - Open serial port (stub)
+//   - serial.write                - Write data (stub)
+//   - serial.close                - Close port (stub)
+//   - serial.listPorts            - List available ports (stub)
 package server
 
 import (
@@ -36,7 +74,7 @@ type Server struct {
 	running   bool
 }
 
-// New creates a new Server
+// New creates a new Server using stdin/stdout
 func New() *Server {
 	s := &Server{
 		reader: bufio.NewReader(os.Stdin),
@@ -62,7 +100,7 @@ func NewWithIO(in io.Reader, out io.Writer) *Server {
 	return s
 }
 
-// Run starts the server's main loop, reading and processing JSON-RPC messages
+// Run starts the server's main loop
 func (s *Server) Run() error {
 	s.running = true
 	log.Println("Tabby Go backend started")
@@ -78,17 +116,14 @@ func (s *Server) Run() error {
 			continue
 		}
 
-		// Trim the newline
 		line = line[:len(line)-1]
 
-		// Parse the request
 		var req api.JSONRPCRequest
 		if err := json.Unmarshal(line, &req); err != nil {
 			s.sendError(0, api.ErrorParseError, "Parse error", nil)
 			continue
 		}
 
-		// Handle the request
 		go s.handleRequest(req)
 	}
 
@@ -103,7 +138,7 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 	switch req.Method {
 	// ---- Lifecycle ----
 	case "ping":
-		result = map[string]string{"status": "ok"}
+		result = map[string]string{"status": "ok", "version": "1.0.231-nightly.1"}
 
 	// ---- SSH ----
 	case "ssh.connect":
@@ -118,6 +153,20 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 		err = s.handleSSHClose(req.Params)
 	case "ssh.listConnections":
 		result = s.sshMgr.ListConnections()
+
+	// ---- SSH Port Forwarding ----
+	case "ssh.addForward":
+		result, err = s.handleSSHAddForward(req.Params)
+	case "ssh.removeForward":
+		err = s.handleSSHRemoveForward(req.Params)
+	case "ssh.listForwards":
+		result, err = s.handleSSHListForwards(req.Params)
+
+	// ---- SSH Auth Callbacks ----
+	case "ssh.verifyHostKey":
+		err = s.handleSSHVerifyHostKey(req.Params)
+	case "ssh.keyboardInteractiveResp":
+		err = s.handleSSHKeyboardInteractiveResp(req.Params)
 
 	// ---- SFTP ----
 	case "sftp.open":
@@ -134,8 +183,22 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 		err = s.handleSFTPRename(req.Params)
 	case "sftp.mkdir":
 		err = s.handleSFTPMkdir(req.Params)
+	case "sftp.mkdirAll":
+		err = s.handleSFTPMkdirAll(req.Params)
 	case "sftp.stat":
 		result, err = s.handleSFTPStat(req.Params)
+	case "sftp.lstat":
+		result, err = s.handleSFTPLstat(req.Params)
+	case "sftp.readDir":
+		result, err = s.handleSFTPReadDir(req.Params)
+	case "sftp.chmod":
+		err = s.handleSFTPChmod(req.Params)
+	case "sftp.readlink":
+		result, err = s.handleSFTPReadlink(req.Params)
+	case "sftp.symlink":
+		err = s.handleSFTPSymlink(req.Params)
+	case "sftp.rmdir":
+		err = s.handleSFTPRmdir(req.Params)
 	case "sftp.close":
 		err = s.handleSFTPClose(req.Params)
 
@@ -156,6 +219,8 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 		err = s.handleSerialWrite(req.Params)
 	case "serial.close":
 		err = s.handleSerialClose(req.Params)
+	case "serial.listPorts":
+		result, err = s.handleSerialListPorts(req.Params)
 
 	default:
 		s.sendError(req.ID, api.ErrorMethodNotFound, fmt.Sprintf("Method not found: %s", req.Method), nil)
@@ -170,7 +235,8 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 	s.sendResult(req.ID, result)
 }
 
-// sendResult sends a successful JSON-RPC response
+// ---- Messaging ----
+
 func (s *Server) sendResult(id int, result interface{}) {
 	resp := api.JSONRPCResponse{
 		JSONRPC: "2.0",
@@ -180,7 +246,6 @@ func (s *Server) sendResult(id int, result interface{}) {
 	s.sendMessage(resp)
 }
 
-// sendError sends an error JSON-RPC response
 func (s *Server) sendError(id int, code int, message string, data interface{}) {
 	resp := api.JSONRPCResponse{
 		JSONRPC: "2.0",
@@ -194,7 +259,6 @@ func (s *Server) sendError(id int, code int, message string, data interface{}) {
 	s.sendMessage(resp)
 }
 
-// sendNotification sends a JSON-RPC notification to the client
 func (s *Server) sendNotification(method string, params interface{}) {
 	notif := api.JSONRPCNotification{
 		JSONRPC: "2.0",
@@ -204,7 +268,6 @@ func (s *Server) sendNotification(method string, params interface{}) {
 	s.sendMessage(notif)
 }
 
-// sendMessage writes a JSON-RPC message as a single line
 func (s *Server) sendMessage(msg interface{}) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -259,6 +322,51 @@ func (s *Server) handleSSHClose(params interface{}) error {
 		return fmt.Errorf("invalid params: %w", err)
 	}
 	return s.sshMgr.Close(p)
+}
+
+func (s *Server) handleSSHAddForward(params interface{}) (*api.PortForwardResult, error) {
+	var p api.PortForwardParams
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	return s.sshMgr.AddForward(p)
+}
+
+func (s *Server) handleSSHRemoveForward(params interface{}) error {
+	var p api.PortForwardRemoveParams
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.sshMgr.RemoveForward(p)
+}
+
+func (s *Server) handleSSHListForwards(params interface{}) ([]api.PortForwardInfo, error) {
+	type connParams struct {
+		ConnectionID string `json:"connectionId"`
+	}
+	var p connParams
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	return s.sshMgr.ListForwards(p.ConnectionID), nil
+}
+
+func (s *Server) handleSSHVerifyHostKey(params interface{}) error {
+	var p api.HostKeyVerifyResponse
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	s.sshMgr.HandleHostKeyResponse(p.ConnectionID, p.Accepted)
+	return nil
+}
+
+func (s *Server) handleSSHKeyboardInteractiveResp(params interface{}) error {
+	var p api.KeyboardInteractiveResponse
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	s.sshMgr.HandleKeyboardInteractiveResponse(p.ConnectionID, p.Responses)
+	return nil
 }
 
 // ---- SFTP Handlers ----
@@ -332,6 +440,18 @@ func (s *Server) handleSFTPMkdir(params interface{}) error {
 	return s.sftpMgr.Mkdir(p.SessionID, p.Path)
 }
 
+func (s *Server) handleSFTPMkdirAll(params interface{}) error {
+	type mkdirParams struct {
+		SessionID string `json:"sessionId"`
+		Path      string `json:"path"`
+	}
+	var p mkdirParams
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.sftpMgr.MkdirAll(p.SessionID, p.Path)
+}
+
 func (s *Server) handleSFTPStat(params interface{}) (*api.SFTPFile, error) {
 	type statParams struct {
 		SessionID string `json:"sessionId"`
@@ -342,6 +462,70 @@ func (s *Server) handleSFTPStat(params interface{}) (*api.SFTPFile, error) {
 		return nil, fmt.Errorf("invalid params: %w", err)
 	}
 	return s.sftpMgr.Stat(p.SessionID, p.Path)
+}
+
+func (s *Server) handleSFTPLstat(params interface{}) (*api.SFTPFile, error) {
+	type statParams struct {
+		SessionID string `json:"sessionId"`
+		Path      string `json:"path"`
+	}
+	var p statParams
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	return s.sftpMgr.Lstat(p.SessionID, p.Path)
+}
+
+func (s *Server) handleSFTPReadDir(params interface{}) ([]api.SFTPFile, error) {
+	type readDirParams struct {
+		SessionID string `json:"sessionId"`
+		Path      string `json:"path"`
+	}
+	var p readDirParams
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	return s.sftpMgr.ReadDir(p.SessionID, p.Path)
+}
+
+func (s *Server) handleSFTPChmod(params interface{}) error {
+	var p api.SFTPChmodParams
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.sftpMgr.Chmod(p.SessionID, p.Path, p.Mode)
+}
+
+func (s *Server) handleSFTPReadlink(params interface{}) (map[string]string, error) {
+	var p api.SFTPReadlinkParams
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	target, err := s.sftpMgr.Readlink(p.SessionID, p.Path)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]string{"target": target}, nil
+}
+
+func (s *Server) handleSFTPSymlink(params interface{}) error {
+	var p api.SFTPSymlinkParams
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.sftpMgr.Symlink(p.SessionID, p.OldPath, p.NewPath)
+}
+
+func (s *Server) handleSFTPRmdir(params interface{}) error {
+	type rmdirParams struct {
+		SessionID string `json:"sessionId"`
+		Path      string `json:"path"`
+	}
+	var p rmdirParams
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.sftpMgr.Rmdir(p.SessionID, p.Path)
 }
 
 func (s *Server) handleSFTPClose(params interface{}) error {
@@ -389,22 +573,46 @@ func (s *Server) handlePTYKill(params interface{}) error {
 	return s.ptyMgr.Kill(p.ID, p.Signal)
 }
 
-// ---- Serial Handlers (stubs) ----
-// Serial port management requires go.bug.st/serial or similar
+// ---- Serial Handlers ----
 
 func (s *Server) handleSerialOpen(params interface{}) (*api.SerialOpenResult, error) {
-	// TODO: Implement using go.bug.st/serial
-	return nil, fmt.Errorf("Serial support not yet implemented")
+	var p api.SerialOpenParams
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	return s.serialMgr.Open(p)
 }
 
 func (s *Server) handleSerialWrite(params interface{}) error {
-	// TODO: Implement
-	return fmt.Errorf("Serial support not yet implemented")
+	var p api.SerialWriteParams
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.serialMgr.Write(p.ID, p.Data)
 }
 
 func (s *Server) handleSerialClose(params interface{}) error {
-	// TODO: Implement
-	return fmt.Errorf("Serial support not yet implemented")
+	var p api.SerialCloseParams
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.serialMgr.Close(p.ID)
+}
+
+func (s *Server) handleSerialListPorts(params interface{}) (*api.SerialListPortsResult, error) {
+	ports, err := s.serialMgr.ListPorts()
+	if err != nil {
+		return nil, err
+	}
+	return &api.SerialListPortsResult{Ports: convertPorts(ports)}, nil
+}
+
+func convertPorts(ports []string) []api.SerialPortInfo {
+	result := make([]api.SerialPortInfo, len(ports))
+	for i, p := range ports {
+		result[i] = api.SerialPortInfo{Name: p}
+	}
+	return result
 }
 
 // reMarshal is a helper to re-marshal interface{} params into a typed struct

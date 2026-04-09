@@ -43,6 +43,12 @@ const (
 	ErrorMethodNotFound = -32601
 	ErrorInvalidParams  = -32602
 	ErrorInternal       = -32603
+
+	// Application-specific error codes
+	ErrorAuthFailed     = -32001
+	ErrorHostKeyReject  = -32002
+	ErrorConnectFailed  = -32003
+	ErrorSessionExpired = -32004
 )
 
 // ---- SSH API Types ----
@@ -58,20 +64,30 @@ type SSHConnectParams struct {
 	ReadyTimeout      int               `json:"readyTimeout,omitempty"`
 	AgentForward      bool              `json:"agentForward,omitempty"`
 	X11               bool              `json:"x11,omitempty"`
+	X11Display        string            `json:"x11Display,omitempty"`
 	JumpHost          *SSHConnectParams `json:"jumpHost,omitempty"`
 	Algorithms        *SSHAlgorithms    `json:"algorithms,omitempty"`
 	ProxyCommand      string            `json:"proxyCommand,omitempty"`
+	SocksProxyHost    string            `json:"socksProxyHost,omitempty"`
+	SocksProxyPort    int               `json:"socksProxyPort,omitempty"`
+	HTTPProxyHost     string            `json:"httpProxyHost,omitempty"`
+	HTTPProxyPort     int               `json:"httpProxyPort,omitempty"`
 	Environment       map[string]string `json:"environment,omitempty"`
+	VerifyHostKey     bool              `json:"verifyHostKey,omitempty"`
+	KnownHostsPath    string            `json:"knownHostsPath,omitempty"`
+	SkipBanner        bool              `json:"skipBanner,omitempty"`
+	Password          string            `json:"password,omitempty"` // Saved password fallback
 }
 
 // SSHAuthParams specifies the authentication method and credentials
 type SSHAuthParams struct {
-	Type              string   `json:"type"` // "password", "publicKey", "agent", "keyboardInteractive"
-	Password          string   `json:"password,omitempty"`
-	PrivateKey        string   `json:"privateKey,omitempty"`
-	PrivateKeyPaths   []string `json:"privateKeyPaths,omitempty"`
-	AgentSocketPath   string   `json:"agentSocketPath,omitempty"`
-	KeyboardInteractivePassthrough bool `json:"keyboardInteractivePassthrough,omitempty"`
+	Type                          string   `json:"type"` // "password", "publicKey", "agent", "keyboardInteractive", "none"
+	Password                      string   `json:"password,omitempty"`
+	PrivateKey                    string   `json:"privateKey,omitempty"`
+	PrivateKeyPaths               []string `json:"privateKeyPaths,omitempty"`
+	AgentSocketPath               string   `json:"agentSocketPath,omitempty"`
+	AgentType                     string   `json:"agentType,omitempty"` // "auto", "unix", "namedPipe", "pageant"
+	KeyboardInteractivePassthrough bool     `json:"keyboardInteractivePassthrough,omitempty"`
 }
 
 // SSHAlgorithms specifies preferred algorithms for the SSH connection
@@ -90,6 +106,8 @@ type SSHSessionParams struct {
 	Rows         int    `json:"rows"`
 	Terminal     string `json:"terminal,omitempty"` // e.g., "xterm-256color"
 	Command      string `json:"command,omitempty"`  // Optional command instead of shell
+	AgentForward bool   `json:"agentForward,omitempty"`
+	X11          bool   `json:"x11,omitempty"`
 }
 
 // SSHResizeParams contains terminal resize parameters
@@ -115,16 +133,64 @@ type SSHCloseParams struct {
 
 // SSHConnectionResult is returned after successful connection
 type SSHConnectionResult struct {
-	ConnectionID   string   `json:"connectionId"`
-	ServerVersion  string   `json:"serverVersion"`
-	RemoteAddress  string   `json:"remoteAddress"`
-	Banner         string   `json:"banner,omitempty"`
-	AuthMethods    []string `json:"authMethods"`
+	ConnectionID  string   `json:"connectionId"`
+	ServerVersion string   `json:"serverVersion"`
+	RemoteAddress string   `json:"remoteAddress"`
+	Banner        string   `json:"banner,omitempty"`
+	AuthMethods   []string `json:"authMethods"`
 }
 
 // SSHSessionResult is returned after starting a shell session
 type SSHSessionResult struct {
 	SessionID string `json:"sessionId"`
+}
+
+// ---- Port Forwarding Types ----
+
+// PortForwardType defines the type of port forwarding
+type PortForwardType string
+
+const (
+	PortForwardLocal   PortForwardType = "local"
+	PortForwardRemote  PortForwardType = "remote"
+	PortForwardDynamic PortForwardType = "dynamic"
+)
+
+// PortForwardParams contains parameters for adding a port forward
+type PortForwardParams struct {
+	ConnectionID  string          `json:"connectionId"`
+	Type          PortForwardType `json:"type"`
+	Host          string          `json:"host"`           // Listen host for local/dynamic, remote host for remote
+	Port          int             `json:"port"`            // Listen port for local/dynamic, remote port for remote
+	TargetAddress string          `json:"targetAddress"`   // Target address (local forward only)
+	TargetPort    int             `json:"targetPort"`      // Target port (local forward only)
+}
+
+// PortForwardResult is returned after adding a port forward
+type PortForwardResult struct {
+	ForwardID string `json:"forwardId"`
+}
+
+// PortForwardRemoveParams removes a port forward
+type PortForwardRemoveParams struct {
+	ConnectionID string `json:"connectionId"`
+	ForwardID    string `json:"forwardId"`
+}
+
+// PortForwardListResult lists active port forwards
+type PortForwardListResult struct {
+	Forwards []PortForwardInfo `json:"forwards"`
+}
+
+// PortForwardInfo describes an active port forward
+type PortForwardInfo struct {
+	ID            string          `json:"id"`
+	Type          PortForwardType `json:"type"`
+	Host          string          `json:"host"`
+	Port          int             `json:"port"`
+	TargetAddress string          `json:"targetAddress,omitempty"`
+	TargetPort    int             `json:"targetPort,omitempty"`
+	Active        bool            `json:"active"`
 }
 
 // ---- PTY API Types ----
@@ -168,16 +234,42 @@ type PTYKillParams struct {
 
 // SerialOpenParams contains parameters for opening a serial port
 type SerialOpenParams struct {
-	Port         string `json:"port"`
-	BaudRate     int    `json:"baudRate"`
-	DataBits     int    `json:"dataBits,omitempty"`     // 5,6,7,8 (default 8)
-	StopBits     int    `json:"stopBits,omitempty"`     // 1,2 (default 1)
-	Parity       string `json:"parity,omitempty"`       // "none","even","odd" (default "none")
-	FlowControl  string `json:"flowControl,omitempty"`  // "none","hardware","software" (default "none")
+	Port        string `json:"port"`
+	BaudRate    int    `json:"baudRate"`
+	DataBits    int    `json:"dataBits,omitempty"`    // 5,6,7,8 (default 8)
+	StopBits    int    `json:"stopBits,omitempty"`    // 1,2 (default 1)
+	Parity      string `json:"parity,omitempty"`      // "none","even","odd" (default "none")
+	FlowControl string `json:"flowControl,omitempty"` // "none","hardware","software" (default "none")
 }
 
 // SerialOpenResult is returned after opening a serial port
 type SerialOpenResult struct {
+	ID string `json:"id"`
+}
+
+// SerialListPortsResult is returned when listing available serial ports
+type SerialListPortsResult struct {
+	Ports []SerialPortInfo `json:"ports"`
+}
+
+// SerialPortInfo describes an available serial port
+type SerialPortInfo struct {
+	Name         string `json:"name"`
+	Manufacturer string `json:"manufacturer,omitempty"`
+	Product      string `json:"product,omitempty"`
+	SerialNumber string `json:"serialNumber,omitempty"`
+	VID          string `json:"vid,omitempty"`
+	PID          string `json:"pid,omitempty"`
+}
+
+// SerialWriteParams writes data to a serial port
+type SerialWriteParams struct {
+	ID   string `json:"id"`
+	Data string `json:"data"` // Base64-encoded
+}
+
+// SerialCloseParams closes a serial port
+type SerialCloseParams struct {
 	ID string `json:"id"`
 }
 
@@ -201,16 +293,18 @@ type SFTPListParams struct {
 
 // SFTPFile represents a file or directory in an SFTP listing
 type SFTPFile struct {
-	Name    string `json:"name"`
-	Size    int64  `json:"size"`
-	Mode    uint32 `json:"mode"`
-	ModTime string `json:"modTime"`
-	IsDir   bool   `json:"isDir"`
+	Name      string `json:"name"`
+	FullPath  string `json:"fullPath"`
+	Size      int64  `json:"size"`
+	Mode      uint32 `json:"mode"`
+	ModTime   string `json:"modTime"`
+	IsDir     bool   `json:"isDir"`
+	IsSymlink bool   `json:"isSymlink"`
 }
 
 // SFTPDownloadParams downloads a file
 type SFTPDownloadParams struct {
-	SessionID string `json:"sessionId"`
+	SessionID  string `json:"sessionId"`
 	RemotePath string `json:"remotePath"`
 	LocalPath  string `json:"localPath"`
 }
@@ -225,6 +319,40 @@ type SFTPUploadParams struct {
 // SFTPTransferResult is returned after a file transfer
 type SFTPTransferResult struct {
 	BytesTransferred int64 `json:"bytesTransferred"`
+}
+
+// SFTPChmodParams changes file permissions
+type SFTPChmodParams struct {
+	SessionID string `json:"sessionId"`
+	Path      string `json:"path"`
+	Mode      uint32 `json:"mode"`
+}
+
+// SFTPReadlinkParams reads a symbolic link
+type SFTPReadlinkParams struct {
+	SessionID string `json:"sessionId"`
+	Path      string `json:"path"`
+}
+
+// SFTPSymlinkParams creates a symbolic link
+type SFTPSymlinkParams struct {
+	SessionID string `json:"sessionId"`
+	OldPath   string `json:"oldPath"`
+	NewPath   string `json:"newPath"`
+}
+
+// ---- SSH Auth Response Types ----
+
+// HostKeyVerifyResponse is sent by the client to accept/reject a host key
+type HostKeyVerifyResponse struct {
+	ConnectionID string `json:"connectionId"`
+	Accepted     bool   `json:"accepted"`
+}
+
+// KeyboardInteractiveResponse is sent by the client with auth responses
+type KeyboardInteractiveResponse struct {
+	ConnectionID string   `json:"connectionId"`
+	Responses    []string `json:"responses"`
 }
 
 // ---- Notification Types (server → client) ----
@@ -250,11 +378,11 @@ type ExitNotification struct {
 
 // TransferProgressNotification is sent during file transfers
 type TransferProgressNotification struct {
-	TransferID      string `json:"transferId"`
+	TransferID       string `json:"transferId"`
 	BytesTransferred int64  `json:"bytesTransferred"`
-	TotalBytes      int64  `json:"totalBytes"`
-	Complete        bool   `json:"complete"`
-	Error           string `json:"error,omitempty"`
+	TotalBytes       int64  `json:"totalBytes"`
+	Complete         bool   `json:"complete"`
+	Error            string `json:"error,omitempty"`
 }
 
 // HostKeyPromptNotification is sent when an unknown host key is encountered
@@ -264,6 +392,7 @@ type HostKeyPromptNotification struct {
 	Port         int    `json:"port"`
 	KeyType      string `json:"keyType"`
 	Fingerprint  string `json:"fingerprint"`
+	KeyBytes     string `json:"keyBytes,omitempty"` // Base64-encoded public key bytes
 }
 
 // KeyboardInteractiveNotification is sent for keyboard-interactive auth prompts
@@ -278,4 +407,26 @@ type KeyboardInteractiveNotification struct {
 type Prompt struct {
 	Prompt string `json:"prompt"`
 	Echo   bool   `json:"echo"`
+}
+
+// BannerNotification is sent when the SSH server sends a banner message
+type BannerNotification struct {
+	ConnectionID string `json:"connectionId"`
+	Message      string `json:"message"`
+}
+
+// PortForwardEventNotification is sent when a port forward connection event occurs
+type PortForwardEventNotification struct {
+	ConnectionID  string `json:"connectionId"`
+	ForwardID     string `json:"forwardId"`
+	EventType     string `json:"eventType"` // "connected", "disconnected", "error"
+	Message       string `json:"message,omitempty"`
+	ClientAddress string `json:"clientAddress,omitempty"`
+	ClientPort    int    `json:"clientPort,omitempty"`
+}
+
+// ServiceMessageNotification is sent for informational messages during connection
+type ServiceMessageNotification struct {
+	ConnectionID string `json:"connectionId"`
+	Message      string `json:"message"`
 }

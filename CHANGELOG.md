@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Version number is maintained in [VERSION.md](VERSION.md) and is the single source of truth.
 
+## [1.0.231-nightly.1] - 2025-04-08
+
+### Added (robertpelloni fork)
+- **Go PTY manager**: Process spawning with stdin/stdout/stderr forwarding
+- **Go serial port manager**: Stub for go.bug.st/serial integration
+- **TypeScript GoBackendService**: Angular service for Go backend communication
+  - JSON-RPC 2.0 client over stdin/stdout
+  - RxJS observables for data/exit notifications
+  - Full TypeScript API for SSH, SFTP, PTY, Serial
+- **Config option**: `goBackend.enabled` to switch between russh and Go backends
+
 ## [1.0.231-nightly.0] - 2025-04-08
 
 ### Upstream Sync

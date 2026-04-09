@@ -236,3 +236,173 @@ func (m *Manager) Close(sessionID string) error {
 
 	return sess.Client.Close()
 }
+
+// Chmod changes file permissions
+func (m *Manager) Chmod(sessionID, filePath string, mode uint32) error {
+	m.mu.RLock()
+	sess, ok := m.sessions[sessionID]
+	m.mu.RUnlock()
+
+	if !ok {
+		return fmt.Errorf("session not found: %s", sessionID)
+	}
+
+	return sess.Client.Chmod(filePath, os.FileMode(mode))
+}
+
+// Readlink reads the target of a symbolic link
+func (m *Manager) Readlink(sessionID, linkPath string) (string, error) {
+	m.mu.RLock()
+	sess, ok := m.sessions[sessionID]
+	m.mu.RUnlock()
+
+	if !ok {
+		return "", fmt.Errorf("session not found: %s", sessionID)
+	}
+
+	return sess.Client.ReadLink(linkPath)
+}
+
+// Symlink creates a symbolic link
+func (m *Manager) Symlink(sessionID, oldPath, newPath string) error {
+	m.mu.RLock()
+	sess, ok := m.sessions[sessionID]
+	m.mu.RUnlock()
+
+	if !ok {
+		return fmt.Errorf("session not found: %s", sessionID)
+	}
+
+	return sess.Client.Symlink(oldPath, newPath)
+}
+
+// Rmdir removes a directory
+func (m *Manager) Rmdir(sessionID, dirPath string) error {
+	m.mu.RLock()
+	sess, ok := m.sessions[sessionID]
+	m.mu.RUnlock()
+
+	if !ok {
+		return fmt.Errorf("session not found: %s", sessionID)
+	}
+
+	return sess.Client.RemoveDirectory(dirPath)
+}
+
+// Lstat returns file info without following symlinks
+func (m *Manager) Lstat(sessionID, filePath string) (*api.SFTPFile, error) {
+	m.mu.RLock()
+	sess, ok := m.sessions[sessionID]
+	m.mu.RUnlock()
+
+	if !ok {
+		return nil, fmt.Errorf("session not found: %s", sessionID)
+	}
+
+	info, err := sess.Client.Lstat(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.SFTPFile{
+		Name:      path.Base(filePath),
+		FullPath:  filePath,
+		Size:      info.Size(),
+		Mode:      uint32(info.Mode()),
+		ModTime:   info.ModTime().Format(time.RFC3339),
+		IsDir:     info.IsDir(),
+		IsSymlink: info.Mode()&os.ModeSymlink != 0,
+	}, nil
+}
+
+// ReadDir reads a directory, returning full file info with symlink detection
+func (m *Manager) ReadDir(sessionID, dirPath string) ([]api.SFTPFile, error) {
+	m.mu.RLock()
+	sess, ok := m.sessions[sessionID]
+	m.mu.RUnlock()
+
+	if !ok {
+		return nil, fmt.Errorf("session not found: %s", sessionID)
+	}
+
+	entries, err := sess.Client.ReadDir(dirPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	files := make([]api.SFTPFile, 0, len(entries))
+	for _, entry := range entries {
+		fullPath := path.Join(dirPath, entry.Name())
+		isSymlink := entry.Mode()&os.ModeSymlink != 0
+
+		// Resolve symlink target if it is a symlink
+		var symlinkTarget string
+		if isSymlink {
+			if target, err := sess.Client.ReadLink(fullPath); err == nil {
+				symlinkTarget = target
+			}
+		}
+
+		file := api.SFTPFile{
+			Name:      entry.Name(),
+			FullPath:  fullPath,
+			Size:      entry.Size(),
+			Mode:      uint32(entry.Mode()),
+			ModTime:   entry.ModTime().Format(time.RFC3339),
+			IsDir:     entry.IsDir(),
+			IsSymlink: isSymlink,
+		}
+
+		// If symlink points to a directory, mark it as directory too
+		if isSymlink && symlinkTarget != "" {
+			if targetInfo, err := sess.Client.Stat(fullPath); err == nil {
+				file.IsDir = targetInfo.IsDir()
+			}
+		}
+
+		_ = symlinkTarget
+
+		files = append(files, file)
+	}
+
+	return files, nil
+}
+
+// MkdirAll creates a directory and all parent directories
+func (m *Manager) MkdirAll(sessionID, dirPath string) error {
+	m.mu.RLock()
+	sess, ok := m.sessions[sessionID]
+	m.mu.RUnlock()
+
+	if !ok {
+		return fmt.Errorf("session not found: %s", sessionID)
+	}
+
+	return sess.Client.MkdirAll(dirPath)
+}
+
+// Truncate truncates a file to the specified size
+func (m *Manager) Truncate(sessionID, filePath string, size int64) error {
+	m.mu.RLock()
+	sess, ok := m.sessions[sessionID]
+	m.mu.RUnlock()
+
+	if !ok {
+		return fmt.Errorf("session not found: %s", sessionID)
+	}
+
+	return sess.Client.Truncate(filePath, size)
+}
+
+// Chtimes changes the access and modification times of a file
+func (m *Manager) Chtimes(sessionID, filePath string, atime, mtime time.Time) error {
+	m.mu.RLock()
+	sess, ok := m.sessions[sessionID]
+	m.mu.RUnlock()
+
+	if !ok {
+		return fmt.Errorf("session not found: %s", sessionID)
+	}
+
+	return sess.Client.Chtimes(filePath, atime, mtime)
+}
