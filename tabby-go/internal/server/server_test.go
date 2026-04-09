@@ -31,7 +31,7 @@ func TestMethodNotFound(t *testing.T) {
 	}
 
 	// Give the goroutine time to write the response
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	if out.Len() == 0 {
 		t.Fatal("Expected output from server")
