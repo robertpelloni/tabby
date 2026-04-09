@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Version number is maintained in [VERSION.md](VERSION.md) and is the single source of truth.
 
+## [1.0.231-nightly.3] - 2025-04-09
+
+### Added (robertpelloni fork)
+- **Terminal Middleware** (`pkg/middleware/`, 400 LOC)
+  - UTF8Splitter: Buffers incomplete multibyte UTF-8 sequences
+  - InputProcessor: Backspace key mapping (ctrl-h, ctrl-?, delete, backspace)
+  - LoginScriptProcessor: Expect/send pattern matching with regex support
+  - OSCProcessor: OSC 1337 parsing (CurrentDir with tilde expansion)
+  - StreamProcessor: Newline mode conversion (CR/LF/CRLF/implicit)
+- **Known Hosts Manager** (`pkg/knownhosts/`, 200 LOC)
+  - Thread-safe in-memory storage with SHA-256 fingerprints
+  - Host key verification (match/mismatch/unknown)
+  - OpenSSH known_hosts file format load/save
+  - IPv6 bracket notation handling
+- **Session Recovery** (`pkg/recovery/`, 160 LOC)
+  - Tab state registration and persistence (JSON)
+  - Session tracking with connected/disconnected transitions
+  - Platform-specific recovery path (`~/.tabby/recovery.json`)
+- **Notification System** (`pkg/notification/`, 120 LOC)
+  - Info/Warning/Error severity levels
+  - Read/unread tracking with 100-entry cap
+  - OnChange callbacks for real-time UI updates
+- **21 new RPC methods** (65+ total): knownHosts.*, notifications.*, recovery.*
+- **33 new tests** (157 total, all passing)
+
+### Changed
+- Binary size: 8.05MB (from 7.95MB)
+- Go codebase: 9,686 LOC across 32 source files, 14 packages
+
 ## [1.0.231-nightly.2] - 2025-04-08
 
 ### Added (robertpelloni fork)

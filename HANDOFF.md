@@ -1,141 +1,101 @@
 # HANDOFF.md - Session Handoff Documentation
 
-## Session: 2025-04-08
+## Session: 2025-04-09 (Continued)
 
 ### What Was Accomplished
 
-1. **Full Project Analysis**
-   - Analyzed all 15+ internal packages of the Tabby monorepo
-   - Mapped all source files (279 TypeScript files, 26,795 lines of code)
-   - Understood plugin architecture, service layer, and Electron integration
-   - Analyzed the russh (Rust SSH) integration and its history
+#### New Go Packages (4 new packages, ~800 LOC)
 
-2. **Git Management**
-   - Configured upstream remote: `git remote add upstream https://github.com/Eugeny/tabby`
-   - Fetched upstream (already in sync)
-   - Verified fork is up to date with Eugeny/tabby master (f05a07ae)
-   - No local feature branches found to merge
-   - Clean working tree on master branch
+1. **Terminal Middleware** (`pkg/middleware`, ~400 LOC)
+   - `UTF8Splitter` — Buffers incomplete multibyte UTF-8 sequences, emits complete characters
+   - `InputProcessor` — Maps backspace key (0x7f) to ctrl-h, delete, or default behavior
+   - `LoginScriptProcessor` — Matches output patterns (string or regex) and sends responses
+   - `OSCProcessor` — Parses OSC 1337 sequences (CurrentDir with tilde expansion)
+   - `StreamProcessor` — Newline mode conversion (CR/LF/CRLF/implicit)
+   - 24 tests, all passing
 
-3. **Comprehensive Documentation Suite Created**
-   - `VERSION.md` — Single source of truth for version (1.0.231-nightly.0)
-   - `VISION.md` — Project vision, architecture, directory structure, technology decisions
-   - `CHANGELOG.md` — Detailed changelog with all changes and module inventory
-   - `ROADMAP.md` — 5-phase long-term plan with Go backend porting roadmap
-   - `TODO.md` — Detailed task list organized by priority (Critical/Medium/Low)
-   - `MEMORY.md` — Architecture observations, code style notes, technical debt
-   - `DEPLOY.md` — Deployment instructions for all platforms
-   - `IDEAS.md` — 30 creative improvement ideas
-   - `HANDOFF.md` — This file
-   - `docs/UNIVERSAL_LLM_INSTRUCTIONS.md` — Universal instructions for all AI models
-   - `CLAUDE.md` — Claude-specific instructions
-   - `GEMINI.md` — Gemini-specific instructions
-   - `GPT.md` — GPT-specific instructions
-   - `copilot-instructions.md` — GitHub Copilot instructions
+2. **Known Hosts Manager** (`pkg/knownhosts`, ~200 LOC)
+   - In-memory storage with thread-safe access
+   - SHA-256 fingerprint computation
+   - Host key verification (match/mismatch/unknown states)
+   - OpenSSH known_hosts file format load/save
+   - IPv6 bracket notation handling
+   - 12 tests, all passing
 
-4. **Go Backend Proof of Concept** ✅
-   - Created `tabby-go/` directory with complete Go module
-   - **SSH Client**: Full SSH connection management (password, pubkey, agent auth)
-     - Shell sessions with PTY resize
-     - Jump host support
-     - Keepalive with disconnect detection
-     - Data forwarding via notifications
-   - **SFTP Client**: Full file management
-     - Directory listing, download, upload, delete, rename, mkdir
-     - Sessions tied to SSH connections
-   - **JSON-RPC 2.0 Server**: Complete communication layer
-     - Stdio transport (stdin/stdout)
-     - 25+ RPC methods registered
-     - Async notifications for data/exit events
-   - **API Types**: Comprehensive type definitions for all operations
-   - **Unit Tests**: All passing (`go test ./...`)
-   - **Buildable Binary**: `tabby-backend.exe` (7.2MB)
+3. **Session Recovery** (`pkg/recovery`, ~160 LOC)
+   - Tab state registration (SSH/Local/Serial/Telnet profiles)
+   - Session state tracking with connected/disconnected transitions
+   - JSON persistence to `~/.tabby/recovery.json`
+   - Clear/load/save with proper file handling
+   - 11 tests, all passing
 
-5. **Version Management**
-   - Fixed `app/package.json` version mismatch (1.0.0-alpha.1 → 1.0.231-nightly.0)
-   - Created `scripts/bump-version.mjs` for automated version synchronization
-   - Successfully synced all package.json files
+4. **Notification System** (`pkg/notification`, ~120 LOC)
+   - Info/Warning/Error severity levels
+   - Read/unread tracking, mark-read, clear
+   - OnChange callbacks for real-time UI updates
+   - Max 100 notification cap with auto-pruning
+   - 10 tests, all passing
 
-### Key Findings
+#### RPC Server Updates (27 new methods, 65+ total)
 
-1. **No Go code exists yet** — The Go porting initiative mentioned in the user's instructions has not started. This is a future goal.
+Added handlers for all new services:
+- `knownHosts.*` — get, store, remove, list, verify, loadFile, saveFile (7 methods)
+- `notifications.*` — info, warning, error, getUnread, getAll, markRead, clear (7 methods)
+- `recovery.*` — registerTab, unregisterTab, updateTab, getTabs, save, load, clear (7 methods)
+- Plus notification change callbacks via `notifications.changed` event
 
-2. **Version mismatch** — `app/package.json` has version `1.0.0-alpha.1` while all plugins have `1.0.231-nightly.0`. This needs to be synchronized.
+#### Key Bug Fixes
+- Fixed unescape function to handle `\\` → `\` correctly (switched from map-based to byte-by-byte)
+- Fixed login script regex handling: regex patterns are no longer unescaped (matching TS behavior)
+- Fixed knownhosts SaveAndLoad test to use FingerprintSHA256 for consistent round-trip
 
-3. **russh integration** — The SSH backend now uses russh (Rust SSH library v0.1.36) instead of ssh2. This was developed on the `origin/russh` branch and merged to master.
+### Current Go Backend Statistics
+- **32 Go source files** (excluding vendor)
+- **9,686 lines of Go code**
+- **157 tests all passing**
+- **Binary**: 8.05MB (`build/tabby-backend.exe`)
+- **14 packages**: ssh, sftp, pty, serial, telnet, config, vault, profile, hotkey, api, middleware, knownhosts, notification, recovery
+- **65+ JSON-RPC methods** across 7 service domains
 
-4. **No unit tests** — The repository has no visible test framework or test files. This is a significant gap.
+### Architecture
+```
+tabby-go/
+├── cmd/
+│   ├── tabby-backend/    # JSON-RPC server (Electron child process)
+│   └── tabby-native/     # BTK native terminal app
+├── internal/
+│   └── server/           # JSON-RPC 2.0 dispatch (65+ methods)
+├── pkg/
+│   ├── api/              # Shared types (608 LOC)
+│   ├── ssh/              # Full SSH client (1,655 LOC)
+│   ├── sftp/             # SFTP operations (609 LOC)
+│   ├── telnet/           # RFC 854 Telnet client (543 LOC)
+│   ├── pty/              # PTY manager (223 LOC)
+│   ├── serial/           # Serial port stub (109 LOC)
+│   ├── config/           # YAML config management (375 LOC)
+│   ├── vault/            # Encrypted credential storage (685 LOC)
+│   ├── profile/          # Profile management (546 LOC)
+│   ├── hotkey/           # Hotkey system (324 LOC)
+│   ├── middleware/        # Terminal middleware (400 LOC) ← NEW
+│   ├── knownhosts/       # Known host key management (200 LOC) ← NEW
+│   ├── recovery/         # Tab/session recovery (160 LOC) ← NEW
+│   └── notification/     # Notification system (120 LOC) ← NEW
+└── vendor/btk/           # BTK submodule for native UI
+```
 
-5. **Architecture is solid** — The plugin architecture is well-designed and extensible. The main improvement areas are:
-   - SFTP file manager UI (only context-menu download exists)
-   - Port forwarding runtime management UI
-   - Comprehensive settings descriptions
+### Remaining Work (Priority Order)
 
-6. **Build system works** — Webpack 5 + electron-builder, CI via GitHub Actions with multi-platform builds.
+1. **Wire middleware into SSH/Telnet sessions** — Attach UTF8Splitter, InputProcessor, OSCProcessor to session pipelines
+2. **Real PTY** — Replace stub with creack/pty (Unix) + ConPTY (Windows)
+3. **Real serial port** — Integrate go.bug.st/serial
+4. **SFTP File Manager UI** — Build Angular component using SFTP RPC methods
+5. **BTK native terminal app** — Full terminal rendering with libvte/box-drawing
+6. **End-to-end integration** — Wire Go backend into Angular SSH service via GoBackendService
+7. **SSH multiplexer** — Port session sharing for multiple tabs on one connection
+8. **Shell integration** — OS-level integration (Windows registry, macOS Automator)
 
-### What the Next Model Should Do
-
-#### Priority 1: Wire Go Backend into Electron
-1. Create a TypeScript service (`tabby-electron/src/services/goBackend.service.ts`) that:
-   - Spawns `tabby-backend` as a child process
-   - Communicates via JSON-RPC over stdin/stdout
-   - Provides Angular-compatible API
-2. Create a new SSH session class that uses the Go backend instead of russh
-3. Add configuration option to switch between russh and Go backends
-4. Test SSH connection through the Go backend end-to-end
-
-#### Priority 2: Go PTY Implementation
-1. Implement PTY management in Go using `github.com/creack/pty` (Unix)
-2. Implement Windows ConPTY support (or use a cross-platform library)
-3. Wire up to local shell sessions
-
-#### Priority 3: Go Serial Implementation
-1. Implement serial port management using `go.bug.st/serial`
-2. Wire up to serial terminal sessions
-
-#### Priority 4: SFTP File Manager UI
-1. Enhance the existing SFTP context menu with full file browser
-2. Add upload, delete, rename, create directory operations
-3. Add progress indicators
-4. Add drag-and-drop support
-
-### Files Modified This Session
-- `VERSION.md` (updated)
-- `CHANGELOG.md` (updated)
-- `app/package.json` (version bump)
-- `*/*.package.json` (version bump)
-- `tabby-go/README.md` (updated)
-- `tabby-go/pkg/api/types.go` (expanded — 300+ lines of API types)
-- `tabby-go/pkg/ssh/ssh.go` (major expansion — 1200+ lines)
-- `tabby-go/pkg/sftp/sftp.go` (expanded with chmod/readlink/symlink/rmdir/lstat/readDir)
-- `tabby-go/pkg/pty/pty.go` (process spawning implementation)
-- `tabby-go/pkg/serial/serial.go` (serial port stub)
-- `tabby-go/internal/server/server.go` (40+ JSON-RPC methods)
-- `tabby-go/pkg/ui/bridge.h` (new — C API header for BTK)
-- `tabby-go/pkg/ui/bridge.cpp` (new — C++ implementation wrapping BTK)
-- `tabby-go/pkg/ui/ui.go` (new — Go bindings for BTK native UI)
-- `tabby-go/pkg/nativeapp/nativeapp.go` (new — native app orchestration)
-- `tabby-go/vendor/btk/` (new — BTK git submodule)
-- `tabby-go/vendor/` (Go dependency vendoring)
-- `.gitmodules` (new — tracks BTK submodule)
-- `tabby-electron/src/services/goBackend.service.ts` (expanded — full API coverage)
-- `tabby-electron/src/config.ts` (goBackend config option)
-
-### Decisions Made
-1. **VERSION.md as single source of truth** — One file containing only the version string
-2. **docs/ directory for universal instructions** — All LLM instructions centralized
-3. **Model-specific files reference universal** — Each model file (CLAUDE.md etc.) references UNIVERSAL_LLM_INSTRUCTIONS.md
-4. **Go port as phased approach** — Start with SSH PoC, then expand to PTY and serial
-5. **No forced merges** — Only merge robertpelloni feature branches (none found this session)
-
-### Blockers / Issues
-- Go porting requires careful design of the communication layer between Electron and Go
-- The app version mismatch (`1.0.0-alpha.1` vs `1.0.231-nightly.0`) may affect auto-updates
-- No test framework set up — need to decide between Jest and Karma
-
-### Observations for Future Sessions
-- The `tabby-uac/` directory is a C# project with no TypeScript — it's a Windows UAC helper
-- The `extras/clink/` directory contains Clink distribution for Windows shell integration
-- The `web/` directory is a separate webpack config for the web app version
-- The `patches/` directory contains patch-package patches for fixing upstream issues
-- Some IPC calls use `sendSync` which blocks the renderer — should be migrated to async
+### Technical Notes
+- The middleware `unescape()` function uses byte-by-byte processing instead of string replacement to avoid issues with `\w` in regex patterns
+- Known hosts manager preserves the original key bytes (base64) alongside SHA-256 fingerprints for compatibility with OpenSSH format
+- Recovery system marks sessions as disconnected on load since TCP connections can't be truly restored
+- Notification system uses 100-entry cap to prevent unbounded memory growth

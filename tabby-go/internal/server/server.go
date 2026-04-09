@@ -56,7 +56,10 @@ import (
 	"sync"
 
 	"github.com/robertpelloni/tabby/tabby-go/pkg/api"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/knownhosts"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/notification"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/pty"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/recovery"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/serial"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/sftp"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ssh"
@@ -65,15 +68,18 @@ import (
 
 // Server is the JSON-RPC server for Tabby's Go backend
 type Server struct {
-	sshMgr    *ssh.Manager
-	sftpMgr   *sftp.Manager
-	ptyMgr    *pty.Manager
-	serialMgr *serial.Manager
-	telnetMgr *telnet.Manager
-	reader    *bufio.Reader
-	writer    io.Writer
-	mu        sync.Mutex
-	running   bool
+	sshMgr       *ssh.Manager
+	sftpMgr      *sftp.Manager
+	ptyMgr       *pty.Manager
+	serialMgr    *serial.Manager
+	telnetMgr    *telnet.Manager
+	knownHosts   *knownhosts.Manager
+	notifMgr     *notification.Manager
+	recoveryMgr  *recovery.Manager
+	reader       *bufio.Reader
+	writer       io.Writer
+	mu           sync.Mutex
+	running      bool
 }
 
 // New creates a new Server using stdin/stdout
@@ -87,6 +93,12 @@ func New() *Server {
 	s.ptyMgr = pty.NewManager(s.sendNotification)
 	s.serialMgr = serial.NewManager(s.sendNotification)
 	s.telnetMgr = telnet.NewManager(s.sendNotification)
+	s.knownHosts = knownhosts.NewManager()
+	s.notifMgr = notification.NewManager()
+	s.recoveryMgr = recovery.NewManager()
+	s.notifMgr.OnChange(func(notifs []notification.Notification) {
+		s.sendNotification("notifications.changed", notifs)
+	})
 	return s
 }
 
@@ -101,6 +113,9 @@ func NewWithIO(in io.Reader, out io.Writer) *Server {
 	s.ptyMgr = pty.NewManager(s.sendNotification)
 	s.serialMgr = serial.NewManager(s.sendNotification)
 	s.telnetMgr = telnet.NewManager(s.sendNotification)
+	s.knownHosts = knownhosts.NewManager()
+	s.notifMgr = notification.NewManager()
+	s.recoveryMgr = recovery.NewManager()
 	return s
 }
 
@@ -237,6 +252,54 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 		err = s.handleTelnetClose(req.Params)
 	case "telnet.listConnections":
 		result = s.telnetMgr.ListConnections()
+
+	// ---- Known Hosts ----
+	case "knownHosts.get":
+		result, err = s.handleKnownHostsGet(req.Params)
+	case "knownHosts.store":
+		err = s.handleKnownHostsStore(req.Params)
+	case "knownHosts.remove":
+		err = s.handleKnownHostsRemove(req.Params)
+	case "knownHosts.list":
+		result = s.knownHosts.List()
+	case "knownHosts.verify":
+		result, err = s.handleKnownHostsVerify(req.Params)
+	case "knownHosts.loadFile":
+		err = s.handleKnownHostsLoadFile(req.Params)
+	case "knownHosts.saveFile":
+		err = s.handleKnownHostsSaveFile(req.Params)
+
+	// ---- Notifications ----
+	case "notifications.info":
+		err = s.handleNotificationInfo(req.Params)
+	case "notifications.warning":
+		err = s.handleNotificationWarning(req.Params)
+	case "notifications.error":
+		err = s.handleNotificationError(req.Params)
+	case "notifications.getUnread":
+		result = s.notifMgr.GetUnread()
+	case "notifications.getAll":
+		result = s.notifMgr.GetAll()
+	case "notifications.markRead":
+		err = s.handleNotificationMarkRead(req.Params)
+	case "notifications.clear":
+		s.notifMgr.Clear()
+
+	// ---- Recovery ----
+	case "recovery.registerTab":
+		err = s.handleRecoveryRegisterTab(req.Params)
+	case "recovery.unregisterTab":
+		err = s.handleRecoveryUnregisterTab(req.Params)
+	case "recovery.updateTab":
+		err = s.handleRecoveryUpdateTab(req.Params)
+	case "recovery.getTabs":
+		result = s.recoveryMgr.GetRecoverableTabs()
+	case "recovery.save":
+		err = s.handleRecoverySave(req.Params)
+	case "recovery.load":
+		result, err = s.handleRecoveryLoad(req.Params)
+	case "recovery.clear":
+		s.recoveryMgr.Clear()
 
 	default:
 		s.sendError(req.ID, api.ErrorMethodNotFound, fmt.Sprintf("Method not found: %s", req.Method), nil)
@@ -684,4 +747,177 @@ func reMarshal(from, to interface{}) error {
 		return err
 	}
 	return json.Unmarshal(data, to)
+}
+
+// ---- Known Hosts Handlers ----
+
+func (s *Server) handleKnownHostsGet(params interface{}) (*knownhosts.KnownHost, error) {
+	var p knownhosts.Selector
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	return s.knownHosts.GetFor(p), nil
+}
+
+func (s *Server) handleKnownHostsStore(params interface{}) error {
+	var p struct {
+		Selector knownhosts.Selector `json:"selector"`
+		Digest   string              `json:"digest"`
+		KeyBytes []byte              `json:"keyBytes"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	s.knownHosts.Store(p.Selector, p.Digest, p.KeyBytes)
+	return nil
+}
+
+func (s *Server) handleKnownHostsRemove(params interface{}) error {
+	var p knownhosts.Selector
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	s.knownHosts.Remove(p)
+	return nil
+}
+
+func (s *Server) handleKnownHostsVerify(params interface{}) (map[string]interface{}, error) {
+	var p struct {
+		Selector knownhosts.Selector `json:"selector"`
+		KeyBytes []byte              `json:"keyBytes"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	ok, err := s.knownHosts.Verify(p.Selector, p.KeyBytes)
+	return map[string]interface{}{"ok": ok}, err
+}
+
+func (s *Server) handleKnownHostsLoadFile(params interface{}) error {
+	var p struct {
+		Path string `json:"path"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.knownHosts.LoadFromFile(p.Path)
+}
+
+func (s *Server) handleKnownHostsSaveFile(params interface{}) error {
+	var p struct {
+		Path string `json:"path"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.knownHosts.SaveToFile(p.Path)
+}
+
+// ---- Notification Handlers ----
+
+func (s *Server) handleNotificationInfo(params interface{}) error {
+	var p struct {
+		Title   string `json:"title"`
+		Message string `json:"message"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	s.notifMgr.Info(p.Title, p.Message)
+	return nil
+}
+
+func (s *Server) handleNotificationWarning(params interface{}) error {
+	var p struct {
+		Title   string `json:"title"`
+		Message string `json:"message"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	s.notifMgr.Warning(p.Title, p.Message)
+	return nil
+}
+
+func (s *Server) handleNotificationError(params interface{}) error {
+	var p struct {
+		Title   string `json:"title"`
+		Message string `json:"message"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	s.notifMgr.Error(p.Title, p.Message)
+	return nil
+}
+
+func (s *Server) handleNotificationMarkRead(params interface{}) error {
+	var p struct {
+		ID string `json:"id"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	s.notifMgr.MarkRead(p.ID)
+	return nil
+}
+
+// ---- Recovery Handlers ----
+
+func (s *Server) handleRecoveryRegisterTab(params interface{}) error {
+	var p recovery.TabState
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	s.recoveryMgr.RegisterTab(p)
+	return nil
+}
+
+func (s *Server) handleRecoveryUnregisterTab(params interface{}) error {
+	var p struct {
+		TabID string `json:"tabId"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	s.recoveryMgr.UnregisterTab(p.TabID)
+	return nil
+}
+
+func (s *Server) handleRecoveryUpdateTab(params interface{}) error {
+	var p struct {
+		TabID string `json:"tabId"`
+		Title string `json:"title"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	s.recoveryMgr.UpdateTab(p.TabID, p.Title)
+	return nil
+}
+
+func (s *Server) handleRecoverySave(params interface{}) error {
+	var p struct {
+		Path string `json:"path"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	if p.Path == "" {
+		p.Path = recovery.GetRecoveryPath()
+	}
+	return s.recoveryMgr.Save(p.Path)
+}
+
+func (s *Server) handleRecoveryLoad(params interface{}) (*recovery.RecoveryFile, error) {
+	var p struct {
+		Path string `json:"path"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	if p.Path == "" {
+		p.Path = recovery.GetRecoveryPath()
+	}
+	return s.recoveryMgr.Load(p.Path)
 }
