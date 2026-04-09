@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Version number is maintained in [VERSION.md](VERSION.md) and is the single source of truth.
 
+## [1.0.231-nightly.2] - 2025-04-08
+
+### Added (robertpelloni fork)
+- **SSH Port Forwarding**: Full local, remote, and dynamic/SOCKS5 forwarding
+- **SSH Proxy Support**: Proxy command, SOCKS5 proxy, HTTP CONNECT proxy
+- **SSH Host Key Verification**: Interactive prompts and known_hosts file support
+- **SSH Keyboard-Interactive Auth**: Client-side prompt forwarding via notifications
+- **SSH X11 Forwarding**: Channel-level X11 forwarding support
+- **SSH Agent Forwarding**: Agent forwarding over SSH sessions
+- **Nested Jump Hosts**: Support for chained jump host connections
+- **SFTP Enhancements**: chmod, readlink, symlink, rmdir, lstat, readDir, mkdirAll
+- **BTK Native UI Integration**: CGo bridge (bridge.h/bridge.cpp) and Go bindings (pkg/ui/)
+  - Full widget set: Window, TabWidget, Splitter, Terminal, MenuBar, Menu,
+    Action, ToolBar, StatusBar, Label, LineEdit, Button, ComboBox, Layout, Dialog
+  - File dialogs, clipboard, dark mode, screen info
+- **BTK Submodule**: Added robertpelloni/btk as git submodule for native UI toolkit
+- **TypeScript GoBackendService**: Full API coverage for all 40+ JSON-RPC methods
+  - Port forwarding methods (addForward, removeForward, listForwards)
+  - Auth callbacks (verifyHostKey, keyboardInteractiveResp)
+  - Enhanced SFTP (chmod, readlink, symlink, lstat, readDir, mkdirAll, rmdir)
+  - RxJS observables for host key prompts, keyboard-interactive, banners, service messages
+- **Go API Types**: Expanded to 500+ lines covering port forwarding, serial ports, SFTP operations
+- **Version bump**: 1.0.231-nightly.1 → 1.0.231-nightly.2
+
 ## [1.0.231-nightly.1] - 2025-04-08
 
 ### Added (robertpelloni fork)

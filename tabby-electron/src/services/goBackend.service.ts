@@ -1,49 +1,39 @@
 /**
- * GoBackendService — Angular service that communicates with the Tabby Go backend
- * via JSON-RPC 2.0 over a child process's stdin/stdout.
+ * GoBackendService — Angular service for Tabby's Go backend
+ * Communicates via JSON-RPC 2.0 over stdin/stdout with the Go backend process.
  *
- * This service spawns the Go backend binary and provides a TypeScript API
- * that mirrors the Go backend's JSON-RPC methods. It can be used as an
- * alternative to the russh-based SSH implementation.
- *
- * Usage:
- *   constructor(private goBackend: GoBackendService) {}
- *
- *   // Connect via Go backend
- *   const conn = await this.goBackend.sshConnect({
- *     host: 'example.com',
- *     port: 22,
- *     user: 'testuser',
- *     auth: { type: 'password', password: 'secret' }
- *   })
- *
- * Architecture:
- *   Angular Service → JSON-RPC → Child Process (Go binary) → SSH/PTY/Serial
+ * This service mirrors the full Go backend API:
+ * - SSH: connect, startShell, resize, write, close, listConnections
+ * - SSH Port Forwarding: addForward, removeForward, listForwards
+ * - SSH Auth: verifyHostKey, keyboardInteractiveResp
+ * - SFTP: open, list, download, upload, delete, rename, mkdir, stat, chmod, readlink, symlink, close
+ * - PTY: spawn, resize, write, kill
+ * - Serial: open, write, close, listPorts
  */
 import { Injectable, OnDestroy } from '@angular/core'
 import { Subject, Observable } from 'rxjs'
 import { spawn, ChildProcess } from 'child_process'
 import * as path from 'path'
 
-// ---- Type definitions matching Go backend API types ----
-
-/** SSH connection parameters */
+// ---- SSH Types ----
 export interface GoSSHConnectParams {
     host: string
     port?: number
     user: string
     auth: {
-        type: 'password' | 'publicKey' | 'agent' | 'keyboardInteractive'
+        type: 'password' | 'publicKey' | 'agent' | 'keyboardInteractive' | 'none'
         password?: string
         privateKey?: string
         privateKeyPaths?: string[]
         agentSocketPath?: string
+        agentType?: string
     }
     keepaliveInterval?: number
     keepaliveCountMax?: number
     readyTimeout?: number
     agentForward?: boolean
     x11?: boolean
+    x11Display?: string
     jumpHost?: GoSSHConnectParams
     algorithms?: {
         hmac?: string[]
@@ -53,19 +43,27 @@ export interface GoSSHConnectParams {
         compression?: string[]
     }
     proxyCommand?: string
+    socksProxyHost?: string
+    socksProxyPort?: number
+    httpProxyHost?: string
+    httpProxyPort?: number
     environment?: Record<string, string>
+    verifyHostKey?: boolean
+    knownHostsPath?: string
+    skipBanner?: boolean
+    password?: string
 }
 
-/** SSH session parameters */
 export interface GoSSHSessionParams {
     connectionId: string
     columns: number
     rows: number
     terminal?: string
     command?: string
+    agentForward?: boolean
+    x11?: boolean
 }
 
-/** SSH connection result */
 export interface GoSSHConnectionResult {
     connectionId: string
     serverVersion: string
@@ -74,12 +72,52 @@ export interface GoSSHConnectionResult {
     authMethods: string[]
 }
 
-/** SSH session result */
 export interface GoSSHSessionResult {
     sessionId: string
 }
 
-/** Data notification from the Go backend */
+// ---- Port Forwarding Types ----
+export type PortForwardType = 'local' | 'remote' | 'dynamic'
+
+export interface GoPortForwardParams {
+    connectionId: string
+    type: PortForwardType
+    host: string
+    port: number
+    targetAddress?: string
+    targetPort?: number
+}
+
+export interface GoPortForwardResult {
+    forwardId: string
+}
+
+export interface GoPortForwardInfo {
+    id: string
+    type: PortForwardType
+    host: string
+    port: number
+    targetAddress?: string
+    targetPort?: number
+    active: boolean
+}
+
+// ---- SFTP Types ----
+export interface GoSFTPFile {
+    name: string
+    fullPath: string
+    size: number
+    mode: number
+    modTime: string
+    isDir: boolean
+    isSymlink: boolean
+}
+
+export interface GoSFTPTransferResult {
+    bytesTransferred: number
+}
+
+// ---- Notification Types ----
 export interface GoDataNotification {
     connectionId?: string
     sessionId?: string
@@ -88,7 +126,6 @@ export interface GoDataNotification {
     data: string // Base64-encoded
 }
 
-/** Exit notification from the Go backend */
 export interface GoExitNotification {
     connectionId?: string
     sessionId?: string
@@ -98,47 +135,38 @@ export interface GoExitNotification {
     signal?: string
 }
 
-/** SFTP file listing entry */
-export interface GoSFTPFile {
+export interface GoHostKeyPromptNotification {
+    connectionId: string
+    host: string
+    port: number
+    keyType: string
+    fingerprint: string
+    keyBytes?: string
+}
+
+export interface GoKeyboardInteractiveNotification {
+    connectionId: string
     name: string
-    size: number
-    mode: number
-    modTime: string
-    isDir: boolean
+    instruction: string
+    prompts: { prompt: string; echo: boolean }[]
 }
 
-/** JSON-RPC request */
-interface JSONRPCRequest {
-    jsonrpc: '2.0'
-    id: number
-    method: string
-    params?: any
+export interface GoBannerNotification {
+    connectionId: string
+    message: string
 }
 
-/** JSON-RPC response */
-interface JSONRPCResponse {
-    jsonrpc: '2.0'
-    id: number
-    result?: any
-    error?: {
-        code: number
-        message: string
-        data?: any
-    }
+export interface GoServiceMessageNotification {
+    connectionId: string
+    message: string
 }
 
-/** JSON-RPC notification */
-interface JSONRPCNotification {
-    jsonrpc: '2.0'
-    method: string
-    params?: any
+export interface GoPortForwardEventNotification {
+    connectionId: string
+    forwardId: string
+    eventType: string
+    message?: string
 }
-
-/** Callback for data notifications */
-export type DataCallback = (notification: GoDataNotification) => void
-
-/** Callback for exit notifications */
-export type ExitCallback = (notification: GoExitNotification) => void
 
 @Injectable({ providedIn: 'root' })
 export class GoBackendService implements OnDestroy {
@@ -150,30 +178,32 @@ export class GoBackendService implements OnDestroy {
     }>()
     private buffer = ''
 
-    /** Observable for SSH data notifications */
     private dataSubject = new Subject<GoDataNotification>()
     readonly onData: Observable<GoDataNotification> = this.dataSubject.asObservable()
 
-    /** Observable for exit notifications */
     private exitSubject = new Subject<GoExitNotification>()
     readonly onExit: Observable<GoExitNotification> = this.exitSubject.asObservable()
 
+    private hostKeyPromptSubject = new Subject<GoHostKeyPromptNotification>()
+    readonly onHostKeyPrompt: Observable<GoHostKeyPromptNotification> = this.hostKeyPromptSubject.asObservable()
+
+    private keyboardInteractiveSubject = new Subject<GoKeyboardInteractiveNotification>()
+    readonly onKeyboardInteractive: Observable<GoKeyboardInteractiveNotification> = this.keyboardInteractiveSubject.asObservable()
+
+    private bannerSubject = new Subject<GoBannerNotification>()
+    readonly onBanner: Observable<GoBannerNotification> = this.bannerSubject.asObservable()
+
+    private serviceMessageSubject = new Subject<GoServiceMessageNotification>()
+    readonly onServiceMessage: Observable<GoServiceMessageNotification> = this.serviceMessageSubject.asObservable()
+
+    private portForwardEventSubject = new Subject<GoPortForwardEventNotification>()
+    readonly onPortForwardEvent: Observable<GoPortForwardEventNotification> = this.portForwardEventSubject.asObservable()
+
     private _running = false
+    get running(): boolean { return this._running }
 
-    /** Whether the Go backend process is running */
-    get running(): boolean {
-        return this._running
-    }
-
-    /**
-     * Start the Go backend process
-     * @param binaryPath Optional path to the tabby-backend binary
-     */
     async start(binaryPath?: string): Promise<void> {
-        if (this._running) {
-            return
-        }
-
+        if (this._running) return
         const exePath = binaryPath || this.getDefaultBinaryPath()
 
         return new Promise<void>((resolve, reject) => {
@@ -195,12 +225,10 @@ export class GoBackendService implements OnDestroy {
                     this.rejectAllPending(`Process exited with code ${code}`)
                 })
 
-                // Read stdout line by line (JSON-RPC responses)
                 this.process.stdout!.on('data', (data: Buffer) => {
                     this.handleStdoutData(data.toString())
                 })
 
-                // Log stderr for debugging
                 this.process.stderr!.on('data', (data: Buffer) => {
                     console.log(`[GoBackend] stderr: ${data.toString().trim()}`)
                 })
@@ -214,9 +242,6 @@ export class GoBackendService implements OnDestroy {
         })
     }
 
-    /**
-     * Stop the Go backend process
-     */
     stop(): void {
         if (this.process) {
             this.process.kill()
@@ -226,210 +251,184 @@ export class GoBackendService implements OnDestroy {
         this.rejectAllPending('Backend stopped')
     }
 
-    ngOnDestroy(): void {
-        this.stop()
-    }
+    ngOnDestroy(): void { this.stop() }
 
     // ---- SSH Methods ----
-
-    /** Connect to an SSH server */
     async sshConnect(params: GoSSHConnectParams): Promise<GoSSHConnectionResult> {
         return this.call('ssh.connect', params)
     }
 
-    /** Start a shell session on an SSH connection */
     async sshStartShell(params: GoSSHSessionParams): Promise<GoSSHSessionResult> {
         return this.call('ssh.startShell', params)
     }
 
-    /** Resize the terminal for an SSH session */
     async sshResize(connectionId: string, sessionId: string, columns: number, rows: number): Promise<void> {
         return this.call('ssh.resize', { connectionId, sessionId, columns, rows })
     }
 
-    /** Write data to an SSH session */
     async sshWrite(connectionId: string, sessionId: string, data: Buffer): Promise<void> {
-        return this.call('ssh.write', {
-            connectionId,
-            sessionId,
-            data: data.toString('base64'),
-        })
+        return this.call('ssh.write', { connectionId, sessionId, data: data.toString('base64') })
     }
 
-    /** Close an SSH session or connection */
     async sshClose(connectionId: string, sessionId?: string): Promise<void> {
         return this.call('ssh.close', { connectionId, sessionId })
     }
 
-    /** List active SSH connections */
     async sshListConnections(): Promise<string[]> {
         return this.call('ssh.listConnections', {})
     }
 
-    // ---- SFTP Methods ----
+    // ---- SSH Port Forwarding ----
+    async sshAddForward(params: GoPortForwardParams): Promise<GoPortForwardResult> {
+        return this.call('ssh.addForward', params)
+    }
 
-    /** Open an SFTP session over an SSH connection */
+    async sshRemoveForward(connectionId: string, forwardId: string): Promise<void> {
+        return this.call('ssh.removeForward', { connectionId, forwardId })
+    }
+
+    async sshListForwards(connectionId: string): Promise<GoPortForwardInfo[]> {
+        const result = await this.call<{ forwards: GoPortForwardInfo[] }>('ssh.listForwards', { connectionId })
+        return result.forwards || []
+    }
+
+    // ---- SSH Auth Callbacks ----
+    async sshVerifyHostKey(connectionId: string, accepted: boolean): Promise<void> {
+        return this.call('ssh.verifyHostKey', { connectionId, accepted })
+    }
+
+    async sshKeyboardInteractiveResp(connectionId: string, responses: string[]): Promise<void> {
+        return this.call('ssh.keyboardInteractiveResp', { connectionId, responses })
+    }
+
+    // ---- SFTP Methods ----
     async sftpOpen(connectionId: string): Promise<string> {
-        const result = await this.call('sftp.open', { connectionId })
+        const result = await this.call<{ sessionId: string }>('sftp.open', { connectionId })
         return result.sessionId
     }
 
-    /** List files in a directory */
     async sftpList(sessionId: string, remotePath: string): Promise<GoSFTPFile[]> {
         return this.call('sftp.list', { sessionId, path: remotePath })
     }
 
-    /** Download a file */
-    async sftpDownload(sessionId: string, remotePath: string, localPath: string): Promise<{ bytesTransferred: number }> {
+    async sftpReadDir(sessionId: string, remotePath: string): Promise<GoSFTPFile[]> {
+        return this.call('sftp.readDir', { sessionId, path: remotePath })
+    }
+
+    async sftpDownload(sessionId: string, remotePath: string, localPath: string): Promise<GoSFTPTransferResult> {
         return this.call('sftp.download', { sessionId, remotePath, localPath })
     }
 
-    /** Upload a file */
-    async sftpUpload(sessionId: string, localPath: string, remotePath: string): Promise<{ bytesTransferred: number }> {
+    async sftpUpload(sessionId: string, localPath: string, remotePath: string): Promise<GoSFTPTransferResult> {
         return this.call('sftp.upload', { sessionId, localPath, remotePath })
     }
 
-    /** Delete a file or directory */
     async sftpDelete(sessionId: string, remotePath: string): Promise<void> {
         return this.call('sftp.delete', { sessionId, remotePath })
     }
 
-    /** Rename a file or directory */
     async sftpRename(sessionId: string, oldPath: string, newPath: string): Promise<void> {
         return this.call('sftp.rename', { sessionId, oldPath, newPath })
     }
 
-    /** Create a directory */
     async sftpMkdir(sessionId: string, dirPath: string): Promise<void> {
         return this.call('sftp.mkdir', { sessionId, path: dirPath })
     }
 
-    /** Get file information */
+    async sftpMkdirAll(sessionId: string, dirPath: string): Promise<void> {
+        return this.call('sftp.mkdirAll', { sessionId, path: dirPath })
+    }
+
     async sftpStat(sessionId: string, filePath: string): Promise<GoSFTPFile> {
         return this.call('sftp.stat', { sessionId, path: filePath })
     }
 
-    /** Close an SFTP session */
+    async sftpLstat(sessionId: string, filePath: string): Promise<GoSFTPFile> {
+        return this.call('sftp.lstat', { sessionId, path: filePath })
+    }
+
+    async sftpChmod(sessionId: string, filePath: string, mode: number): Promise<void> {
+        return this.call('sftp.chmod', { sessionId, path: filePath, mode })
+    }
+
+    async sftpReadlink(sessionId: string, linkPath: string): Promise<string> {
+        const result = await this.call<{ target: string }>('sftp.readlink', { sessionId, path: linkPath })
+        return result.target
+    }
+
+    async sftpSymlink(sessionId: string, oldPath: string, newPath: string): Promise<void> {
+        return this.call('sftp.symlink', { sessionId, oldPath, newPath })
+    }
+
+    async sftpRmdir(sessionId: string, dirPath: string): Promise<void> {
+        return this.call('sftp.rmdir', { sessionId, path: dirPath })
+    }
+
     async sftpClose(sessionId: string): Promise<void> {
         return this.call('sftp.close', { sessionId })
     }
 
-    // ---- PTY Methods (stubs) ----
-
-    /** Spawn a local PTY (not yet implemented in Go backend) */
-    async ptySpawn(params: any): Promise<any> {
-        return this.call('pty.spawn', params)
-    }
-
-    /** Resize a PTY (not yet implemented in Go backend) */
+    // ---- PTY Methods ----
+    async ptySpawn(params: any): Promise<any> { return this.call('pty.spawn', params) }
     async ptyResize(id: string, columns: number, rows: number): Promise<void> {
         return this.call('pty.resize', { id, columns, rows })
     }
-
-    /** Write data to a PTY (not yet implemented in Go backend) */
     async ptyWrite(id: string, data: Buffer): Promise<void> {
         return this.call('pty.write', { id, data: data.toString('base64') })
     }
-
-    /** Kill a PTY process (not yet implemented in Go backend) */
     async ptyKill(id: string, signal?: string): Promise<void> {
         return this.call('pty.kill', { id, signal })
     }
 
-    // ---- Serial Methods (stubs) ----
-
-    /** Open a serial port (not yet implemented in Go backend) */
-    async serialOpen(params: any): Promise<any> {
-        return this.call('serial.open', params)
-    }
-
-    /** Write data to a serial port (not yet implemented in Go backend) */
+    // ---- Serial Methods ----
+    async serialOpen(params: any): Promise<any> { return this.call('serial.open', params) }
     async serialWrite(id: string, data: Buffer): Promise<void> {
         return this.call('serial.write', { id, data: data.toString('base64') })
     }
-
-    /** Close a serial port (not yet implemented in Go backend) */
-    async serialClose(id: string): Promise<void> {
-        return this.call('serial.close', { id })
+    async serialClose(id: string): Promise<void> { return this.call('serial.close', { id }) }
+    async serialListPorts(): Promise<any[]> {
+        const result = await this.call<{ ports: any[] }>('serial.listPorts', {})
+        return result.ports || []
     }
 
-    // ---- Internal Methods ----
-
-    /**
-     * Send a JSON-RPC call and wait for the response
-     */
+    // ---- Internal ----
     private call<T = any>(method: string, params: any): Promise<T> {
         if (!this._running || !this.process) {
             return Promise.reject(new Error('Go backend is not running'))
         }
-
         const id = ++this.requestId
-        const request: JSONRPCRequest = {
-            jsonrpc: '2.0',
-            id,
-            method,
-            params,
-        }
-
         return new Promise<T>((resolve, reject) => {
             this.pendingRequests.set(id, { resolve, reject })
-            const data = JSON.stringify(request) + '\n'
+            const data = JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n'
             this.process!.stdin!.write(data)
         })
     }
 
-    /**
-     * Handle data from the Go backend's stdout
-     * Messages are newline-delimited JSON
-     */
     private handleStdoutData(data: string): void {
         this.buffer += data
-
-        // Process complete lines
         let newlineIndex: number
         while ((newlineIndex = this.buffer.indexOf('\n')) !== -1) {
             const line = this.buffer.slice(0, newlineIndex)
             this.buffer = this.buffer.slice(newlineIndex + 1)
-
-            if (line.trim()) {
-                this.handleMessage(line.trim())
-            }
+            if (line.trim()) this.handleMessage(line.trim())
         }
     }
 
-    /**
-     * Handle a single JSON-RPC message
-     */
     private handleMessage(line: string): void {
         let message: any
-        try {
-            message = JSON.parse(line)
-        } catch {
-            console.error('[GoBackend] Invalid JSON:', line)
-            return
-        }
+        try { message = JSON.parse(line) } catch { console.error('[GoBackend] Invalid JSON:', line); return }
 
         if (message.id !== undefined && message.id !== null) {
-            // This is a response to a request
-            this.handleResponse(message as JSONRPCResponse)
+            this.handleResponse(message)
         } else if (message.method) {
-            // This is a notification from the server
-            this.handleNotification(message as JSONRPCNotification)
+            this.handleNotification(message)
         }
     }
 
-    /**
-     * Handle a JSON-RPC response
-     */
-    private handleResponse(response: JSONRPCResponse): void {
+    private handleResponse(response: any): void {
         const pending = this.pendingRequests.get(response.id)
-        if (!pending) {
-            console.warn(`[GoBackend] No pending request for id ${response.id}`)
-            return
-        }
-
+        if (!pending) { console.warn(`[GoBackend] No pending request for id ${response.id}`); return }
         this.pendingRequests.delete(response.id)
-
         if (response.error) {
             pending.reject(new Error(`Go backend error [${response.error.code}]: ${response.error.message}`))
         } else {
@@ -437,45 +436,48 @@ export class GoBackendService implements OnDestroy {
         }
     }
 
-    /**
-     * Handle a JSON-RPC notification from the Go backend
-     */
-    private handleNotification(notification: JSONRPCNotification): void {
+    private handleNotification(notification: any): void {
         switch (notification.method) {
             case 'ssh.data':
-                this.dataSubject.next(notification.params as GoDataNotification)
+            case 'pty.data':
+            case 'serial.data':
+                this.dataSubject.next(notification.params)
                 break
             case 'ssh.exit':
             case 'pty.exit':
             case 'serial.exit':
-                this.exitSubject.next(notification.params as GoExitNotification)
+                this.exitSubject.next(notification.params)
+                break
+            case 'ssh.hostKeyPrompt':
+                this.hostKeyPromptSubject.next(notification.params)
+                break
+            case 'ssh.keyboardInteractive':
+                this.keyboardInteractiveSubject.next(notification.params)
+                break
+            case 'ssh.banner':
+                this.bannerSubject.next(notification.params)
+                break
+            case 'ssh.serviceMessage':
+                this.serviceMessageSubject.next(notification.params)
+                break
+            case 'ssh.portForwardEvent':
+                this.portForwardEventSubject.next(notification.params)
                 break
             default:
                 console.log(`[GoBackend] Unknown notification: ${notification.method}`)
         }
     }
 
-    /**
-     * Reject all pending requests (used when the backend stops)
-     */
     private rejectAllPending(reason: string): void {
-        for (const [id, pending] of this.pendingRequests) {
+        for (const [, pending] of this.pendingRequests) {
             pending.reject(new Error(reason))
         }
         this.pendingRequests.clear()
     }
 
-    /**
-     * Get the default path to the Go backend binary
-     */
     private getDefaultBinaryPath(): string {
-        // In development: look in build/ directory
-        // In production: look in resources directory
         const isDev = !!process.env.TABBY_DEV
-        if (isDev) {
-            return path.join(__dirname, '..', '..', 'build', 'tabby-backend')
-        }
-        // Production path (inside the app resources)
+        if (isDev) return path.join(__dirname, '..', '..', 'build', 'tabby-backend')
         return path.join((process as any).resourcesPath, 'tabby-backend')
     }
 }

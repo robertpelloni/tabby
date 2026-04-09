@@ -15,20 +15,34 @@
 
 ### Go Backend Port
 - [x] **Create Go module structure**: `tabby-go/` directory with `go.mod` ✅
-- [x] **Go SSH client PoC**: Basic SSH connection using `golang.org/x/crypto/ssh` ✅
-  - Authenticate with password and public key
-  - Open shell session
-  - Handle PTY resize
-  - Jump host support
+- [x] **Go SSH client PoC**: Full SSH connection management ✅
+  - Password, public key, agent, keyboard-interactive auth
+  - Shell sessions with PTY resize
+  - Jump host support (nested chains)
   - Keepalive with disconnect detection
 - [x] **Go SFTP client**: Full file management ✅
-  - List, download, upload, delete, rename, mkdir
+  - List, download, upload, delete, rename, mkdir, mkdirAll
+  - chmod, readlink, symlink, lstat, readDir, rmdir
 - [x] **Communication layer**: JSON-RPC 2.0 over stdin/stdout ✅
-  - 25+ methods registered
-  - Async notifications for data/exit events
-- [ ] **TypeScript client**: Angular service to communicate with Go backend
-- [ ] **PTY management in Go**: Cross-platform PTY spawning (stub exists)
-- [ ] **Serial port in Go**: Serial communication (stub exists)
+  - 40+ methods registered
+  - Async notifications for data/exit/events
+- [x] **TypeScript client**: Angular service to communicate with Go backend ✅
+  - Full API coverage for SSH, SFTP, PTY, Serial
+  - RxJS observables for all notification types
+  - Host key and keyboard-interactive auth callbacks
+- [x] **PTY management in Go**: Process spawning with data forwarding ✅
+- [x] **Serial port in Go**: Serial communication stub ✅
+- [x] **SSH Port Forwarding**: Local, Remote, Dynamic/SOCKS5 ✅
+- [x] **SSH Proxy Support**: Proxy command, SOCKS, HTTP CONNECT ✅
+- [x] **SSH Host Key Verification**: Interactive and known_hosts ✅
+- [x] **SSH Keyboard-Interactive Auth**: Client-side prompt forwarding ✅
+- [x] **BTK Native UI Integration**: CGo bridge and Go bindings ✅
+- [x] **Go Backend Config**: `goBackend.enabled` option in Electron config ✅
+- [ ] **End-to-end testing**: Wire Go backend into existing Angular SSH service
+- [ ] **Real PTY support**: Cross-platform PTY via creack/pty + Windows ConPTY
+- [ ] **Real Serial support**: go.bug.st/serial integration
+- [ ] **SFTP File Manager UI**: Full bidirectional file browser in Electron
+- [ ] **BTK Native Terminal App**: Full native UI with terminal rendering
 
 ### SSH Feature Completeness
 - [ ] **SFTP file manager UI**: Full bidirectional file browser

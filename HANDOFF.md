@@ -100,31 +100,26 @@
 4. Add drag-and-drop support
 
 ### Files Modified This Session
-- `VERSION.md` (new)
-- `VISION.md` (new)
-- `CHANGELOG.md` (new)
-- `ROADMAP.md` (new)
-- `TODO.md` (new)
-- `MEMORY.md` (new)
-- `DEPLOY.md` (new)
-- `IDEAS.md` (new)
-- `HANDOFF.md` (new)
-- `docs/UNIVERSAL_LLM_INSTRUCTIONS.md` (new)
-- `CLAUDE.md` (new)
-- `GEMINI.md` (new)
-- `GPT.md` (new)
-- `copilot-instructions.md` (new)
-- `scripts/bump-version.mjs` (new)
-- `app/package.json` (version fix: 1.0.0-alpha.1 → 1.0.231-nightly.0)
-- `.gitignore` (added Go build output)
-- `tabby-go/` (entire directory — new Go module)
-  - `go.mod`, `go.sum`
-  - `README.md`
-  - `cmd/tabby-backend/main.go`
-  - `pkg/api/types.go`, `pkg/api/types_test.go`
-  - `pkg/ssh/ssh.go`
-  - `pkg/sftp/sftp.go`
-  - `internal/server/server.go`, `internal/server/server_test.go`
+- `VERSION.md` (updated)
+- `CHANGELOG.md` (updated)
+- `app/package.json` (version bump)
+- `*/*.package.json` (version bump)
+- `tabby-go/README.md` (updated)
+- `tabby-go/pkg/api/types.go` (expanded — 300+ lines of API types)
+- `tabby-go/pkg/ssh/ssh.go` (major expansion — 1200+ lines)
+- `tabby-go/pkg/sftp/sftp.go` (expanded with chmod/readlink/symlink/rmdir/lstat/readDir)
+- `tabby-go/pkg/pty/pty.go` (process spawning implementation)
+- `tabby-go/pkg/serial/serial.go` (serial port stub)
+- `tabby-go/internal/server/server.go` (40+ JSON-RPC methods)
+- `tabby-go/pkg/ui/bridge.h` (new — C API header for BTK)
+- `tabby-go/pkg/ui/bridge.cpp` (new — C++ implementation wrapping BTK)
+- `tabby-go/pkg/ui/ui.go` (new — Go bindings for BTK native UI)
+- `tabby-go/pkg/nativeapp/nativeapp.go` (new — native app orchestration)
+- `tabby-go/vendor/btk/` (new — BTK git submodule)
+- `tabby-go/vendor/` (Go dependency vendoring)
+- `.gitmodules` (new — tracks BTK submodule)
+- `tabby-electron/src/services/goBackend.service.ts` (expanded — full API coverage)
+- `tabby-electron/src/config.ts` (goBackend config option)
 
 ### Decisions Made
 1. **VERSION.md as single source of truth** — One file containing only the version string
