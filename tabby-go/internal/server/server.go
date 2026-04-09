@@ -60,6 +60,7 @@ import (
 	"github.com/robertpelloni/tabby/tabby-go/pkg/serial"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/sftp"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ssh"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/telnet"
 )
 
 // Server is the JSON-RPC server for Tabby's Go backend
@@ -68,6 +69,7 @@ type Server struct {
 	sftpMgr   *sftp.Manager
 	ptyMgr    *pty.Manager
 	serialMgr *serial.Manager
+	telnetMgr *telnet.Manager
 	reader    *bufio.Reader
 	writer    io.Writer
 	mu        sync.Mutex
@@ -84,6 +86,7 @@ func New() *Server {
 	s.sftpMgr = sftp.NewManager(s.sshMgr)
 	s.ptyMgr = pty.NewManager(s.sendNotification)
 	s.serialMgr = serial.NewManager(s.sendNotification)
+	s.telnetMgr = telnet.NewManager(s.sendNotification)
 	return s
 }
 
@@ -97,6 +100,7 @@ func NewWithIO(in io.Reader, out io.Writer) *Server {
 	s.sftpMgr = sftp.NewManager(s.sshMgr)
 	s.ptyMgr = pty.NewManager(s.sendNotification)
 	s.serialMgr = serial.NewManager(s.sendNotification)
+	s.telnetMgr = telnet.NewManager(s.sendNotification)
 	return s
 }
 
@@ -221,6 +225,18 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 		err = s.handleSerialClose(req.Params)
 	case "serial.listPorts":
 		result, err = s.handleSerialListPorts(req.Params)
+
+	// ---- Telnet ----
+	case "telnet.connect":
+		result, err = s.handleTelnetConnect(req.Params)
+	case "telnet.write":
+		err = s.handleTelnetWrite(req.Params)
+	case "telnet.resize":
+		err = s.handleTelnetResize(req.Params)
+	case "telnet.close":
+		err = s.handleTelnetClose(req.Params)
+	case "telnet.listConnections":
+		result = s.telnetMgr.ListConnections()
 
 	default:
 		s.sendError(req.ID, api.ErrorMethodNotFound, fmt.Sprintf("Method not found: %s", req.Method), nil)
@@ -613,6 +629,52 @@ func convertPorts(ports []string) []api.SerialPortInfo {
 		result[i] = api.SerialPortInfo{Name: p}
 	}
 	return result
+}
+
+// ---- Telnet Handlers ----
+
+func (s *Server) handleTelnetConnect(params interface{}) (interface{}, error) {
+	var p struct {
+		Host string `json:"host"`
+		Port int    `json:"port"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	return s.telnetMgr.Connect(telnet.TelnetConnectParams{Host: p.Host, Port: p.Port})
+}
+
+func (s *Server) handleTelnetWrite(params interface{}) error {
+	var p struct {
+		ConnectionID string `json:"connectionId"`
+		Data         string `json:"data"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.telnetMgr.Write(p.ConnectionID, p.Data)
+}
+
+func (s *Server) handleTelnetResize(params interface{}) error {
+	var p struct {
+		ConnectionID string `json:"connectionId"`
+		Width        int    `json:"width"`
+		Height       int    `json:"height"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.telnetMgr.Resize(p.ConnectionID, p.Width, p.Height)
+}
+
+func (s *Server) handleTelnetClose(params interface{}) error {
+	var p struct {
+		ConnectionID string `json:"connectionId"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.telnetMgr.Close(p.ConnectionID)
 }
 
 // reMarshal is a helper to re-marshal interface{} params into a typed struct
