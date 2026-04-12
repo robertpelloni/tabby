@@ -21,7 +21,9 @@ export class GoBackendService extends EventEmitter {
         // In dev, it's at <root>/build/tabby-backend
         // In prod, it should be in the resources folder
         const isDev = process.env.TABBY_DEV === '1' || process.env.TABBY_DEV === 'true'
-        let binPath = path.join(appPath, '..', 'build', binName)
+        // appPath is .../app/dist/ or .../app/lib/
+        // We need to get back to the project root
+        let binPath = path.join(appPath, '..', '..', 'build', binName)
         if (!isDev && process.resourcesPath) {
             binPath = path.join(process.resourcesPath, binName)
         }

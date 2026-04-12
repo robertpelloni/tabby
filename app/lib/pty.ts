@@ -100,8 +100,8 @@ export class PTY {
     constructor (private id: string, private app: Application, ...args: any[]) {
         // Create a mock nodePTY.IPty to satisfy PTYDataQueue's pause/resume
         const mockPty: any = {
-            pause: () => {},
-            resume: () => {}
+            pause: () => { goBackend.request('pty.pause', { id: this.id }).catch(() => {}) },
+            resume: () => { goBackend.request('pty.resume', { id: this.id }).catch(() => {}) }
         };
 
         this.outputQueue = new PTYDataQueue(mockPty, data => {
