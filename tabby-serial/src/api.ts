@@ -1,8 +1,7 @@
-import stripAnsi from 'strip-ansi'
-import { SerialPortStream } from '@serialport/stream'
+import { ipcRenderer } from 'electron'
 import { LogService, NotificationsService } from 'tabby-core'
 import { Subject, Observable } from 'rxjs'
-import { Injector, NgZone } from '@angular/core'
+import { Injector } from '@angular/core'
 import { BaseSession, ConnectableTerminalProfile, InputProcessingOptions, InputProcessor, LoginScriptsOptions, SessionMiddleware, StreamProcessingOptions, TerminalStreamProcessor, UTF8SplitterMiddleware } from 'tabby-terminal'
 import { SerialService } from './services/serial.service'
 
@@ -42,12 +41,12 @@ class SlowFeedMiddleware extends SessionMiddleware {
 }
 
 export class SerialSession extends BaseSession {
-    serial: SerialPortStream|null
+    serialId: string | null = null
 
     get serviceMessage$ (): Observable<string> { return this.serviceMessage }
     private serviceMessage = new Subject<string>()
     private streamProcessor: TerminalStreamProcessor
-    private zone: NgZone
+
     private notifications: NotificationsService
     private serialService: SerialService
 
@@ -55,7 +54,7 @@ export class SerialSession extends BaseSession {
         super(injector.get(LogService).create(`serial-${profile.options.port}`))
         this.serialService = injector.get(SerialService)
 
-        this.zone = injector.get(NgZone)
+
         this.notifications = injector.get(NotificationsService)
 
         this.streamProcessor = new TerminalStreamProcessor(profile.options)
@@ -73,89 +72,71 @@ export class SerialSession extends BaseSession {
 
     async start (): Promise<void> {
         if (!this.profile.options.port) {
-            this.profile.options.port = (await this.serialService.listPorts())[0].name
+            const ports = await this.serialService.listPorts()
+            if (ports.length > 0) {
+                this.profile.options.port = ports[0].name
+            }
         }
 
-        const serial = this.serial = new SerialPortStream({
-            binding: this.serialService.detectBinding(),
-            path: this.profile.options.port,
-            autoOpen: false,
-            baudRate: parseInt(this.profile.options.baudrate as any),
-            dataBits: this.profile.options.databits,
-            stopBits: this.profile.options.stopbits,
-            parity: this.profile.options.parity,
-            rtscts: this.profile.options.rtscts,
-            xon: this.profile.options.xon,
-            xoff: this.profile.options.xoff,
-            xany: this.profile.options.xany,
-        })
-        let connected = false
-        await new Promise(async (resolve, reject) => {
-            serial.on('open', () => {
-                connected = true
-                this.zone.run(resolve)
+        const params = {
+            port: this.profile.options.port,
+            baudRate: parseInt(this.profile.options.baudrate as any) || 9600,
+            dataBits: this.profile.options.databits || 8,
+            stopBits: this.profile.options.stopbits || 1,
+            parity: this.profile.options.parity || 'none',
+            flowControl: this.profile.options.rtscts ? 'hardware' : 'none'
+        }
+
+        try {
+            const result = await ipcRenderer.invoke('serial:open', params)
+            this.serialId = result.id
+            this.open = true
+            setTimeout(() => this.streamProcessor.start())
+
+            ipcRenderer.on('serial:data', (event, id, base64Data) => {
+                if (id === this.serialId) {
+                    this.emitOutput(Buffer.from(base64Data, 'base64'))
+                }
             })
-            serial.on('error', error => {
-                this.zone.run(() => {
-                    if (connected) {
-                        this.notifications.error(error.message)
-                    } else {
-                        reject(error)
+
+            ipcRenderer.on('serial:exit', (event, id) => {
+                if (id === this.serialId) {
+                    this.serviceMessage.next('Port closed')
+                    if (this.open) {
+                        this.destroy()
                     }
-                    this.destroy()
-                })
-            })
-            serial.on('close', () => {
-                this.emitServiceMessage('Port closed')
-                this.destroy()
+                }
             })
 
-            try {
-                serial.open()
-            } catch (e) {
-                this.notifications.error(e.message)
-                reject(e)
-            }
-        })
-
-        this.open = true
-        setTimeout(() => this.streamProcessor.start())
-
-        serial.on('readable', () => {
-            this.emitOutput(serial.read())
-        })
-
-        serial.on('end', () => {
-            this.logger.info('Shell session ended')
-            if (this.open) {
-                this.destroy()
-            }
-        })
-
-        this.loginScriptProcessor?.executeUnconditionalScripts()
+        } catch (e: any) {
+            this.notifications.error(e.message)
+            throw e
+        }
     }
 
-    write (data: Buffer): void {
-        this.serial?.write(data)
-    }
-
-    async destroy (): Promise<void> {
-        this.serviceMessage.complete()
-        await super.destroy()
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-empty-function
     resize (_, __) {
         this.streamProcessor.resize()
     }
 
-    kill (_?: string): void {
-        this.serial?.close()
+    write (data: Buffer): void {
+        if (this.open && this.serialId) {
+            ipcRenderer.send('serial:write', this.serialId, data.toString('base64'))
+        }
     }
 
-    emitServiceMessage (msg: string): void {
-        this.serviceMessage.next(msg)
-        this.logger.info(stripAnsi(msg))
+    kill (_?: string): void {
+        if (this.serialId) {
+            ipcRenderer.send('serial:close', this.serialId)
+        }
+    }
+
+    async destroy (): Promise<void> {
+        this.open = false
+        if (this.serialId) {
+            ipcRenderer.send('serial:close', this.serialId)
+            this.serialId = null
+        }
+        await super.destroy()
     }
 
     async getChildProcesses (): Promise<any[]> {
@@ -163,7 +144,7 @@ export class SerialSession extends BaseSession {
     }
 
     async gracefullyKillProcess (): Promise<void> {
-        this.kill('TERM')
+        this.kill()
     }
 
     supportsWorkingDirectory (): boolean {
