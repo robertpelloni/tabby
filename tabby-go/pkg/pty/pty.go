@@ -102,7 +102,10 @@ func (m *Manager) Spawn(params api.PTYSpawnParams) (*api.PTYSpawnResult, error) 
 		return nil, fmt.Errorf("failed to start process: %w", err)
 	}
 
-	id := m.nextID("pty")
+	id := params.ID
+	if id == "" {
+		id = m.nextID("pty")
+	}
 	instance := &PTYInstance{
 		ID:    id,
 		PID:   cmd.Process.Pid,

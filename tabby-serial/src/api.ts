@@ -1,5 +1,4 @@
-import { ipcRenderer } from 'electron'
-import { LogService, NotificationsService } from 'tabby-core'
+import { HostAppService, LogService, NotificationsService, Platform } from 'tabby-core'
 import { Subject, Observable } from 'rxjs'
 import { Injector } from '@angular/core'
 import { BaseSession, ConnectableTerminalProfile, InputProcessingOptions, InputProcessor, LoginScriptsOptions, SessionMiddleware, StreamProcessingOptions, TerminalStreamProcessor, UTF8SplitterMiddleware } from 'tabby-terminal'
@@ -49,10 +48,12 @@ export class SerialSession extends BaseSession {
 
     private notifications: NotificationsService
     private serialService: SerialService
+        private hostApp: HostAppService
 
     constructor (injector: Injector, public profile: SerialProfile) {
         super(injector.get(LogService).create(`serial-${profile.options.port}`))
         this.serialService = injector.get(SerialService)
+                this.hostApp = injector.get(HostAppService)
 
 
         this.notifications = injector.get(NotificationsService)
@@ -70,47 +71,113 @@ export class SerialSession extends BaseSession {
         this.setLoginScriptsOptions(profile.options)
     }
 
+    private idGen = () => Math.random().toString(36).substring(7);
+
+    private handleSerialData = (_event: any, id: string, base64Data: string) => {
+        if (id === this.serialId) {
+            this.emitOutput(Buffer.from(base64Data, 'base64'));
+        }
+    };
+
+    private handleSerialExit = (_event: any, id: string) => {
+        if (id === this.serialId) {
+            this.serviceMessage.next('Port closed');
+            if (this.open) {
+                this.destroy();
+            }
+        }
+    };
+
     async start (): Promise<void> {
         if (!this.profile.options.port) {
-            const ports = await this.serialService.listPorts()
+            const ports = await this.serialService.listPorts();
             if (ports.length > 0) {
-                this.profile.options.port = ports[0].name
+                this.profile.options.port = ports[0].name;
             }
         }
 
+        if (this.hostApp.platform === Platform.Web) {
+            // Restore WebSerial for Browser
+            const serial = this.serialId = new (this.serialService.detectBinding() as any)({
+                path: this.profile.options.port,
+                autoOpen: false,
+                baudRate: parseInt(this.profile.options.baudrate as any),
+                dataBits: this.profile.options.databits,
+                stopBits: this.profile.options.stopbits,
+                parity: this.profile.options.parity,
+                rtscts: this.profile.options.rtscts,
+                xon: this.profile.options.xon,
+                xoff: this.profile.options.xoff,
+                xany: this.profile.options.xany,
+            })
+            let connected = false
+            await new Promise(async (resolve, reject) => {
+                serial.on('open', () => {
+                    connected = true
+                    resolve(null)
+                })
+                serial.on('error', error => {
+                    if (connected) {
+                        this.notifications.error(error.message)
+                    } else {
+                        reject(error)
+                    }
+                    this.destroy()
+                })
+                serial.on('close', () => {
+                    this.serviceMessage.next('Port closed')
+                    this.destroy()
+                })
+
+                try {
+                    serial.open()
+                } catch (e: any) {
+                    this.notifications.error(e.message)
+                    reject(e)
+                }
+            })
+
+            this.open = true
+            setTimeout(() => this.streamProcessor.start())
+
+            serial.on('readable', () => {
+                this.emitOutput(serial.read())
+            })
+
+            serial.on('end', () => {
+                if (this.open) {
+                    this.destroy()
+                }
+            })
+            return
+        }
+
+        // Electron native proxy via Go backend
+        this.serialId = this.idGen();
         const params = {
+            id: this.serialId,
             port: this.profile.options.port,
             baudRate: parseInt(this.profile.options.baudrate as any) || 9600,
             dataBits: this.profile.options.databits || 8,
             stopBits: this.profile.options.stopbits || 1,
             parity: this.profile.options.parity || 'none',
             flowControl: this.profile.options.rtscts ? 'hardware' : 'none'
-        }
+        };
+
+        // Register handlers BEFORE invoking open to prevent dropped initial output
+        window['require']('electron').ipcRenderer.on('serial:data', this.handleSerialData);
+        window['require']('electron').ipcRenderer.on('serial:exit', this.handleSerialExit);
 
         try {
-            const result = await ipcRenderer.invoke('serial:open', params)
-            this.serialId = result.id
-            this.open = true
-            setTimeout(() => this.streamProcessor.start())
-
-            ipcRenderer.on('serial:data', (event, id, base64Data) => {
-                if (id === this.serialId) {
-                    this.emitOutput(Buffer.from(base64Data, 'base64'))
-                }
-            })
-
-            ipcRenderer.on('serial:exit', (event, id) => {
-                if (id === this.serialId) {
-                    this.serviceMessage.next('Port closed')
-                    if (this.open) {
-                        this.destroy()
-                    }
-                }
-            })
-
+            await window['require']('electron').ipcRenderer.invoke('serial:open', params);
+            this.open = true;
+            setTimeout(() => this.streamProcessor.start());
         } catch (e: any) {
-            this.notifications.error(e.message)
-            throw e
+            this.notifications.error(e.message);
+            // Cleanup on failure
+            window['require']('electron').ipcRenderer.off('serial:data', this.handleSerialData);
+            window['require']('electron').ipcRenderer.off('serial:exit', this.handleSerialExit);
+            throw e;
         }
     }
 
@@ -119,22 +186,31 @@ export class SerialSession extends BaseSession {
     }
 
     write (data: Buffer): void {
-        if (this.open && this.serialId) {
-            ipcRenderer.send('serial:write', this.serialId, data.toString('base64'))
+        if (!this.open || !this.serialId) return;
+        if (this.hostApp.platform === Platform.Web) {
+            (this.serialId as any).write(data);
+        } else {
+            window['require']('electron').ipcRenderer.send('serial:write', this.serialId, data.toString('base64'));
         }
     }
 
     kill (_?: string): void {
         if (this.serialId) {
-            ipcRenderer.send('serial:close', this.serialId)
+            window['require']('electron').ipcRenderer.send('serial:close', this.serialId)
         }
     }
 
     async destroy (): Promise<void> {
         this.open = false
         if (this.serialId) {
-            ipcRenderer.send('serial:close', this.serialId)
-            this.serialId = null
+            if (this.hostApp.platform === Platform.Web) {
+                (this.serialId as any).close();
+            } else {
+                window['require']('electron').ipcRenderer.send('serial:close', this.serialId);
+                window['require']('electron').ipcRenderer.off('serial:data', this.handleSerialData);
+                window['require']('electron').ipcRenderer.off('serial:exit', this.handleSerialExit);
+            }
+            this.serialId = null;
         }
         await super.destroy()
     }

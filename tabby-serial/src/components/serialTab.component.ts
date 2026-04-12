@@ -61,8 +61,8 @@ export class SerialTabComponent extends ConnectableTerminalTabComponent<SerialPr
 
         try {
             await this.session!.start()
-            this.stopSpinner()
-            session['serviceMessage'].next(this.translate.instant(_('Port opened')))
+            this.stopSpinner();
+            (session as any).serviceMessage.next(this.translate.instant(_('Port opened')))
         } catch (e) {
             this.stopSpinner()
             this.write(colors.black.bgRed(' X ') + ' ' + colors.red(e.message) + '\r\n')

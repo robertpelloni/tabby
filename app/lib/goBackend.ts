@@ -20,12 +20,21 @@ export class GoBackendService extends EventEmitter {
 
         // In dev, it's at <root>/build/tabby-backend
         // In prod, it should be in the resources folder
-        const binPath = path.join(appPath, '..', 'build', binName)
+        const isDev = process.env.TABBY_DEV === '1' || process.env.TABBY_DEV === 'true'
+        let binPath = path.join(appPath, '..', 'build', binName)
+        if (!isDev && process.resourcesPath) {
+            binPath = path.join(process.resourcesPath, binName)
+        }
 
         console.log('[go-backend] Spawning', binPath)
 
         this.proc = spawn(binPath, [], {
             stdio: ['pipe', 'pipe', 'pipe']
+        })
+
+        this.proc.on('error', err => {
+            console.error('[go-backend] Failed to start Go backend:', err)
+            this.proc = null
         })
 
         this.proc.stdout.pipe(split2()).on('data', (line: string) => {
