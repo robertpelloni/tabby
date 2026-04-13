@@ -56,7 +56,11 @@ import (
 	"sync"
 
 	"github.com/robertpelloni/tabby/tabby-go/pkg/api"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/configsync"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/knownhosts"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/locale"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/logger"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/multiplexer"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/notification"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/pty"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/recovery"
@@ -64,6 +68,8 @@ import (
 	"github.com/robertpelloni/tabby/tabby-go/pkg/sftp"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ssh"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/telnet"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/theme"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/updater"
 )
 
 // Server is the JSON-RPC server for Tabby's Go backend
