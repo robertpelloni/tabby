@@ -42,9 +42,9 @@
 - [x] **Known Hosts Manager**: Storage, verification, OpenSSH file format ✅
 - [x] **Session Recovery**: Tab state persistence and restore ✅
 - [x] **Notification System**: Severity levels, read tracking, change callbacks ✅
-- [ ] **End-to-end testing**: Wire Go backend into existing Angular SSH service
-- [ ] **Real PTY support**: Cross-platform PTY via creack/pty + Windows ConPTY
-- [ ] **Real Serial support**: go.bug.st/serial integration
+- [x] **End-to-end testing**: Wire Go backend into existing Angular SSH service
+- [x] **Real PTY support**: Cross-platform PTY via creack/pty + Windows ConPTY
+- [x] **Real Serial support**: go.bug.st/serial integration
 - [ ] **SFTP File Manager UI**: Full bidirectional file browser in Electron
 - [ ] **BTK Native Terminal App**: Full native UI with terminal rendering
 
