@@ -197,6 +197,7 @@ type PortForwardInfo struct {
 
 // PTYSpawnParams contains parameters for spawning a local PTY
 type PTYSpawnParams struct {
+	ID      string            `json:"id"`
 	Command string            `json:"command"`
 	Args    []string          `json:"args,omitempty"`
 	Env     map[string]string `json:"env,omitempty"`
@@ -234,6 +235,7 @@ type PTYKillParams struct {
 
 // SerialOpenParams contains parameters for opening a serial port
 type SerialOpenParams struct {
+	ID          string `json:"id"`
 	Port        string `json:"port"`
 	BaudRate    int    `json:"baudRate"`
 	DataBits    int    `json:"dataBits,omitempty"`    // 5,6,7,8 (default 8)

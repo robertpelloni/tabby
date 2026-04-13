@@ -55,7 +55,10 @@ func (m *Manager) Open(params api.SerialOpenParams) (*api.SerialOpenResult, erro
 	// 2. Configure baud rate, data bits, stop bits, parity, flow control
 	// 3. Start a goroutine to read data and send notifications
 	
-	id := m.nextID("serial")
+	id := params.ID
+	if id == "" {
+		id = m.nextID("serial")
+	}
 	conn := &SerialConnection{
 		ID:       id,
 		Port:     params.Port,
