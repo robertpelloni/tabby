@@ -82,6 +82,12 @@ type Server struct {
 	knownHosts   *knownhosts.Manager
 	notifMgr     *notification.Manager
 	recoveryMgr  *recovery.Manager
+	configSync   *configsync.Service
+	localeMgr    *locale.Service
+	loggerMgr    *logger.Logger
+	multiplexer  *multiplexer.Manager
+	themeMgr     *theme.Manager
+	updaterMgr   *updater.Manager
 	reader       *bufio.Reader
 	writer       io.Writer
 	mu           sync.Mutex
@@ -102,6 +108,12 @@ func New() *Server {
 	s.knownHosts = knownhosts.NewManager()
 	s.notifMgr = notification.NewManager()
 	s.recoveryMgr = recovery.NewManager()
+	s.configSync = configsync.NewService("")
+	s.localeMgr = locale.NewService()
+	s.loggerMgr = logger.New("tabby")
+	s.multiplexer = multiplexer.NewManager()
+	s.themeMgr = theme.NewManager()
+	s.updaterMgr = updater.NewManager(updater.Config{})
 	s.notifMgr.OnChange(func(notifs []notification.Notification) {
 		s.sendNotification("notifications.changed", notifs)
 	})
@@ -122,6 +134,12 @@ func NewWithIO(in io.Reader, out io.Writer) *Server {
 	s.knownHosts = knownhosts.NewManager()
 	s.notifMgr = notification.NewManager()
 	s.recoveryMgr = recovery.NewManager()
+	s.configSync = configsync.NewService("")
+	s.localeMgr = locale.NewService()
+	s.loggerMgr = logger.New("tabby")
+	s.multiplexer = multiplexer.NewManager()
+	s.themeMgr = theme.NewManager()
+	s.updaterMgr = updater.NewManager(updater.Config{})
 	return s
 }
 

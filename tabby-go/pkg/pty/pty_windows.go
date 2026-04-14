@@ -1,17 +1,16 @@
-//go:build !windows
+//go:build windows
 
 package pty
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io"
-	"os"
-	"os/exec"
 	"sync"
 	"time"
 
-	"github.com/creack/pty"
+	"github.com/UserExistsError/conpty"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/api"
 )
 
@@ -27,8 +26,7 @@ type NotifyFunc func(method string, params interface{})
 type PTYInstance struct {
 	ID    string
 	PID   int
-	Pty   *os.File
-	Cmd   *exec.Cmd
+	Pty   *conpty.ConPty
 	done  chan struct{}
 }
 
@@ -47,20 +45,9 @@ func (m *Manager) nextID(prefix string) string {
 }
 
 func (m *Manager) Spawn(params api.PTYSpawnParams) (*api.PTYSpawnResult, error) {
-	cmd := exec.Command(params.Command, params.Args...)
-	if params.Cwd != "" {
-		cmd.Dir = params.Cwd
-	}
-	if params.Env != nil {
-		cmd.Env = os.Environ()
-		for k, v := range params.Env {
-			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
-		}
-	}
-
-	ptyFile, err := pty.Start(cmd)
+	cpty, err := conpty.Start(params.Command + " " + joinArgs(params.Args))
 	if err != nil {
-		return nil, fmt.Errorf("failed to start PTY: %w", err)
+		return nil, fmt.Errorf("failed to start ConPTY: %w", err)
 	}
 
 	id := params.ID
@@ -70,9 +57,8 @@ func (m *Manager) Spawn(params api.PTYSpawnParams) (*api.PTYSpawnResult, error) 
 
 	instance := &PTYInstance{
 		ID:    id,
-		PID:   cmd.Process.Pid,
-		Pty:   ptyFile,
-		Cmd:   cmd,
+		PID:   0, // ConPTY doesn't expose the underlying PID easily this way
+		Pty:   cpty,
 		done:  make(chan struct{}),
 	}
 
@@ -80,12 +66,12 @@ func (m *Manager) Spawn(params api.PTYSpawnParams) (*api.PTYSpawnResult, error) 
 	m.ptyInstances[id] = instance
 	m.mu.Unlock()
 
-	go m.forwardOutput(id, ptyFile)
-	go m.monitorExit(id, cmd)
+	go m.forwardOutput(id, cpty)
+	go m.monitorExit(id, cpty)
 
 	return &api.PTYSpawnResult{
 		ID:  id,
-		PID: cmd.Process.Pid,
+		PID: 0,
 	}, nil
 }
 
@@ -98,10 +84,7 @@ func (m *Manager) Resize(id string, columns, rows int) error {
 		return fmt.Errorf("PTY not found: %s", id)
 	}
 
-	return pty.Setsize(instance.Pty, &pty.Winsize{
-		Rows: uint16(rows),
-		Cols: uint16(columns),
-	})
+	return instance.Pty.Resize(columns, rows)
 }
 
 func (m *Manager) Write(id string, data string) error {
@@ -134,8 +117,7 @@ func (m *Manager) Kill(id string, signal string) error {
 		return fmt.Errorf("PTY not found: %s", id)
 	}
 
-	instance.Pty.Close()
-	return instance.Cmd.Process.Kill()
+	return instance.Pty.Close()
 }
 
 func (m *Manager) forwardOutput(ptyID string, reader io.Reader) {
@@ -155,23 +137,22 @@ func (m *Manager) forwardOutput(ptyID string, reader io.Reader) {
 	}
 }
 
-func (m *Manager) monitorExit(ptyID string, cmd *exec.Cmd) {
-	err := cmd.Wait()
-	exitCode := 0
-	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			exitCode = exitErr.ExitCode()
-		} else {
-			exitCode = -1
-		}
-	}
-
+func (m *Manager) monitorExit(ptyID string, cpty *conpty.ConPty) {
+	cpty.Wait(context.Background())
 	m.notify("pty.exit", api.ExitNotification{
 		PTYID:    ptyID,
-		ExitCode: exitCode,
+		ExitCode: 0,
 	})
 
 	m.mu.Lock()
 	delete(m.ptyInstances, ptyID)
 	m.mu.Unlock()
+}
+
+func joinArgs(args []string) string {
+	res := ""
+	for _, arg := range args {
+		res += " " + arg
+	}
+	return res
 }
