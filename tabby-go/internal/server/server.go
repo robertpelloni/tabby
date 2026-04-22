@@ -55,12 +55,9 @@ import (
 	"os"
 	"sync"
 
+	"github.com/robertpelloni/tabby/tabby-go/pkg/ai"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/api"
-	"github.com/robertpelloni/tabby/tabby-go/pkg/configsync"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/knownhosts"
-	"github.com/robertpelloni/tabby/tabby-go/pkg/locale"
-	"github.com/robertpelloni/tabby/tabby-go/pkg/logger"
-	"github.com/robertpelloni/tabby/tabby-go/pkg/multiplexer"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/notification"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/pty"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/recovery"
@@ -68,8 +65,6 @@ import (
 	"github.com/robertpelloni/tabby/tabby-go/pkg/sftp"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ssh"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/telnet"
-	"github.com/robertpelloni/tabby/tabby-go/pkg/theme"
-	"github.com/robertpelloni/tabby/tabby-go/pkg/updater"
 )
 
 // Server is the JSON-RPC server for Tabby's Go backend
@@ -79,15 +74,10 @@ type Server struct {
 	ptyMgr       *pty.Manager
 	serialMgr    *serial.Manager
 	telnetMgr    *telnet.Manager
+	aiMgr        *ai.Manager
 	knownHosts   *knownhosts.Manager
 	notifMgr     *notification.Manager
 	recoveryMgr  *recovery.Manager
-	configSync   *configsync.Service
-	localeMgr    *locale.Service
-	loggerMgr    *logger.Logger
-	multiplexer  *multiplexer.Manager
-	themeMgr     *theme.Manager
-	updaterMgr   *updater.Manager
 	reader       *bufio.Reader
 	writer       io.Writer
 	mu           sync.Mutex
@@ -105,15 +95,10 @@ func New() *Server {
 	s.ptyMgr = pty.NewManager(s.sendNotification)
 	s.serialMgr = serial.NewManager(s.sendNotification)
 	s.telnetMgr = telnet.NewManager(s.sendNotification)
+	s.aiMgr = ai.NewManager()
 	s.knownHosts = knownhosts.NewManager()
 	s.notifMgr = notification.NewManager()
 	s.recoveryMgr = recovery.NewManager()
-	s.configSync = configsync.NewService("")
-	s.localeMgr = locale.NewService()
-	s.loggerMgr = logger.New("tabby")
-	s.multiplexer = multiplexer.NewManager()
-	s.themeMgr = theme.NewManager()
-	s.updaterMgr = updater.NewManager(updater.Config{})
 	s.notifMgr.OnChange(func(notifs []notification.Notification) {
 		s.sendNotification("notifications.changed", notifs)
 	})
@@ -134,12 +119,6 @@ func NewWithIO(in io.Reader, out io.Writer) *Server {
 	s.knownHosts = knownhosts.NewManager()
 	s.notifMgr = notification.NewManager()
 	s.recoveryMgr = recovery.NewManager()
-	s.configSync = configsync.NewService("")
-	s.localeMgr = locale.NewService()
-	s.loggerMgr = logger.New("tabby")
-	s.multiplexer = multiplexer.NewManager()
-	s.themeMgr = theme.NewManager()
-	s.updaterMgr = updater.NewManager(updater.Config{})
 	return s
 }
 
@@ -324,6 +303,18 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 		result, err = s.handleRecoveryLoad(req.Params)
 	case "recovery.clear":
 		s.recoveryMgr.Clear()
+
+	// ---- AI ----
+	case "ai.generateCommand":
+		var p ai.GenerateCommandParams
+		if err = reMarshal(req.Params, &p); err == nil {
+			result, err = s.aiMgr.GenerateCommand(p)
+		}
+	case "ai.explainError":
+		var p ai.ExplainErrorParams
+		if err = reMarshal(req.Params, &p); err == nil {
+			result, err = s.aiMgr.ExplainError(p)
+		}
 
 	default:
 		s.sendError(req.ID, api.ErrorMethodNotFound, fmt.Sprintf("Method not found: %s", req.Method), nil)

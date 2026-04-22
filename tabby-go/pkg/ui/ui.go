@@ -1,3 +1,6 @@
+//go:build btk
+// +build btk
+
 // Package ui provides Go bindings for the BTK native UI toolkit.
 //
 // It exposes a Go-friendly API for creating native desktop applications
@@ -27,6 +30,10 @@ package ui
 
 #include "bridge.h"
 #include <stdlib.h>
+
+extern void tabbyCloseCallback(void* ptr);
+extern void tabbySizeCallback(void* ptr, int w, int h);
+extern void tabbyMenuCallback(void* ptr);
 */
 import "C"
 import (

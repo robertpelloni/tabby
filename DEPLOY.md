@@ -1,141 +1,90 @@
-# Deployment Instructions
+# DEPLOY.md - Tabby Terminal Deployment Instructions
+
+## Overview
+Tabby is an Electron application with an Angular frontend and a native Go backend daemon (`tabby-go`). Deployment involves building the Go binary, compiling the TypeScript frontend, and packaging them together via `electron-builder`.
 
 ## Prerequisites
+*   **Node.js**: v18 or v20 (Strictly required for native module compatibility).
+*   **Yarn**: v1.22.x (Classic). Do not use npm or yarn v3+.
+*   **Go**: v1.21 or higher (Required to compile the backend daemon).
+*   **Python 3**: For building native dependencies (if any remain).
+*   **C++ Build Tools**:
+    *   Windows: Visual Studio Build Tools (C++ workload).
+    *   macOS: Xcode Command Line Tools.
+    *   Linux: `build-essential`, `libx11-dev`, `libxext-dev` (depending on the distro).
 
-### All Platforms
-- [Node.js](https://nodejs.org/) **v15+** (v22 recommended for builds)
-- [Yarn](https://yarnpkg.com/) package manager
-- Git
+## 1. Building the Go Backend
+The Go backend must be compiled for the target architecture *before* packaging the Electron app.
 
-### Linux (Debian/Ubuntu)
 ```bash
-sudo apt install libfontconfig-dev libsecret-1-dev libarchive-tools \
-  libnss3 libatk1.0-0 libatk-bridge2.0-0 libgdk-pixbuf2.0-0 \
-  libgtk-3-0 libgbm1 cmake
+cd tabby-go
+# Install dependencies into vendor/
+go mod vendor
+
+# Run tests to ensure stability
+env CGO_ENABLED=1 go test ./...
+
+# Build the binary (Outputs to the bin/ directory)
+# For Windows
+GOOS=windows GOARCH=amd64 go build -o bin/tabby-backend.exe ./cmd/tabby-backend
+
+# For macOS (Apple Silicon)
+GOOS=darwin GOARCH=arm64 go build -o bin/tabby-backend-darwin-arm64 ./cmd/tabby-backend
+
+# For Linux
+GOOS=linux GOARCH=amd64 go build -o bin/tabby-backend-linux-amd64 ./cmd/tabby-backend
 ```
 
-### Windows
-- Visual Studio Build Tools (for native module compilation)
-- Python 3 (for node-gyp)
+*Note: `electron-builder` is configured to copy the contents of `tabby-go/bin/` into the final application bundle under `resources/`.*
 
-### macOS
-- Xcode Command Line Tools: `xcode-select --install`
-
-## Development Setup
+## 2. Building the Frontend Workspaces
+Tabby uses Lerna/Yarn Workspaces. You must install dependencies from the root and build all packages.
 
 ```bash
-# Clone the repository
-git clone https://github.com/robertpelloni/tabby.git
-cd tabby
+cd .. # Back to project root
 
-# Set up upstream remote (one-time)
-git remote add upstream https://github.com/Eugeny/tabby
+# Install dependencies (This takes a while)
+yarn install
 
-# Install dependencies
-yarn
+# Build all Angular plugins and the Electron app
+yarn build
+```
 
-# Build all modules
-yarn run build
+## 3. Running in Development Mode
+To test the application locally without packaging it:
 
-# Start in development mode
+```bash
 yarn start
 ```
+This will spawn the Electron process, which in turn spawns the local `tabby-go` binary from your `bin/` folder via the JSON-RPC bridge.
 
-## Building for Production
-
-### 1. Build all TypeScript modules
-```bash
-yarn run build
-```
-
-### 2. Pre-package plugins
-```bash
-node scripts/prepackage-plugins.mjs
-```
-
-### 3. Build platform installer
-
-#### Windows
-```bash
-node scripts/build-windows.mjs
-```
-Outputs: `dist/tabby-*-setup-*.exe` (NSIS installer), `dist/tabby-*-portable-*.exe` (portable)
-
-#### Linux
-```bash
-node scripts/build-linux.mjs
-```
-Outputs: `dist/tabby-*.deb`, `dist/tabby-*.rpm`, `dist/tabby-*.pacman`
-
-#### macOS
-```bash
-node scripts/build-macos.mjs
-```
-Outputs: `dist/tabby-*-macos-*.dmg` (or .zip for notarized builds)
-
-## Portable Mode (Windows)
-
-Create a `data` folder in the same directory as `Tabby.exe` to run in portable mode.
-
-## CI/CD
-
-### GitHub Actions Workflows
-- **build.yml** — Lint + build for macOS (x86_64/arm64), Windows, Linux
-- **release.yml** — Automatic draft release on tag push (`v*`)
-- **docs.yml** — Build and publish API documentation
-- **codeql-analysis.yml** — Security analysis
-
-### Creating a Release
-```bash
-# Update VERSION.md with new version number
-# Update CHANGELOG.md with release notes
-# Commit and tag
-git add -A
-git commit -m "Release v1.0.231"
-git tag v1.0.231
-git push origin master --tags
-```
-
-## Web App Deployment
-
-The web version can be deployed separately:
-```bash
-cd web
-yarn
-yarn build
-# Deploy the dist/ folder to your hosting
-```
-
-### Firebase Hosting
-The project includes `firebase.json` for Firebase deployment.
-
-## Syncing with Upstream
+## 4. Packaging for Production
+To create a distributable installer (e.g., `.exe`, `.dmg`, `.AppImage`):
 
 ```bash
-git fetch upstream
-git merge upstream/master
-# Resolve any conflicts, then:
-git push origin master
+# Package for the current OS/Architecture
+yarn app:build
+
+# To specify a platform (Requires appropriate cross-compilation tools):
+yarn app:build:win
+yarn app:build:mac
+yarn app:build:linux
 ```
 
-## Troubleshooting
+The resulting installers will be placed in the `app/dist/` directory.
 
-### Native Module Build Failures
+## 5. Versioning and Releases
+Before cutting a release, ensure the global version number is synchronized across all `package.json` files and the `CHANGELOG.md`.
+
 ```bash
-# Clean and rebuild
-rm -rf node_modules app/node_modules
-yarn
-```
+# Increment the nightly version
+node scripts/bump-version.mjs nightly
 
-### Electron Cache Issues
-```bash
-export ELECTRON_GET_USE_PROXY=true
-# or set the electron mirror:
-export ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"
-```
+# Increment patch/minor/major
+node scripts/bump-version.mjs patch
 
-### WSL/Windows Build Issues
-Make sure you have:
-- Windows SDK
-- Visual Studio Build Tools with C++ workload
-- Python in PATH
+# Commit the version bump
+git commit -am "chore: release vX.Y.Z"
+git tag vX.Y.Z
+# Git pushing the tags manually omitted here
+```

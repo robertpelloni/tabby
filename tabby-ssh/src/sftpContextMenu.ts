@@ -48,6 +48,18 @@ export class CommonSFTPContextMenu extends SFTPContextMenuItemProvider {
 
         items.push({
             click: async () => {
+                const newName = window.prompt('New name', item.name)
+                if (newName && newName !== item.name) {
+                    const newPath = item.fullPath.substring(0, item.fullPath.length - item.name.length) + newName
+                    await panel.sftp.rename(item.fullPath, newPath)
+                    panel.navigate(panel.path)
+                }
+            },
+            label: this.translate.instant('Rename'),
+        })
+
+        items.push({
+            click: async () => {
                 if ((await this.platform.showMessageBox({
                     type: 'warning',
                     message: this.translate.instant('Delete {fullPath}?', item),

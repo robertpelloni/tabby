@@ -74,6 +74,8 @@ func NewManager(notify NotifyFunc) *Manager {
 
 // Connection represents an active SSH connection
 type Connection struct {
+	RefCount int
+
 	ID         string
 	Client     *ssh.Client
 	Config     *ssh.ClientConfig
@@ -113,8 +115,31 @@ func (m *Manager) nextID(prefix string) string {
 	return fmt.Sprintf("%s-%d-%d", prefix, time.Now().UnixMilli(), m.idCounter)
 }
 
-// Connect establishes a new SSH connection
+// getFingerprint generates a unique fingerprint for a connection profile
+func getFingerprint(params api.SSHConnectParams) string {
+	return fmt.Sprintf("%s@%s:%d|%v", params.Username, params.Host, params.Port, params.JumpHost != nil)
+}
+
+// Connect establishes a new SSH connection or returns an active multiplexed connection
 func (m *Manager) Connect(params api.SSHConnectParams) (*api.SSHConnectionResult, error) {
+	fingerprint := getFingerprint(params)
+
+	// Multiplexer logic
+	m.mu.Lock()
+	for _, conn := range m.connections {
+		if getFingerprint(conn.Params) == fingerprint {
+			// Found an existing connection, multiplex it!
+			conn.RefCount++
+			m.mu.Unlock()
+			m.sendServiceMessage(conn.ID, fmt.Sprintf("Multiplexing existing SSH connection to %s", conn.RemoteAddr))
+			return &api.SSHConnectionResult{
+				ConnectionID: conn.ID,
+				ServerVersion:    conn.ServerVer,
+			}, nil
+		}
+	}
+	m.mu.Unlock()
+
 	// Build SSH client config
 	config, err := m.buildClientConfig(params)
 	if err != nil {
@@ -158,6 +183,7 @@ func (m *Manager) Connect(params api.SSHConnectParams) (*api.SSHConnectionResult
 		RemoteAddr: addr,
 		ServerVer:  string(client.ServerVersion()),
 		Params:     params,
+		RefCount:   1,
 	}
 
 	m.mu.Lock()
@@ -347,7 +373,17 @@ func (m *Manager) Close(params api.SSHCloseParams) error {
 
 	m.mu.Lock()
 	conn, ok := m.connections[params.ConnectionID]
+
 	if ok {
+		// Decrease the reference count for multiplexed connections
+		conn.RefCount--
+		if conn.RefCount > 0 {
+			m.mu.Unlock()
+			m.sendServiceMessage(params.ConnectionID, fmt.Sprintf("Detached from multiplexed SSH connection to %s. (%d references remaining)", conn.RemoteAddr, conn.RefCount))
+			return nil
+		}
+
+		// If ref count reaches 0, actually close and cleanup everything
 		// Close all sessions for this connection
 		for id, sess := range m.sessions {
 			if sess.ConnectionID == params.ConnectionID {
@@ -938,7 +974,7 @@ func (m *Manager) hostKeyCallback(params api.SSHConnectParams) ssh.HostKeyCallba
 
 // connectViaJump connects through a jump host (supports chained jumps)
 func (m *Manager) connectViaJump(jumpParams *api.SSHConnectParams, targetAddr string, config *ssh.ClientConfig) (*ssh.Client, error) {
-	// Connect to jump host first
+	// 1. Build SSH configuration for the jump host
 	jumpConfig, err := m.buildClientConfig(*jumpParams)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build jump host config: %w", err)
@@ -949,7 +985,7 @@ func (m *Manager) connectViaJump(jumpParams *api.SSHConnectParams, targetAddr st
 		jumpAddr = fmt.Sprintf("%s:22", jumpParams.Host)
 	}
 
-	// Handle nested jump hosts
+	// 2. Connect to the jump host (handling recursive chains natively)
 	var jumpClient *ssh.Client
 	if jumpParams.JumpHost != nil {
 		jumpClient, err = m.connectViaJump(jumpParams.JumpHost, jumpAddr, jumpConfig)
@@ -961,17 +997,18 @@ func (m *Manager) connectViaJump(jumpParams *api.SSHConnectParams, targetAddr st
 		return nil, fmt.Errorf("failed to connect to jump host %s: %w", jumpAddr, err)
 	}
 
-	// Dial through the jump host to the target
-	conn, err := jumpClient.Dial("tcp", targetAddr)
+	// 3. Dial the target address through the active jump host connection
+	// This opens a direct-tcpip channel on the jump host to the target
+	netConn, err := jumpClient.Dial("tcp", targetAddr)
 	if err != nil {
 		jumpClient.Close()
 		return nil, fmt.Errorf("failed to dial target through jump host: %w", err)
 	}
 
-	// Establish SSH connection over the proxied connection
-	ncc, chans, reqs, err := ssh.NewClientConn(conn, targetAddr, config)
+	// 4. Perform the SSH handshake to the final target over the proxied TCP channel
+	ncc, chans, reqs, err := ssh.NewClientConn(netConn, targetAddr, config)
 	if err != nil {
-		conn.Close()
+		netConn.Close()
 		jumpClient.Close()
 		return nil, fmt.Errorf("failed to establish SSH over jump: %w", err)
 	}
