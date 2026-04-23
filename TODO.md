@@ -45,7 +45,7 @@
 - [x] **React/Web Component Plugin API**: Develop a wrapper around the Angular Dependency Injection system so users can write simple scripts exporting React components to customize the terminal chrome.
 
 ### Feature Completeness & Polish (Phase 6)
-- [ ] **SFTP File Manager UI**: Full bidirectional file browser, drag-and-drop file transfer, progress indicators, directory tree browsing.
+- [x] **SFTP File Manager UI**: Full bidirectional file browser, drag-and-drop file transfer, progress indicators, directory tree browsing.
 - [x] **Port Forwarding Management UI**: Add/remove forwards while connected, status indicators for active forwards.
 - [x] **Jump Host Chain Visualization**: Show jump host path in UI.
 - [ ] **SSH Config File Import**: Verify and enhance `sshImporters.ts`.

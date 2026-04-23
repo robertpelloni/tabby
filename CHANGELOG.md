@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Version number is maintained in [VERSION.md](VERSION.md) and is the single source of truth.
 
+## [1.0.231-nightly.5] - 2026-04-23
+
+### Changed
+- Version bump
+
 ## [1.0.231-nightly.4] - 2026-04-15
 
 ### Added (robertpelloni fork)
