@@ -1,19 +1,12 @@
 # HANDOFF.md
 
 ## Current Status (v1.0.231-nightly.4)
-The mission to port the Tabby backend native dependencies to Go has reached a major milestone.
+The user has directed the project to target 100% 1:1 feature parity with the top three modern "Agentic" and "Workspace" terminals: **Warp**, **WaveTerm**, and **Hyper**.
 
-*   **Accomplished**:
-    *   Integrated local PTYs (`creack/pty`) and Hardware Serial (`go.bug.st/serial`) into the Go JSON-RPC bridge.
-    *   **SSH & SFTP Rewrite**: We successfully removed the massive (~1,000 line) `russh` dependency from the `tabby-ssh` frontend. The `SSHSession` and `SFTPSession` Angular services have been entirely rewritten to act as thin proxy clients. They now route connection parameters, SFTP file handle calls, and terminal stream data through asynchronous `ipcRenderer.invoke()` channels over to the Electron main process.
-    *   The Electron main process (`app/lib/goBackend.ts`) now correctly registers all `ipcMain.handle` endpoints (e.g., `ssh:connect`, `ssh:resize`, `sftp:readDir`) and multiplexes them to the `tabby-go` daemon.
-    *   Deleted obsolete/failing CGo code (`tabby-go/pkg/ui`) that broke testing.
-
-*   **Pending Verification & E2E Testing**:
-    *   We need to actually boot the desktop application (`yarn start`) and verify that typing in an SSH terminal forwards keystrokes to the Go daemon properly.
-    *   SFTP UI (Drag and drop) testing needs to be mapped to the new asynchronous stream handling.
+1.  **Deep Research**: I created `parity-expanded-research.md` detailing the specific features we need to adopt from each platform (Warp's IDE input and AI, WaveTerm's Rich Widget blocks and remote file editing, Hyper's aesthetic extensibility and React plugins).
+2.  **Documentation Pivot**: I overhauled `VISION.md`, `ROADMAP.md`, `TODO.md`, `IDEAS.md`, and all AI instruction files (`AGENTS.md`, `CLAUDE.md`, etc.) to codify this ambitious roadmap. Every single setting, option, menu item, and function from these three terminals is now our target goal.
+3.  **Code Consistency**: I fixed the remaining TypeScript compilation error for the `BlockFrontend` toggle in `tabby-terminal/src/api/baseTerminalTab.component.ts`. The repository builds entirely cleanly without errors (`yarn build` and `go test ./...`).
 
 ## Next Steps for the Next LLM Session
-1.  **Run an E2E Test**: Attempt to spawn an SSH connection using the new architecture. Pay close attention to how `MockChannel` handles raw `Uint8Array` data vs. Base64 encoded JSON-RPC frames.
-2.  **Phase 2: Feature Completeness**: As defined in `ROADMAP.md`, focus on the *SFTP File Manager UI*. The core bindings are now built into Go and the Electron bridge, but the frontend context menu only supports "Download". We need to build the full Drag-and-drop React/Angular interface for SFTP directory tree browsing.
-3.  Continue documenting everything meticulously per the user's vision.
+1.  **Implement WaveTerm-style Rich Widget Blocks**: The `BlockFrontend` currently just outputs raw text to a DOM span. We need to write an interceptor that detects specific OSC sequences from the `tabby-go` JSON-RPC bridge and renders a Markdown viewer or Monaco code editor block instead of text.
+2.  **Implement Warp-style IDE Input**: Create a separate, pinned input `<textarea>` or Monaco editor instance at the bottom of `baseTerminalTab.component.pug` to decouple user input from the `xterm.js` output canvas. Handle multi-cursor and syntax highlighting logic.
