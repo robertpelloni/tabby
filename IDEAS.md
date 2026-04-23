@@ -1,175 +1,36 @@
-# IDEAS.md - Creative Improvement Ideas
+# IDEAS.md - Tabby Improvement & Feature Ideas
 
-## Architecture Ideas
+This document contains a brainstorming list of features, refactors, and pivots for the Tabby Terminal project.
 
-### 1. Go Backend with gRPC
-Replace the native Node.js modules (node-pty, russh, serialport) with a Go backend service that communicates via gRPC. Benefits:
-- Single static binary for the backend
-- Better cross-platform compatibility
-- Goroutine-based concurrency for handling multiple sessions
-- Easier debugging and profiling
-- No node-gyp compilation issues
+## 1. The Warp Parity Pivot (Agentic & Block-Based)
+The traditional terminal emulator is dying. To stay relevant, Tabby must adopt the features of Warp and Fig:
+*   **Blocks**: Parse the output stream so every command executed becomes a distinct DOM element (a "Block"). This allows users to hover over a command, copy *only* its output, or share a permalink to that specific block.
+*   **IDE Input Area**: Instead of typing at the bottom of a scrolling text stream, pin a Monaco-editor style input box to the bottom. This allows multi-line editing, multi-cursor (`Alt+Click`), and real-time syntax highlighting before pressing Enter.
+*   **Warp AI (Agent)**: Add a sidebar chat interface that has context of the current terminal buffer. It can read error messages and suggest fixes, or generate complex `ffmpeg` or `awk` commands based on natural language prompts.
+*   **Workflows (Command Palette)**: A searchable catalog (`Cmd+P`) of parameterized, saved shell scripts that a team can sync to the cloud.
 
-### 2. WebAssembly Terminal Core
-Compile the terminal emulation core to WebAssembly so it can run in both Electron and web contexts without code duplication. xterm.js already runs in browsers, but the middleware pipeline could benefit from WASM acceleration.
+## 2. The WaveTerm Parity Pivot (Rich Content Workspaces)
+Taking blocks a step further by embracing the terminal as a dynamic IDE:
+*   **Rich Widgets**: A block shouldn't just be plain text. If a user runs `cat README.md`, Tabby should render a beautifully styled Markdown viewer inline within the block flow. If they run `cat image.png`, the image should render inline.
+*   **Code Editor Blocks**: Running `edit config.json` shouldn't open `nano` in a text stream. It should pop open a fully functional Monaco text editor block with file-saving capabilities.
+*   **Remote File Intelligence (`wsh`)**: We can leverage `tabby-go` by seamlessly installing it on remote SSH servers (like WaveTerm does with its `wsh` binary). Then, Tabby can negotiate complex remote file edits, system metrics (CPU/RAM), and process management natively without relying on parsing SSH text streams.
 
-### 3. Plugin Sandbox
-Run third-party plugins in a sandboxed environment (like VS Code's extension host process) for better security and stability. A misbehaving plugin shouldn't crash the entire app.
+## 3. The Hyper Parity Pivot (Aesthetic Extensibility)
+*   **Zero-Friction Plugins**: Tabby currently relies heavily on Angular Dependency Injection for plugins. This is powerful but steep. We should write a wrapper API that lets a user write a basic React component, drop it into `~/.tabby-plugins/`, and instantly render it over the terminal chrome (e.g., adding a CPU usage graph to the tab bar).
+*   **Hot-Reloading Configurations**: Modifying `config.yaml` or a `.js` config file should never require clicking "Restart App". The UI should reactively reload colors, shortcuts, and plugins.
 
-### 4. Event-Sourced Configuration
-Store configuration changes as an event log, allowing:
-- Undo/redo for configuration changes
-- Config sync across devices
-- Audit trail for sensitive settings changes
-- Branch/merge for different config profiles
+## 4. Refactoring & Architecture
+*   **Rust/Tauri Rewrite (The "Nuclear" Option)**: Electron is memory-heavy. We are already moving native logic to Go (`tabby-go`). The next logical step is to replace Electron entirely with Tauri (Rust) for a tiny memory footprint, while keeping the Angular frontend.
+*   **Headless Daemon Mode**: The `tabby-go` backend is fully decoupled from the UI via JSON-RPC. We should add a CLI flag (`tabby-go --daemon`) to run it headless on remote servers. Then, the Tabby UI could connect over WebSockets to this remote daemon, providing a seamless local-feeling terminal for remote machines.
+*   **WebAssembly (Wasm) Frontend**: If we move away from Electron, the Angular frontend could be compiled to WebAssembly (or we could switch to a framework like Yew/Leptos) for near-native UI performance.
 
-## Feature Ideas
+## 5. Quality of Life & Polish
+*   **Command History Sync**: Sync bash/zsh history across all machines using a lightweight encrypted cloud backend.
+*   **Built-in Snippet Manager**: A UI to manage and inject reusable text snippets into the terminal with variable placeholders (e.g., `ssh {{user}}@{{host}}`).
+*   **Hex Viewer (Serial)**: For embedded developers using the Serial port feature, add a split-pane hex dump view alongside the ASCII output.
+*   **Visual Jump Host Builder**: A node-graph UI to drag-and-drop SSH servers to construct complex `ProxyJump` chains visually.
+*   **Live Collaboration**: "Multiplayer" terminal sessions where two users can type in the same terminal simultaneously (like VS Code Live Share).
 
-### 5. Smart Command History
-- Fuzzy search through command history across all sessions
-- Tag frequently used commands
-- Share command history between similar profiles
-- AI-powered command suggestions based on history patterns
-
-### 6. Terminal Workspaces
-- Save and restore complete workspace layouts (tabs, splits, connections)
-- Named workspaces for different projects/environments
-- Quick workspace switching
-- Per-workspace environment variables
-
-### 7. Visual Connection Map
-- Graph visualization of SSH jump chains
-- Real-time connection health monitoring
-- Bandwidth usage per connection
-- Port forwarding visualization
-
-### 8. Integrated TUI Detection
-- Detect when remote applications (htop, vim, mc) are running
-- Show context-sensitive toolbar (vim: save/quit buttons, htop: filter)
-- Auto-adjust terminal settings for TUI applications
-
-### 9. Collaborative Debugging
-- Share a terminal session with a colleague (read-only or read-write)
-- Annotate terminal output with comments
-- Timeline scrubbing through scrollback buffer
-
-### 10. Container-First Mode
-- Built-in Docker container management
-- One-click connect to any running container
-- Kubernetes pod terminal access
-- Container log streaming
-
-## Code Quality Ideas
-
-### 11. TypeScript Strict Mode Migration
-- Enable `strict: true` in tsconfig
-- Replace all `any` types with proper interfaces
-- Add runtime type validation for IPC boundaries
-
-### 12. Observable State Management
-- Replace imperative state management with NgRx or similar
-- Time-travel debugging for state changes
-- Better testability with pure reducers
-
-### 13. Plugin API v2
-- Type-safe plugin API with runtime validation
-- Plugin lifecycle hooks (install, update, uninstall)
-- Plugin dependency resolution
-- Plugin marketplace with ratings and reviews
-
-### 14. Monorepo Tooling
-- Migrate from yarn workspaces to Nx or Turborepo
-- Better caching for incremental builds
-- Affected-project detection for CI
-
-## UI/UX Ideas
-
-### 15. Command Palette (VS Code style)
-- `Ctrl+Shift+P` opens fuzzy search over all commands
-- Quick access to settings, profiles, connections
-- Plugin commands automatically registered
-
-### 16. Adaptive Layout
-- Automatically adjust layout based on window size
-- Compact mode for small windows
-- Full-screen presentation mode
-
-### 17. Connection Health Dashboard
-- Real-time connection status for all profiles
-- Latency monitoring
-- Automatic reconnection with exponential backoff
-- Connection quality indicators
-
-### 18. Theming Improvements
-- CSS custom properties for complete theme control
-- Theme editor with live preview
-- Import themes from iTerm2, Windows Terminal, Alacritty
-- Per-profile themes
-
-## Performance Ideas
-
-### 19. Terminal Output Buffering
-- Ring buffer for scrollback with configurable size
-- Compression for old scrollback data
-- Virtual scrolling for massive output
-
-### 20. Connection Pooling
-- Reuse SSH connections across tabs
-- Connection multiplexing (already partially implemented via SSHMultiplexerService)
-- Lazy connection initialization
-
-## Integration Ideas
-
-### 21. VS Code Extension
-- Embed Tabby terminal in VS Code
-- Share profiles and settings
-- Remote SSH integration
-
-### 22. MCP (Model Context Protocol) Server
-- Already exists as community plugin (tabby-mcp-server)
-- Could be built-in for AI assistant integration
-- Allow AI agents to manage connections and execute commands
-
-### 23. WebRTC Terminal Sharing
-- Peer-to-peer terminal sharing without server
-- End-to-end encrypted
-- No registration required
-
-### 24. Homebrew Integration
-- Auto-detect and integrate with Homebrew on macOS
-- Show update notifications for Homebrew packages
-- One-click package management
-
-## Renaming / Restructuring Ideas
-
-### 25. Module Renaming
-- Consider renaming from `tabby-*` to `@tabby/*` for npm scoping
-- Would prevent namespace conflicts with other npm packages
-- Better organization in node_modules
-
-### 26. Directory Restructure
-- Group plugins into `plugins/` subdirectory
-- Group build tools into `tools/` subdirectory
-- Keep root directory clean
-
-## Wild Ideas
-
-### 27. GPU-Accelerated Terminal
-- Use WebGPU for terminal rendering
-- Hardware-accelerated text rendering
-- GPU-based text search in scrollback
-
-### 28. AI Pair Programming in Terminal
-- Watch terminal output for errors
-- Suggest fixes inline
-- Auto-execute safe fixes with confirmation
-
-### 29. Terminal as a Service
-- Run Tabby headless as a terminal server
-- Web-based access to all connections
-- Multi-user with RBAC
-
-### 30. Blockchain-Backed Audit Log
-- Immutable audit trail for compliance
-- Tamper-proof session recordings
-- Certificate-based session verification
+## 6. UI/Theming Innovations
+*   **Native MacOS/Windows Styling**: Currently, Tabby uses generic HTML/CSS styling. It should detect the host OS and seamlessly blend into MacOS (Vibrancy/Acrylic blurs) or Windows 11 (Mica materials).
+*   **Command Status Indicators**: Instead of relying on shell prompt themes (like Starship), Tabby should natively render a green checkmark or red X next to the input box based on the exit code of the last block.

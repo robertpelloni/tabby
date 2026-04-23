@@ -6,9 +6,12 @@ import { trigger, transition, style, animate, AnimationTriggerMetadata } from '@
 import { AppService, ConfigService, BaseTabComponent, HostAppService, HotkeysService, NotificationsService, Platform, LogService, Logger, TabContextMenuItemProvider, SplitTabComponent, SubscriptionContainer, MenuItemOptions, PlatformService, HostWindowService, ResettableTimeout, TranslateService, ThemesService, FullyDefined } from 'tabby-core'
 
 import { BaseSession } from '../session'
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
+import { CommandCatalogModalComponent } from '../components/commandCatalogModal.component'
 
 import { Frontend } from '../frontends/frontend'
 import { XTermFrontend, XTermWebGLFrontend } from '../frontends/xtermFrontend'
+import { BlockFrontend } from '../frontends/blockFrontend'
 import { ResizeEvent, BaseTerminalProfile } from './interfaces'
 import { TerminalDecorator } from './decorator'
 import { SearchPanelComponent } from '../components/searchPanel.component'
@@ -76,6 +79,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
 
     /** @hidden */
     @ViewChild('content') content
+    @ViewChild('ideInput') ideInput?: ElementRef<HTMLTextAreaElement>
 
     /** @hidden */
     @HostBinding('style.background-color') backgroundColor: string|null = null
@@ -371,6 +375,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         const cls: new (..._) => Frontend = enable8884Workarround ? XTermFrontend : {
             xterm: XTermFrontend,
             'xterm-webgl': XTermWebGLFrontend,
+            'block': BlockFrontend,
         }[this.config.store.terminal.frontend] ?? XTermFrontend
         this.frontend = new cls(this.injector)
 
@@ -909,5 +914,92 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
      */
     protected isSessionExplicitlyTerminated (): boolean {
         return false
+    }
+
+
+    onIdeInputKeydown(event: KeyboardEvent) {
+        if (!this.ideInput?.nativeElement) return;
+
+        if (event.key === 'Enter') {
+            if (!event.shiftKey) {
+                event.preventDefault();
+                const command = this.ideInput.nativeElement.value;
+                this.ideInput.nativeElement.value = '';
+                this.sendInput(Buffer.from(command + '\r'));
+            }
+        }
+    }
+
+
+    async generateCommand() {
+        if (!this.ideInput?.nativeElement) return;
+        const prompt = this.ideInput.nativeElement.value.trim();
+        if (!prompt) return;
+
+        this.ideInput.nativeElement.value = 'Generating...';
+        this.ideInput.nativeElement.disabled = true;
+
+        try {
+            // Forward to the Go backend AI agent integration
+            const response = await window['require']('electron').ipcRenderer.invoke('ai:generateCommand', { prompt });
+            this.ideInput.nativeElement.value = response.command || '';
+        } catch (e) {
+            this.ideInput.nativeElement.value = prompt; // Revert
+            this.notifications.error('Failed to generate command', e.toString());
+        } finally {
+            this.ideInput.nativeElement.disabled = false;
+            this.ideInput.nativeElement.focus();
+        }
+    }
+
+
+
+    async openCommandCatalog() {
+        const modal = this.injector.get(NgbModal).open(CommandCatalogModalComponent, { size: 'lg' })
+        const result = await modal.result.catch(() => null)
+
+        if (result && this.ideInput?.nativeElement) {
+            this.ideInput.nativeElement.value = result;
+            this.ideInput.nativeElement.focus();
+        }
+
+}
+
+    showAgentChat = false;
+    agentInput = '';
+    agentMessages: {role: 'user' | 'agent', content: string}[] = [
+        { role: 'agent', content: 'Hello! I am Tabby AI. How can I help you today?' }
+    ];
+
+    toggleAgentChat() {
+        this.showAgentChat = !this.showAgentChat;
+        if (this.showAgentChat) {
+            setTimeout(() => {
+                // Focus logic could go here if we had a ViewChild on the input
+            }, 100);
+        }
+    }
+
+    async sendAgentMessage() {
+        if (!this.agentInput.trim()) return;
+
+        const userMsg = this.agentInput.trim();
+        this.agentMessages.push({ role: 'user', content: userMsg });
+        this.agentInput = '';
+
+        // Add a temporary loading message
+        const loadingIndex = this.agentMessages.push({ role: 'agent', content: 'Thinking...' }) - 1;
+
+        try {
+            // Forward to the Go backend AI agent integration
+            // Reusing explainError payload mapping for generic chat temporarily
+            const response = await window['require']('electron').ipcRenderer.invoke('ai:explainError', {
+                command: 'chat',
+                errorOutput: userMsg
+            });
+            this.agentMessages[loadingIndex].content = response.explanation;
+        } catch (e) {
+            this.agentMessages[loadingIndex].content = `Error connecting to AI backend: ${e.toString()}`;
+        }
     }
 }

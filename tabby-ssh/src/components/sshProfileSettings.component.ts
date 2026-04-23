@@ -7,7 +7,7 @@ import { FileProvidersService, Platform, HostAppService, PromptModalComponent, P
 import { LoginScriptsSettingsComponent } from 'tabby-terminal'
 import { PasswordStorageService } from '../services/passwordStorage.service'
 import { ForwardedPortConfig, SSHAlgorithmType, SSHProfile } from '../api'
-import { supportedAlgorithms } from '../algorithms'
+import { SupportedAlgorithms } from '../algorithms'
 import { FullyDefined, ProxifiedConfig } from 'tabby-core/src/services/config.service'
 import { SSHProfilesService } from '../profiles'
 
@@ -22,7 +22,7 @@ export class SSHProfileSettingsComponent implements ProfileSettingsComponent<SSH
 
     connectionMode: 'direct'|'proxyCommand'|'jumpHost'|'socksProxy'|'httpProxy' = 'direct'
 
-    supportedAlgorithms = supportedAlgorithms
+    SupportedAlgorithms = SupportedAlgorithms
     algorithms: Record<string, Record<string, boolean>> = {}
     jumpHosts: PartialProfile<SSHProfile>[]
     @ViewChild('loginScriptsSettings') loginScriptsSettings: LoginScriptsSettingsComponent|null

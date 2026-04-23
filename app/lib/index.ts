@@ -14,6 +14,8 @@ import 'source-map-support/register'
 import './sentry'
 import './lru'
 import { parseArgs } from './cli'
+import { initSSH } from './ssh'
+import { initAI } from './ai'
 import { Application } from './app'
 import electronDebug from 'electron-debug'
 import { loadConfig } from './config'
@@ -33,6 +35,8 @@ try {
 
 process.mainModule = module
 
+    initSSH()
+    initAI()
 const application = new Application(configStore)
 
 // Register tabby:// URL scheme
