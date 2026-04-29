@@ -1,3 +1,6 @@
 [submodule "tabby-go/vendor/btk"]
 	path = tabby-go/vendor/btk
 	url = https://github.com/robertpelloni/btk.git
+[submodule "warp"]
+	path = warp
+	url = https://github.com/robertpelloni/warp.git
