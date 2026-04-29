@@ -1,0 +1,207 @@
+{
+  "items": [
+    {
+      "type": "TODO",
+      "message": "Implement actual PTY resize using creack/pty",
+      "file": "tabby-go\\pkg\\pty\\pty.go",
+      "line": 144,
+      "column": 4
+    },
+    {
+      "type": "TODO",
+      "message": "Implement with go.bug.st/serial for actual serial communication",
+      "file": "tabby-go\\pkg\\serial\\serial.go",
+      "line": 51,
+      "column": 3
+    },
+    {
+      "type": "TODO",
+      "message": "Implement actual write",
+      "file": "tabby-go\\pkg\\serial\\serial.go",
+      "line": 86,
+      "column": 4
+    },
+    {
+      "type": "TODO",
+      "message": "Implement with go.bug.st/serial",
+      "file": "tabby-go\\pkg\\serial\\serial.go",
+      "line": 108,
+      "column": 3
+    },
+    {
+      "type": "TODO",
+      "message": "dfc) scope warning!",
+      "file": "tabby-go\\vendor\\github.com\\pkg\\sftp\\client.go",
+      "line": 376,
+      "column": 6
+    },
+    {
+      "type": "TODO",
+      "message": "FIXME: ignore flags field",
+      "file": "tabby-go\\vendor\\github.com\\pkg\\sftp\\server.go",
+      "line": 241,
+      "column": 5
+    },
+    {
+      "type": "TODO",
+      "message": "delete once the compiler does a reliably",
+      "file": "tabby-go\\vendor\\golang.org\\x\\crypto\\chacha20\\xor.go",
+      "line": 23,
+      "column": 5
+    },
+    {
+      "type": "TODO",
+      "message": "hanwen): provide better logging interface?",
+      "file": "tabby-go\\vendor\\golang.org\\x\\crypto\\ssh\\agent\\server.go",
+      "line": 33,
+      "column": 6
+    },
+    {
+      "type": "TODO",
+      "message": "consider using KeyAlgoRSASHA256 as default.",
+      "file": "tabby-go\\vendor\\golang.org\\x\\crypto\\ssh\\certs.go",
+      "line": 479,
+      "column": 5
+    },
+    {
+      "type": "TODO",
+      "message": "hanwen): should send Disconnect?",
+      "file": "tabby-go\\vendor\\golang.org\\x\\crypto\\ssh\\channel.go",
+      "line": 309,
+      "column": 5
+    },
+    {
+      "type": "TODO",
+      "message": "hanwen): should send Disconnect with reason?",
+      "file": "tabby-go\\vendor\\golang.org\\x\\crypto\\ssh\\channel.go",
+      "line": 321,
+      "column": 5
+    },
+    {
+      "type": "TODO",
+      "message": "huin) this should be determined by the cipher.",
+      "file": "tabby-go\\vendor\\golang.org\\x\\crypto\\ssh\\cipher.go",
+      "line": 26,
+      "column": 28
+    },
+    {
+      "type": "TODO",
+      "message": "hanwen): consider exposing:",
+      "file": "tabby-go\\vendor\\golang.org\\x\\crypto\\ssh\\connection.go",
+      "line": 72,
+      "column": 4
+    },
+    {
+      "type": "TODO",
+      "message": "hanwen): are these the right semantics? What if there",
+      "file": "tabby-go\\vendor\\golang.org\\x\\crypto\\ssh\\knownhosts\\knownhosts.go",
+      "line": 357,
+      "column": 4
+    },
+    {
+      "type": "TODO",
+      "message": "hanwen): check if we can safely normalize this always.",
+      "file": "tabby-go\\vendor\\golang.org\\x\\crypto\\ssh\\knownhosts\\knownhosts.go",
+      "line": 459,
+      "column": 4
+    },
+    {
+      "type": "TODO",
+      "message": "mundaym): the following feature detection functions are currently",
+      "file": "tabby-go\\vendor\\golang.org\\x\\sys\\cpu\\cpu_gccgo_s390x.go",
+      "line": 13,
+      "column": 3
+    },
+    {
+      "type": "TODO",
+      "message": "Features that require kernel support like LSX and LASX can",
+      "file": "tabby-go\\vendor\\golang.org\\x\\sys\\cpu\\cpu_linux_loong64.go",
+      "line": 14,
+      "column": 4
+    },
+    {
+      "type": "TODO",
+      "message": "bcmills): since we're already appending to a slice, it would be nice",
+      "file": "tabby-go\\vendor\\golang.org\\x\\sys\\windows\\exec_windows.go",
+      "line": 135,
+      "column": 5
+    },
+    {
+      "type": "TODO",
+      "message": "consider weak pointers once Go 1.24 is appropriate. See suggestion in https://go.dev/cl/663575.",
+      "file": "tabby-go\\vendor\\golang.org\\x\\sys\\windows\\security_windows.go",
+      "line": 1334,
+      "column": 4
+    },
+    {
+      "type": "TODO",
+      "message": "brainman): fix all needed for net",
+      "file": "tabby-go\\vendor\\golang.org\\x\\sys\\windows\\syscall_windows.go",
+      "line": 1331,
+      "column": 3
+    },
+    {
+      "type": "BUG",
+      "message": "brainman): The definition of Linger is not appropriate for direct use",
+      "file": "tabby-go\\vendor\\golang.org\\x\\sys\\windows\\syscall_windows.go",
+      "line": 1360,
+      "column": 3
+    },
+    {
+      "type": "TODO",
+      "message": "brainman): fix all needed for os",
+      "file": "tabby-go\\vendor\\golang.org\\x\\sys\\windows\\syscall_windows.go",
+      "line": 1477,
+      "column": 3
+    },
+    {
+      "type": "TODO",
+      "message": "mattn): SockaddrGen is union of sockaddr/sockaddr_in/sockaddr_in6_old.",
+      "file": "tabby-go\\vendor\\golang.org\\x\\sys\\windows\\types_windows.go",
+      "line": 1423,
+      "column": 3
+    },
+    {
+      "type": "TODO",
+      "message": "add more here, after collecting data on the common",
+      "file": "tabby-go\\vendor\\golang.org\\x\\sys\\windows\\zsyscall_windows.go",
+      "line": 32,
+      "column": 4
+    },
+    {
+      "type": "TODO",
+      "message": "this could actually be allowed in some circumstances.",
+      "file": "tabby-go\\vendor\\gopkg.in\\yaml.v3\\decode.go",
+      "line": 535,
+      "column": 5
+    },
+    {
+      "type": "TODO",
+      "message": "Kill this function. Replace all initialize calls by their underlining Go literals.",
+      "file": "tabby-go\\vendor\\gopkg.in\\yaml.v3\\encode.go",
+      "line": 415,
+      "column": 4
+    },
+    {
+      "type": "TODO",
+      "message": "write code to check all the formats supported by",
+      "file": "tabby-go\\vendor\\gopkg.in\\yaml.v3\\resolve.go",
+      "line": 307,
+      "column": 4
+    },
+    {
+      "type": "TODO",
+      "message": "Make this logic more reasonable.",
+      "file": "tabby-go\\vendor\\gopkg.in\\yaml.v3\\scannerc.go",
+      "line": 856,
+      "column": 9
+    },
+    {
+      "type": "TODO",
+      "message": "Convert this into more reasonable logic.",
+      "file": "tabby-go\\vendor\\gopkg.in\\yaml.v3\\scannerc.go",
+      "line": 2108,
+      "column": 9
+    }
+  ]
+}
