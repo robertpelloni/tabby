@@ -1,0 +1,27 @@
+{
+  "files": {
+    "pkg/pty/pty_windows.go": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 189
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-04-29T15:59:00.974Z"
+    },
+    "pkg/pty/pty_unix.go": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 207
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-04-29T15:59:49.596Z"
+    }
+  },
+  "turnCycles": 0,
+  "maxCycles": 3,
+  "lastUpdated": "2026-04-29T15:59:49.597Z"
+}

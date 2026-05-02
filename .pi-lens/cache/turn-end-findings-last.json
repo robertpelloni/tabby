@@ -1,0 +1,3 @@
+{
+  "signature": "tabby-go/wails-app/frontend/src/app.css|tabby-go/wails-app/frontend/src/style.css::📐 Cascade errors in 1 other file(s) — fix before finishing turn:\n<diagnostics file=\"tabby-go/wails-app/app.go\">\n  line 5, col 2 code=UnusedImport: \"fmt\" imported and not used\n</diagnostics>"
+}
