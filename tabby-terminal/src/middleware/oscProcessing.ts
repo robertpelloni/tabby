@@ -7,6 +7,7 @@ const OSCSuffixes = [Buffer.from('\x07'), Buffer.from('\x1b\\')]
 
 export class OSCProcessor extends SessionMiddleware {
     get cwdReported$ (): Observable<string> { return this.cwdReported }
+    get copyRequested$ (): Observable<string> { return this.copyRequested }
 
     private cwdReported = new Subject<string>()
 
@@ -52,6 +53,7 @@ export class OSCProcessor extends SessionMiddleware {
 
     close (): void {
         this.cwdReported.complete()
+        this.copyRequested.complete()
         super.close()
     }
 }
