@@ -42,12 +42,35 @@ export class BlockFrontend extends Frontend {
         this.currentBlock.style.borderBottom = '1px solid #333'
         this.currentBlock.style.position = 'relative'
 
+        const outputContainer = document.createElement('div')
+        outputContainer.className = 'block-output'
+
         const actionsContainer = document.createElement('div')
         actionsContainer.className = 'block-actions'
         actionsContainer.style.position = 'absolute'
         actionsContainer.style.top = '5px'
         actionsContainer.style.right = '5px'
         actionsContainer.style.display = 'none'
+
+        const copyCmdBtn = document.createElement('button')
+        copyCmdBtn.innerText = '📋 Copy Command'
+        copyCmdBtn.style.background = '#44475a'
+        copyCmdBtn.style.color = '#f8f8f2'
+        copyCmdBtn.style.border = 'none'
+        copyCmdBtn.style.borderRadius = '4px'
+        copyCmdBtn.style.padding = '4px 8px'
+        copyCmdBtn.style.cursor = 'pointer'
+        copyCmdBtn.style.fontSize = '12px'
+        copyCmdBtn.style.marginRight = '5px'
+
+        copyCmdBtn.onclick = () => {
+            // First line is generally the prompt + command
+            const firstLine = outputContainer.innerText.split('\n')[0].replace(/^\$ /, '').trim()
+            navigator.clipboard.writeText(firstLine);
+            const originalText = copyCmdBtn.innerText;
+            copyCmdBtn.innerText = '✅ Copied!';
+            setTimeout(() => { copyCmdBtn.innerText = originalText }, 2000);
+        }
 
         const copyBtn = document.createElement('button')
         copyBtn.innerText = '📋 Copy Output'
@@ -61,8 +84,9 @@ export class BlockFrontend extends Frontend {
         copyBtn.style.marginRight = '5px'
 
         copyBtn.onclick = () => {
-            const rawText = this.currentBlock.innerText.replace('📋 Copy Output', '').replace('✨ Explain Error', '').trim();
-            navigator.clipboard.writeText(rawText);
+            // Output is everything after first line
+            const outputLines = outputContainer.innerText.split('\n').slice(1).join('\n').trim()
+            navigator.clipboard.writeText(outputLines);
             const originalText = copyBtn.innerText;
             copyBtn.innerText = '✅ Copied!';
             setTimeout(() => { copyBtn.innerText = originalText }, 2000);
@@ -81,9 +105,11 @@ export class BlockFrontend extends Frontend {
         explainBtn.onclick = async () => {
             explainBtn.innerText = 'Analyzing...'
             try {
+                const firstLine = outputContainer.innerText.split('\n')[0].replace(/^\$ /, '').trim()
+                const outputLines = outputContainer.innerText.split('\n').slice(1).join('\n').trim()
                 const response = await window['require']('electron').ipcRenderer.invoke('ai:explainError', {
-                    command: 'unknown',
-                    errorOutput: this.currentBlock.innerText
+                    command: firstLine || 'unknown',
+                    errorOutput: outputLines || 'unknown error'
                 });
 
                 const explanationDiv = document.createElement('div')
@@ -100,8 +126,11 @@ export class BlockFrontend extends Frontend {
             }
         }
 
+        actionsContainer.appendChild(copyCmdBtn)
         actionsContainer.appendChild(copyBtn)
         actionsContainer.appendChild(explainBtn)
+
+        this.currentBlock.appendChild(outputContainer)
         this.currentBlock.appendChild(actionsContainer)
 
         this.currentBlock.onmouseenter = () => { actionsContainer.style.display = 'block' }
@@ -141,8 +170,8 @@ export class BlockFrontend extends Frontend {
         } else {
             // Render basic ANSI control codes to HTML using ansi-to-html
             const span = document.createElement('span')
-            span.innerHTML = this.ansiConverter.toHtml(data).replace(/\n/g, '<br/>')
-            this.currentBlock.appendChild(span)
+            span.innerHTML = this.ansiConverter.toHtml(data).replace(/\\n/g, '<br/>')
+            (this.currentBlock.querySelector('.block-output') || this.currentBlock).appendChild(span)
         }
         this.container.scrollTop = this.container.scrollHeight
     }
@@ -169,7 +198,7 @@ export class BlockFrontend extends Frontend {
                     widgetContainer.innerHTML = `<div style="font-family: sans-serif;"><h3>Unknown Widget Type</h3><pre>${JSON.stringify(widget)}</pre></div>`
                 }
 
-                this.currentBlock.appendChild(widgetContainer)
+                (this.currentBlock.querySelector('.block-output') || this.currentBlock).appendChild(widgetContainer)
                 this.createNewBlock() // Prepare for next command
             } catch (e) {
                 console.error("Failed to parse widget JSON", e)

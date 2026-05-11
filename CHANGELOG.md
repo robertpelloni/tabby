@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.231-nightly.6] - 2026-05-11
+### Changed
+- Refactored `BlockFrontend` to isolate terminal output from UI actions, allowing clean "Copy Command" and "Copy Output" actions.
+- Implemented natural language to shell command generation logic in the AI backend integration mock.
+
+
 All notable changes to the Tabby (robertpelloni fork) project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
