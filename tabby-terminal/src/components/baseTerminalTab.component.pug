@@ -19,9 +19,9 @@
             i.fas.fa-wrench
 
         // IDE Input Box (Warp Parity)
-        .ide-input-container(*ngIf='config.store.terminal.useBlockFrontend', style='display: flex; flex-direction: row; border-top: 1px solid #444; background: #1e1e1e; padding: 10px; align-items: flex-end;')
+        .ide-input-container(*ngIf='config.store.terminal.useBlockFrontend', style='display: flex; flex-direction: row; border-top: 1px solid #444; background: #1e1e1e; padding: 10px; align-items: flex-start;')
             .prompt-indicator(style='margin-right: 10px; color: #50fa7b; font-weight: bold; font-family: monospace;') $
-            textarea.ide-input(#ideInput, style='flex: 1; background: transparent; color: #f8f8f2; border: none; outline: none; font-family: monospace; resize: none; overflow: hidden; min-height: 20px;', placeholder='Type a command...', (keydown)='onIdeInputKeydown($event)', rows='1')
+            .ide-input(#ideInput, style='flex: 1; background: transparent; color: #f8f8f2; border: none; outline: none; font-family: monospace; resize: none; overflow: hidden; min-height: 40px;')
             button.btn.btn-sm.btn-link(title="Command Catalog & Workflows", (click)="openCommandCatalog()", style="margin-left: 10px; color: #8be9fd;")
                 i.fas.fa-book
             button.btn.btn-sm.btn-link(title="Toggle AI Agent Chat", (click)="toggleAgentChat()", style="margin-left: 10px; color: #ff79c6;")

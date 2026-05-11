@@ -1,4 +1,5 @@
 import { Observable, Subject, first, auditTime, debounce, interval } from 'rxjs'
+import * as monaco from 'monaco-editor'
 import { Spinner } from 'cli-spinner'
 import colors from 'ansi-colors'
 import { NgZone, OnInit, OnDestroy, Injector, ViewChild, HostBinding, Input, ElementRef, InjectFlags, Component } from '@angular/core'
@@ -79,7 +80,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
 
     /** @hidden */
     @ViewChild('content') content
-    @ViewChild('ideInput') ideInput?: ElementRef<HTMLTextAreaElement>
+    @ViewChild('ideInput') ideInput?: ElementRef<HTMLElement>
 
     /** @hidden */
     @HostBinding('style.background-color') backgroundColor: string|null = null
@@ -929,38 +930,70 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
     }
 
 
-    onIdeInputKeydown(event: KeyboardEvent) {
-        if (!this.ideInput?.nativeElement) return;
+    private monacoEditor?: any
 
-        if (event.key === 'Enter') {
-            if (!event.shiftKey) {
-                event.preventDefault();
-                const command = this.ideInput.nativeElement.value;
-                this.ideInput.nativeElement.value = '';
-                this.sendInput(Buffer.from(command + '\r'));
+    ngAfterViewInit (): void {
+
+        setTimeout(() => {
+            if (this.ideInput && this.config.store.terminal.useBlockFrontend) {
+                this.monacoEditor = monaco.editor.create(this.ideInput.nativeElement, {
+                    value: '',
+                    language: 'shell',
+                    theme: 'vs-dark',
+                    minimap: { enabled: false },
+                    lineNumbers: 'off',
+                    glyphMargin: false,
+                    folding: false,
+                    lineDecorationsWidth: 0,
+                    lineNumbersMinChars: 0,
+                    overviewRulerBorder: false,
+                    hideCursorInOverviewRuler: true,
+                    scrollBeyondLastLine: false,
+                    scrollbar: {
+                        vertical: 'hidden',
+                        horizontal: 'hidden'
+                    },
+                    renderLineHighlight: 'none',
+                    wordWrap: 'on'
+                });
+
+                this.monacoEditor.onKeyDown((e) => {
+                    if (e.keyCode === 3 && !e.shiftKey) {
+                        e.preventDefault();
+                        const command = this.monacoEditor?.getValue();
+                        this.monacoEditor?.setValue('');
+                        if (command) {
+                            this.sendInput(Buffer.from(command + '\r'));
+                        }
+                    }
+                });
             }
-        }
+        }, 500)
+    }
+
+    onIdeInputKeydown(event: KeyboardEvent) {
+        // Handled by monaco
     }
 
 
     async generateCommand() {
         if (!this.ideInput?.nativeElement) return;
-        const prompt = this.ideInput.nativeElement.value.trim();
+        const prompt = this.monacoEditor?.getValue().trim() || '';
         if (!prompt) return;
 
-        this.ideInput.nativeElement.value = 'Generating...';
-        this.ideInput.nativeElement.disabled = true;
+        this.monacoEditor?.setValue('Generating...');
+        this.monacoEditor?.updateOptions({ readOnly: true });
 
         try {
             // Forward to the Go backend AI agent integration
             const response = await window['require']('electron').ipcRenderer.invoke('ai:generateCommand', { prompt });
-            this.ideInput.nativeElement.value = response.command || '';
+            this.monacoEditor?.setValue(response.command || '');
         } catch (e) {
-            this.ideInput.nativeElement.value = prompt; // Revert
+            this.monacoEditor?.setValue(prompt);
             this.notifications.error('Failed to generate command', e.toString());
         } finally {
-            this.ideInput.nativeElement.disabled = false;
-            this.ideInput.nativeElement.focus();
+            this.monacoEditor?.updateOptions({ readOnly: false });
+            this.monacoEditor?.focus();
         }
     }
 
@@ -971,8 +1004,8 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         const result = await modal.result.catch(() => null)
 
         if (result && this.ideInput?.nativeElement) {
-            this.ideInput.nativeElement.value = result;
-            this.ideInput.nativeElement.focus();
+            this.monacoEditor?.setValue(result);
+            this.monacoEditor?.focus();
         }
 
 }
