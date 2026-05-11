@@ -8,7 +8,6 @@ import { LoginScriptsSettingsComponent } from 'tabby-terminal'
 import { PasswordStorageService } from '../services/passwordStorage.service'
 import { ForwardedPortConfig, SSHAlgorithmType, SSHProfile } from '../api'
 import { SupportedAlgorithms } from '../algorithms'
-import { FullyDefined, ProxifiedConfig } from 'tabby-core/src/services/config.service'
 import { SSHProfilesService } from '../profiles'
 
 /** @hidden */

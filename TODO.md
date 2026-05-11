@@ -23,7 +23,7 @@
   - Implement Filtering/searching within a block.
   - Implement Generating shareable web links for a block.
   - Implement Keyboard navigation between blocks.
-- [ ] **Rich Widget Blocks (WaveTerm)**:
+- [x] **Rich Widget Blocks (WaveTerm)**:
   - Add logic to intercept specific OSC codes from the `tabby-go` backend that tell the frontend to render the next block as Markdown, an Image, or a Code Editor buffer.
 
 ### Agentic AI Integration (Phase 3)

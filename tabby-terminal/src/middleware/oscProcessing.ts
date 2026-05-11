@@ -10,6 +10,7 @@ export class OSCProcessor extends SessionMiddleware {
     get copyRequested$ (): Observable<string> { return this.copyRequested }
 
     private cwdReported = new Subject<string>()
+    private copyRequested = new Subject<string>()
 
     feedFromSession (data: Buffer): void {
         let startIndex = 0

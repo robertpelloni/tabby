@@ -1,6 +1,8 @@
 import { Injector } from '@angular/core'
 import { Frontend, SearchOptions, SearchState } from './frontend'
 import { BaseTerminalProfile } from '../api/interfaces'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 
 const AnsiToHtml = require('ansi-to-html')
 
@@ -147,7 +149,7 @@ export class BlockFrontend extends Frontend {
 
     private renderWidget(data: string) {
         // Extract widget JSON
-        const match = data.match(/\\x1b\\]1337;WaveTermWidget=([^\\x07]+)\\x07/)
+        const match = data.match(/\x1b\]1337;WaveTermWidget=([^\x07]+)\x07/)
         if (match && match[1]) {
             try {
                 const widget = JSON.parse(match[1])
@@ -159,8 +161,12 @@ export class BlockFrontend extends Frontend {
                 widgetContainer.style.borderRadius = '4px'
 
                 if (widget.type === 'markdown') {
-                    // For now, just render raw markdown. We will integrate a real markdown renderer later.
-                    widgetContainer.innerHTML = `<div style="font-family: sans-serif;"><h3>Markdown Widget</h3><pre>${widget.content}</pre></div>`
+                    // Render markdown widget
+                    const rawHtml = marked.parse(widget.content) as string;
+                    const cleanHtml = DOMPurify.sanitize(rawHtml);
+                    widgetContainer.innerHTML = `<div class="markdown-widget" style="font-family: sans-serif;">${cleanHtml}</div>`
+                } else {
+                    widgetContainer.innerHTML = `<div style="font-family: sans-serif;"><h3>Unknown Widget Type</h3><pre>${JSON.stringify(widget)}</pre></div>`
                 }
 
                 this.currentBlock.appendChild(widgetContainer)
