@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.231-nightly.8] - 2026-05-11
+### Added
+- Integrated actual OpenAI API requests to the Go backend (`tabby-go/pkg/ai`) triggered by the `OPENAI_API_KEY` environment variable. If missing, it gracefully falls back to the local mock behavior.
+- Implemented Hyper-style hot-reloading configurations. The Go backend (`tabby-go/pkg/config`) now utilizes an `os.Stat` polling loop to watch the active YAML configuration file and broadcasts JSON-RPC `host:config-change` events instantly to the Angular frontend for zero-restart visual updates.
+
+
 ## [1.0.231-nightly.7] - 2026-05-11
 ### Changed
 - Extended `BlockFrontend` OSC rendering to support parsing and safely displaying inline image widgets and iframe/webview widgets, utilizing DOMPurify to prevent arbitrary XSS.
