@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.231-nightly.7] - 2026-05-11
+### Changed
+- Extended `BlockFrontend` OSC rendering to support parsing and safely displaying inline image widgets and iframe/webview widgets, utilizing DOMPurify to prevent arbitrary XSS.
+- Refined the `tabby-go/pkg/ai` backend mock to intelligently parse errors for the `ExplainError` action, emitting structured Markdown diagnostic tips for common terminal failures like 'Permission Denied', 'Port in Use', and 'Command Not Found'.
+
+
 ## [1.0.231-nightly.6] - 2026-05-11
 ### Changed
 - Refactored `BlockFrontend` to isolate terminal output from UI actions, allowing clean "Copy Command" and "Copy Output" actions.

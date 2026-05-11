@@ -194,6 +194,23 @@ export class BlockFrontend extends Frontend {
                     const rawHtml = marked.parse(widget.content) as string;
                     const cleanHtml = DOMPurify.sanitize(rawHtml);
                     widgetContainer.innerHTML = `<div class="markdown-widget" style="font-family: sans-serif;">${cleanHtml}</div>`
+                } else if (widget.type === 'image') {
+                    // Render image widget
+                    const cleanSrc = DOMPurify.sanitize(widget.content, { ALLOWED_TAGS: [] });
+                    // Provide a safe default if sanitization stripped everything, else output image tag
+                    if (cleanSrc) {
+                         widgetContainer.innerHTML = `<div class="image-widget" style="text-align: center;"><img src="${cleanSrc}" style="max-width: 100%; border-radius: 4px;" /></div>`
+                    } else {
+                         widgetContainer.innerHTML = `<div style="font-family: sans-serif; color: #ff5555;">Invalid Image URL provided.</div>`
+                    }
+                } else if (widget.type === 'iframe') {
+                    // Render iframe widget
+                    const cleanSrc = DOMPurify.sanitize(widget.content, { ALLOWED_TAGS: [] });
+                    if (cleanSrc) {
+                         widgetContainer.innerHTML = `<div class="iframe-widget" style="width: 100%; height: 400px;"><iframe src="${cleanSrc}" style="width: 100%; height: 100%; border: none; border-radius: 4px;"></iframe></div>`
+                    } else {
+                         widgetContainer.innerHTML = `<div style="font-family: sans-serif; color: #ff5555;">Invalid Iframe URL provided.</div>`
+                    }
                 } else {
                     widgetContainer.innerHTML = `<div style="font-family: sans-serif;"><h3>Unknown Widget Type</h3><pre>${JSON.stringify(widget)}</pre></div>`
                 }
