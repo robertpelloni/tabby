@@ -41,3 +41,5 @@ crowdin.yml
 # Go build output
 build/tabby-backend
 build/tabby-backend.exe
+
+tabby-go/vendor/

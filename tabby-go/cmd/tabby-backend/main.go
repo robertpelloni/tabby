@@ -14,7 +14,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/robertpelloni/tabby/tabby-go/internal/server"
 )
 
@@ -30,6 +32,19 @@ func main() {
 
 	log.SetPrefix("[tabby-go] ")
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn: os.Getenv("SENTRY_DSN"),
+		Release: "tabby-backend@v1.0.231-nightly.0",
+		EnableTracing: true,
+		TracesSampleRate: 1.0,
+	})
+	if err != nil {
+		log.Printf("Sentry initialization failed: %v", err)
+	}
+	// Flush buffered events before the program terminates.
+	defer sentry.Flush(2 * time.Second)
+	defer sentry.Recover()
 
 	srv := server.New()
 

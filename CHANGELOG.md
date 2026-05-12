@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.231-nightly.10] - 2026-05-12
+### Added
+- Created `ReactPluginDecorator` in the Angular frontend that exposes a `window['tabbyReactPlugins']` interface, giving users the ability to inject native React or DOM extensions over the Tabby window seamlessly (Hyper parity).
+- Initialized official Sentry Go error tracking on the Go daemon inside `main.go`. This automatically recovers and captures native panics on the daemon via the `SENTRY_DSN` env var.
+
+
 ## [1.0.231-nightly.8] - 2026-05-11
 ### Added
 - Integrated actual OpenAI API requests to the Go backend (`tabby-go/pkg/ai`) triggered by the `OPENAI_API_KEY` environment variable. If missing, it gracefully falls back to the local mock behavior.
