@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.231-nightly.14] - 2026-05-12
+### Added
+- Implemented a base `registerCompletionItemProvider` dictionary overlay on top of the Monaco IDE input window, providing intelligent Warp-style shell autocomplete suggestions.
+- Bound `Cmd+F` and `Ctrl+F` keystrokes inside the Monaco UI block to redirect focus automatically to Tabby's global terminal output search panel, removing the isolated/redundant Monaco native find widget.
+
+
 ## [1.0.231-nightly.13] - 2026-05-12
 ### Changed
 - Converted `generateCommand()` AI text generation to use an explicit overlay `prompt()` window, preventing the destruction of currently typed user command text in the Monaco IDE box (Warp parity).

@@ -957,7 +957,48 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
                     wordWrap: 'on'
                 });
 
+
+                // Register simple mock autocompletions for shell
+                if (!(window as any)._monacoShellRegistered) {
+                    monaco.languages.registerCompletionItemProvider('shell', {
+                        provideCompletionItems: (model, position) => {
+                            const word = model.getWordUntilPosition(position);
+                            const range = {
+                                startLineNumber: position.lineNumber,
+                                endLineNumber: position.lineNumber,
+                                startColumn: word.startColumn,
+                                endColumn: word.endColumn
+                            };
+
+                            const suggestions = ['docker', 'tar', 'git', 'kubectl', 'npm', 'yarn', 'ssh', 'cd', 'ls', 'grep', 'find', 'rm', 'mkdir', 'sudo', 'apt', 'brew'].map(cmd => ({
+                                label: cmd,
+                                kind: monaco.languages.CompletionItemKind.Keyword,
+                                insertText: cmd,
+                                range: range
+                            }));
+
+                            return { suggestions };
+                        }
+                    });
+                    (window as any)._monacoShellRegistered = true;
+                }
+
+
                 this.monacoEditor.onKeyDown((e) => {
+                    // Cmd+F or Ctrl+F
+                    if (e.keyCode === monaco.KeyCode.KeyF && (e.metaKey || e.ctrlKey)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Close monaco's internal find
+                        const findController = this.monacoEditor.getContribution('editor.contrib.findController');
+                        if (findController) {
+                            (findController as any).closeFindWidget();
+                        }
+                        // Open Tabby global output search
+                        this.showSearchPanel = true;
+                        return;
+                    }
+
                     if (e.keyCode === 3 && !e.shiftKey) {
                         e.preventDefault();
                         const command = this.monacoEditor?.getValue();
