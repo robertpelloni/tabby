@@ -978,18 +978,27 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
 
     async generateCommand() {
         if (!this.ideInput?.nativeElement) return;
-        const prompt = this.monacoEditor?.getValue().trim() || '';
-        if (!prompt) return;
 
-        this.monacoEditor?.setValue('Generating...');
+        const promptStr = prompt("Ask Tabby AI to generate a command:");
+        if (!promptStr) return;
+
         this.monacoEditor?.updateOptions({ readOnly: true });
+
+        // Save current so we can append
+        const currentBuffer = this.monacoEditor?.getValue() || '';
 
         try {
             // Forward to the Go backend AI agent integration
-            const response = await window['require']('electron').ipcRenderer.invoke('ai:generateCommand', { prompt });
-            this.monacoEditor?.setValue(response.command || '');
+            const response = await window['require']('electron').ipcRenderer.invoke('ai:generateCommand', { prompt: promptStr });
+            const generated = response.command || '';
+
+            if (currentBuffer.length > 0) {
+                this.monacoEditor?.setValue(currentBuffer + " " + generated);
+            } else {
+                this.monacoEditor?.setValue(generated);
+            }
+
         } catch (e) {
-            this.monacoEditor?.setValue(prompt);
             this.notifications.error('Failed to generate command', e.toString());
         } finally {
             this.monacoEditor?.updateOptions({ readOnly: false });

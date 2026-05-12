@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.231-nightly.13] - 2026-05-12
+### Changed
+- Converted `generateCommand()` AI text generation to use an explicit overlay `prompt()` window, preventing the destruction of currently typed user command text in the Monaco IDE box (Warp parity).
+- Successfully hooked up the `ReactPluginDecorator` to the Angular lifecycle, validating that simple isolated React components can inject UI frames directly on top of the Terminal canvas without relying on standard Webpack/Angular DI modules.
+
+
 ## [1.0.231-nightly.12] - 2026-05-12
 ### Changed
 - Improved the Workflows Catalog Modal to actively parse template strings (e.g. `{port}`) and prompt the user to fulfill variables via a popup before pasting the finalized command string back into the Warp-style IDE Monaco editor.
