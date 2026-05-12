@@ -52,7 +52,20 @@ export class CommandCatalogModalComponent {
     }
 
     selectCommand(cmd: any) {
-        this.modal.close(cmd.command)
+        let finalCommand = cmd.command;
+        const matches = [...finalCommand.matchAll(/{{([^}]+)}}/g)];
+
+        for (const match of matches) {
+            const paramName = match[1];
+            const val = prompt(`Enter value for ${paramName}:`);
+            if (val === null) {
+                // User cancelled the prompt
+                return;
+            }
+            finalCommand = finalCommand.replace(match[0], val);
+        }
+
+        this.modal.close(finalCommand);
     }
 
     formatCommand(cmd: string): string {

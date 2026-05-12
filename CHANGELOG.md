@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.231-nightly.12] - 2026-05-12
+### Changed
+- Improved the Workflows Catalog Modal to actively parse template strings (e.g. `{port}`) and prompt the user to fulfill variables via a popup before pasting the finalized command string back into the Warp-style IDE Monaco editor.
+- Configured a persistent rolling `tabby-backend.log` file in the user's home directory (`os.UserHomeDir`) alongside `os.Stdout` to ensure trace logs and backend panics are easily retrievable by users reporting issues from the standalone daemon.
+
+
 ## [1.0.231-nightly.11] - 2026-05-12
 ### Added
 - Completed Tabby Agent Sidebar Chat integration, sending real conversation payloads containing `role` and `content` through the `ipcRenderer` directly to the `ai.agentChat` JSON-RPC orchestrator on the backend.
