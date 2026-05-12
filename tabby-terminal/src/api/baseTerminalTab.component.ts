@@ -1036,13 +1036,10 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         const loadingIndex = this.agentMessages.push({ role: 'agent', content: 'Thinking...' }) - 1;
 
         try {
-            // Forward to the Go backend AI agent integration
-            // Reusing explainError payload mapping for generic chat temporarily
-            const response = await window['require']('electron').ipcRenderer.invoke('ai:explainError', {
-                command: 'chat',
-                errorOutput: userMsg
+            const response = await window['require']('electron').ipcRenderer.invoke('ai:agentChat', {
+                messages: this.agentMessages.slice(0, -1) // Exclude the "Thinking..." message
             });
-            this.agentMessages[loadingIndex].content = response.explanation;
+            this.agentMessages[loadingIndex].content = response.response;
         } catch (e) {
             this.agentMessages[loadingIndex].content = `Error connecting to AI backend: ${e.toString()}`;
         }

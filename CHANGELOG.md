@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.231-nightly.11] - 2026-05-12
+### Added
+- Completed Tabby Agent Sidebar Chat integration, sending real conversation payloads containing `role` and `content` through the `ipcRenderer` directly to the `ai.agentChat` JSON-RPC orchestrator on the backend.
+- Extended the `CommandCatalogModalComponent` UI to properly format and highlight `{parameter}` blocks inline matching Warp Drive workflows.
+
+
 ## [1.0.231-nightly.10] - 2026-05-12
 ### Added
 - Created `ReactPluginDecorator` in the Angular frontend that exposes a `window['tabbyReactPlugins']` interface, giving users the ability to inject native React or DOM extensions over the Tabby window seamlessly (Hyper parity).
