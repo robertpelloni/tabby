@@ -984,6 +984,37 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
                 }
 
 
+
+                const validCommands = ['docker', 'tar', 'git', 'kubectl', 'npm', 'yarn', 'ssh', 'cd', 'ls', 'grep', 'find', 'rm', 'mkdir', 'sudo', 'apt', 'brew', 'cat', 'echo', 'pwd'];
+
+                this.monacoEditor.onDidChangeModelContent(() => {
+                    const model = this.monacoEditor?.getModel();
+                    if (!model) return;
+
+                    const text = model.getValue();
+                    const words = text.split(/\s+/);
+                    const markers: monaco.editor.IMarkerData[] = [];
+
+                    if (words.length > 0 && words[0].length > 0) {
+                        const firstWord = words[0];
+                        if (!validCommands.includes(firstWord) && !firstWord.startsWith('./') && !firstWord.startsWith('/')) {
+                            // First word isn't recognized, add a red squiggle
+                            markers.push({
+                                message: `Command '${firstWord}' is not recognized.`,
+                                severity: monaco.MarkerSeverity.Error,
+                                startLineNumber: 1,
+                                startColumn: 1,
+                                endLineNumber: 1,
+                                endColumn: firstWord.length + 1
+                            });
+                        }
+                    }
+
+                    monaco.editor.setModelMarkers(model, 'shell', markers);
+                });
+
+
+
                 this.monacoEditor.onKeyDown((e) => {
                     // Cmd+F or Ctrl+F
                     if (e.keyCode === monaco.KeyCode.KeyF && (e.metaKey || e.ctrlKey)) {
@@ -1030,8 +1061,8 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
 
         try {
             // Forward to the Go backend AI agent integration
-            const response = await window['require']('electron').ipcRenderer.invoke('ai:generateCommand', { prompt: promptStr });
-            const generated = response.command || '';
+            const response = await window['require']('electron').ipcRenderer.invoke('ai:chat', { messages: [{ role: 'user', content: promptStr }] });
+            const generated = response.message?.content || '';
 
             if (currentBuffer.length > 0) {
                 this.monacoEditor?.setValue(currentBuffer + " " + generated);
