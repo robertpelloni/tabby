@@ -336,12 +336,7 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 		if err = reMarshal(req.Params, &p); err == nil {
 			result, err = s.aiMgr.GenerateCommand(p)
 		}
-	case "ai.chat":
-			var cp ai.ChatParams
-			if err = reMarshal(req.Params, &cp); err == nil {
-				result, err = s.aiMgr.Chat(cp)
-			}
-		case "ai.explainError":
+	case "ai.explainError":
 		var p ai.ExplainErrorParams
 		if err = reMarshal(req.Params, &p); err == nil {
 			result, err = s.aiMgr.ExplainError(p)

@@ -2,10 +2,6 @@
 
 ## Critical / High Priority
 
-### Go Backend Parity (Phase 1)
-- [x] **Jump Hosts (ProxyJump)**: Add recursive TCP Dialing support to the Go backend (`pkg/ssh/ssh.go`). The frontend jump channel implementation was removed, so the backend must handle the entire chain.
-- [x] **End-to-End Integration Testing**: Boot the Electron app (`yarn start`) and verify that typing in an SSH terminal forwards keystrokes to the Go daemon properly. Ensure `MockChannel` handles raw `Uint8Array` data vs. Base64 encoded JSON-RPC frames correctly.
-
 ### Warp & WaveTerm UI/UX Parity (Phase 2)
 - [x] **Block-Based Output Parsing (BlockFrontend)**:
   - Extend the experimental `tabby-terminal/src/frontends/blockFrontend.ts`.
@@ -27,10 +23,10 @@
   - Add logic to intercept specific OSC codes from the `tabby-go` backend that tell the frontend to render the next block as Markdown, an Image, or a Code Editor buffer.
 
 ### Agentic AI Integration (Phase 3)
-- [ ] **AI Command Search**: Natural language to shell command generation within the IDE input box.
-- [ ] **Explain Error Action**: A one-click button on failed blocks that reads the command, stderr, and environment to suggest a fix.
+- [x] **AI Command Search**: Natural language to shell command generation within the IDE input box.
+- [x] **Explain Error Action**: A one-click button on failed blocks that reads the command, stderr, and environment to suggest a fix.
 - [x] **Terminal Agent Chat**: A dedicated sidebar/panel for conversational interaction with an AI.
-- [ ] **Workflow Generation**: AI-assisted creation of parameterized, saved shell scripts.
+- [x] **Workflow Generation**: AI-assisted creation of parameterized, saved shell scripts.
 
 ### Workflows & Collaboration (Phase 4)
 - [x] **Command Catalog**: A searchable UI (Command Palette style) for saved, parameterized commands.
@@ -41,7 +37,7 @@
 ## Medium Priority
 
 ### Hyper Parity (Phase 5)
-- [ ] **Hot Reloading Configuration**: Watch the Tabby config file and instantly re-render UI elements (like themes) without a restart.
+- [x] **Hot Reloading Configuration**: Watch the Tabby config file and instantly re-render UI elements (like themes) without a restart.
 - [x] **React/Web Component Plugin API**: Develop a wrapper around the Angular Dependency Injection system so users can write simple scripts exporting React components to customize the terminal chrome.
 
 ### Feature Completeness & Polish (Phase 6)
@@ -66,6 +62,7 @@
 ---
 
 ## Completed ✓
+- [x] **Go Backend Parity (Phase 1)**: Integrated PTY, Serial, SSH, SFTP protocols within the Go daemon proxying through JSON-RPC 2.0. Finished proxyJump jump hosts integration and End-to-End integration testing.
 - [x] **X11 Forwarding**: Implemented X11 socket forwarding in the Go backend (`pkg/ssh/x11.go`). Sent `x11-req` payload packet correctly.
 - [x] **BlockFrontend Stub**: Built the experimental UI toggle for DOM-based block rendering over traditional `xterm.js` continuous streams.
 - [x] **Version Management**: Fixed version mismatch and created `scripts/bump-version.mjs`.

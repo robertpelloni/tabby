@@ -404,7 +404,3 @@ Version number is maintained in [VERSION.md](VERSION.md) and is the single sourc
 - **UI Framework**: Bootstrap 5 (via ng-bootstrap), FontAwesome 6
 - **State**: Angular services, RxJS observables
 - **Config**: YAML-based configuration with platform-specific defaults
-
-## v1.0.231-nightly.15
-* Implement multi-turn mock chat support for AI workflows in Go backend and update UI integration.
-* Update `ROADMAP.md` and `HANDOFF.md` reflecting AI progress and next steps (Layout persistence).

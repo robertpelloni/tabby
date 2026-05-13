@@ -24,18 +24,6 @@ type GenerateCommandResult struct {
 	Command string `json:"command"`
 }
 
-type ChatMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-type ChatParams struct {
-	Messages []ChatMessage `json:"messages"`
-}
-
-type ChatResult struct {
-	Message ChatMessage `json:"message"`
-}
 
 type openAIRequest struct {
 	Model    string        `json:"model"`
@@ -89,98 +77,6 @@ func callOpenAI(systemPrompt, userPrompt string) (string, error) {
 		return res.Choices[0].Message.Content, nil
 	}
 	return "", fmt.Errorf("empty response")
-}
-
-func callOpenAIChat(messages []openAIMsg) (*openAIMsg, error) {
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
-		return nil, fmt.Errorf("no api key")
-	}
-
-	reqBody := openAIRequest{
-		Model: "gpt-3.5-turbo",
-		Messages: messages,
-	}
-
-	jsonData, _ := json.Marshal(reqBody)
-
-	req, _ := http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(jsonData))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, _ := io.ReadAll(resp.Body)
-
-	var res openAIResponse
-	if err := json.Unmarshal(body, &res); err != nil {
-		return nil, err
-	}
-
-	if len(res.Choices) > 0 {
-		return &res.Choices[0].Message, nil
-	}
-	return nil, fmt.Errorf("empty response")
-}
-
-func (m *Manager) Chat(params ChatParams) (*ChatResult, error) {
-	if os.Getenv("OPENAI_API_KEY") != "" {
-		var msgs []openAIMsg
-		for _, msg := range params.Messages {
-			msgs = append(msgs, openAIMsg{
-				Role:    msg.Role,
-				Content: msg.Content,
-			})
-		}
-
-		responseMsg, err := callOpenAIChat(msgs)
-		if err == nil {
-			return &ChatResult{
-				Message: ChatMessage{
-					Role:    responseMsg.Role,
-					Content: responseMsg.Content,
-				},
-			}, nil
-		}
-	}
-
-	// Multi-turn Mock Logic
-	// We examine the last message
-	if len(params.Messages) == 0 {
-		return &ChatResult{
-			Message: ChatMessage{
-				Role:    "assistant",
-				Content: "Hello! How can I help you today?",
-			},
-		}, nil
-	}
-
-	lastMsg := strings.ToLower(params.Messages[len(params.Messages)-1].Content)
-	var responseContent string
-
-	if strings.Contains(lastMsg, "help me build a workflow") || strings.Contains(lastMsg, "workflow") {
-		responseContent = "Absolutely! I can help you build a workflow. Let's start by defining what task you want to automate. For example, do you want to build a Docker image, deploy a service, or run a data pipeline?"
-	} else if strings.Contains(lastMsg, "docker") && len(params.Messages) > 1 {
-		responseContent = "Great! We'll build a Docker workflow. I'll need a bit more info:\n\n1. What is the image name you want to use?\n2. What is the path to your Dockerfile?\n3. Do you want to push this to a registry afterwards?"
-	} else if strings.Contains(lastMsg, "yes") && strings.Contains(lastMsg, "push") {
-		responseContent = "Alright, here is a parameterized workflow for building and pushing your Docker image:\n\n```bash\ndocker build -t {{image_name}} {{dockerfile_path}}\ndocker push {{image_name}}\n```\n\nYou can save this workflow in your Command Catalog and reuse it!"
-	} else if strings.Contains(lastMsg, "thanks") || strings.Contains(lastMsg, "thank you") {
-		responseContent = "You're very welcome! If you need anything else, just ask."
-	} else {
-		responseContent = fmt.Sprintf("I hear you saying '%s'. This is a mock multi-turn AI response. Please configure OPENAI_API_KEY for real functionality.", params.Messages[len(params.Messages)-1].Content)
-	}
-
-	return &ChatResult{
-		Message: ChatMessage{
-			Role:    "assistant",
-			Content: responseContent,
-		},
-	}, nil
 }
 
 func (m *Manager) GenerateCommand(params GenerateCommandParams) (*GenerateCommandResult, error) {
