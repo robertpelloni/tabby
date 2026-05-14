@@ -404,3 +404,8 @@ Version number is maintained in [VERSION.md](VERSION.md) and is the single sourc
 - **UI Framework**: Bootstrap 5 (via ng-bootstrap), FontAwesome 6
 - **State**: Angular services, RxJS observables
 - **Config**: YAML-based configuration with platform-specific defaults
+
+## v1.0.231-nightly.17
+* Create `tabby-go/pkg/sync` implementation representing the Warp Drive Cloud Sync backend stub.
+* Connect JSON-RPC `sync.push` and `sync.pull` commands to the `server.go` IPC handler to allow the frontend to serialize Workflows and Profiles.
+* Increment version tracking documents and prepare HANDOFF logic.

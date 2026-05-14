@@ -56,6 +56,7 @@ import (
 	"sync"
 
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ai"
+	tabbysync "github.com/robertpelloni/tabby/tabby-go/pkg/sync"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/api"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/config"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/knownhosts"
@@ -76,6 +77,7 @@ type Server struct {
 	serialMgr    *serial.Manager
 	telnetMgr    *telnet.Manager
 	aiMgr        *ai.Manager
+	syncMgr      *tabbysync.Manager
 	knownHosts   *knownhosts.Manager
 	notifMgr     *notification.Manager
 	recoveryMgr  *recovery.Manager
@@ -98,6 +100,7 @@ func New() *Server {
 	s.serialMgr = serial.NewManager(s.sendNotification)
 	s.telnetMgr = telnet.NewManager(s.sendNotification)
 	s.aiMgr = ai.NewManager()
+	s.syncMgr = tabbysync.NewManager()
 	s.knownHosts = knownhosts.NewManager()
 	s.notifMgr = notification.NewManager()
 	s.recoveryMgr = recovery.NewManager()
@@ -330,7 +333,16 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 	case "recovery.clear":
 		s.recoveryMgr.Clear()
 
-	// ---- AI ----
+	// ---- Sync ----
+		case "sync.push":
+			var p tabbysync.PushParams
+			if err = reMarshal(req.Params, &p); err == nil {
+				result, err = s.syncMgr.Push(p)
+			}
+		case "sync.pull":
+			result, err = s.syncMgr.Pull()
+
+		// ---- AI ----
 	case "ai.generateCommand":
 		var p ai.GenerateCommandParams
 		if err = reMarshal(req.Params, &p); err == nil {
