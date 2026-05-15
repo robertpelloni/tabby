@@ -1,15 +1,15 @@
 # Handoff Document
 
 ## Current Status
-The project is currently at version **v1.0.231-nightly.17**.
+The project is currently at version **v1.0.231-nightly.18**.
 
 ## Recent Work
-*   **Warp Drive Parity (Cloud Sync):** Built out the stub implementation for synchronizing terminal workflows, SSH profiles, and environment variables. The `tabby-go/pkg/sync` Go package now defines the `SyncData` format and exposes `Push()` and `Pull()` methods. These serialize data locally representing the "cloud" state.
-*   **IPC Handlers:** Successfully mapped the `sync.push` and `sync.pull` JSON-RPC methods in the `server.go` event router.
+*   **Warp Drive Parity (Cloud Sync):** Built out the Angular frontend service `SyncService` in `tabby-core`. This service exposes `push()` and `pull()` commands which forward payloads across the `ipcRenderer` border to the `tabby-go` daemon's `sync.push` and `sync.pull` JSON-RPC targets.
+*   **API Export:** Exposed the `SyncService` cleanly via `tabby-core/src/index.ts` so plugins (like the upcoming Workflow catalog) can depend on it natively.
 *   **Build Verification:** Successfully ran the memory-intensive `yarn build` using the 8GB node limit constraint to prevent OOMs. The Go tests and builds completed without regressions.
 
 ## Next Steps
-*   **Cloud Sync Frontend:** Wire up the Angular services in `tabby-core` or `tabby-terminal` to actually invoke `sync.push` and `sync.pull` through `ipcRenderer`. Construct the "Command Catalog" searchable UI to save and execute parameterized workflows.
+*   **Command Catalog UI:** Now that the `SyncService` exists, build out the `CommandCatalogModalComponent` (or similar overlay). It needs to pull Workflows from the sync service, render them in a searchable list, and inject the selected command back into the `baseTerminalTab`'s Monaco IDE input editor.
 *   **Hyper-Style Extensibility (Phase 5):** The next major target is implementing the React Web Component API wrapper. Developers should be able to push raw `.tsx` functional components into the configuration directory, and the Angular app should render them seamlessly as terminal overlays.
 
 ## Relevant Notes
