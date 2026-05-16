@@ -16,8 +16,8 @@ func main() {
 	app := NewApp()
 
 	err := wails.Run(&options.App{
-		Title:     "Tabby",
-		Width:     1200,
+		Title:     "Tabby Go",
+		Width:     1280,
 		Height:    800,
 		MinWidth:  600,
 		MinHeight: 400,

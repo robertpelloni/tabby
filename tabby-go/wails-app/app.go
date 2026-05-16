@@ -7,13 +7,15 @@ import (
 	"runtime"
 
 	"github.com/robertpelloni/tabby/tabby-go/pkg/api"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/session"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/pty"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ssh"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/sftp"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/settings"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-// App struct
+// App struct holds all the application state and backend managers.
 type App struct {
 	ctx     context.Context
 	sshMgr  *ssh.Manager
@@ -21,7 +23,7 @@ type App struct {
 	ptyMgr  *pty.Manager
 }
 
-// NewApp creates a new App application struct
+// NewApp creates a new App application struct with all managers initialized.
 func NewApp() *App {
 	a := &App{}
 	a.ptyMgr = pty.NewManager(a.emit)
@@ -30,56 +32,57 @@ func NewApp() *App {
 	return a
 }
 
-// startup is called when the app starts
+// startup is called when the Wails app starts. It stores the context for later use.
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-// ---- PTY Methods ----
+// ==== PTY Methods ====
 
-// PTYSpawn spawns a local PTY
+// PTYSpawn spawns a local pseudo-terminal process.
 func (a *App) PTYSpawn(params api.PTYSpawnParams) (*api.PTYSpawnResult, error) {
 	return a.ptyMgr.Spawn(params)
 }
 
-// PTYWrite writes data to a PTY
+// PTYWrite writes base64-encoded data to a PTY process's stdin.
 func (a *App) PTYWrite(id string, data string) error {
 	return a.ptyMgr.Write(id, data)
 }
 
-// PTYResize resizes a PTY
+// PTYResize resizes a PTY process's terminal dimensions.
 func (a *App) PTYResize(id string, columns, rows int) error {
 	return a.ptyMgr.Resize(id, columns, rows)
 }
 
-// PTYKill kills a PTY
+// PTYKill sends a kill signal to a PTY process.
 func (a *App) PTYKill(id string, signal string) error {
 	return a.ptyMgr.Kill(id, signal)
 }
 
-// ---- SSH Methods ----
+// ==== SSH Methods ====
 
-// SSHConnect connects to an SSH server
+// SSHConnect establishes an SSH connection to a remote server.
 func (a *App) SSHConnect(params api.SSHConnectParams) (*api.SSHConnectionResult, error) {
 	return a.sshMgr.Connect(params)
 }
 
-// SSHStartShell starts a shell session
+// SSHStartShell starts an interactive shell session over an existing SSH connection.
 func (a *App) SSHStartShell(params api.SSHSessionParams) (*api.SSHSessionResult, error) {
 	return a.sshMgr.StartShell(params)
 }
 
-// SSHWrite writes data to a session
+// SSHWrite writes base64-encoded data to an SSH shell session's stdin.
 func (a *App) SSHWrite(params api.SSHWriteParams) error {
 	return a.sshMgr.Write(params)
 }
 
-// ---- System Methods ----
+// ==== System Methods ====
 
-// GetDefaultShell returns the default shell for the current OS
+// GetDefaultShell returns the default shell for the current OS.
+// On Windows: prefers PowerShell, falls back to cmd.exe.
+// On Unix: uses $SHELL env, falls back to /bin/bash.
 func (a *App) GetDefaultShell() string {
 	if runtime.GOOS == "windows" {
-		// Prefer PowerShell, fall back to cmd
 		if path, err := exec.LookPath("powershell.exe"); err == nil {
 			return path
 		}
@@ -88,21 +91,22 @@ func (a *App) GetDefaultShell() string {
 		}
 		return "cmd.exe"
 	}
-	// Unix: check SHELL env, then fall back
 	if shell := os.Getenv("SHELL"); shell != "" {
 		return shell
 	}
 	return "/bin/bash"
 }
 
-// GetAvailableShells returns a list of available shells
+// GetAvailableShells returns a list of all installed shells on the system.
 func (a *App) GetAvailableShells() []string {
 	var shells []string
 	if runtime.GOOS == "windows" {
 		candidates := []string{
-			"powershell.exe", "pwsh.exe",
+			"powershell.exe",
+			"pwsh.exe",
 			"cmd.exe",
-			"bash.exe", "wsl.exe",
+			"bash.exe",
+			"wsl.exe",
 		}
 		for _, c := range candidates {
 			if path, err := exec.LookPath(c); err == nil {
@@ -111,8 +115,11 @@ func (a *App) GetAvailableShells() []string {
 		}
 	} else {
 		candidates := []string{
-			"/bin/bash", "/bin/zsh", "/bin/fish",
-			"/bin/sh", "/usr/local/bin/fish",
+			"/bin/bash",
+			"/bin/zsh",
+			"/bin/fish",
+			"/bin/sh",
+			"/usr/local/bin/fish",
 			"/opt/homebrew/bin/fish",
 		}
 		for _, c := range candidates {
@@ -120,7 +127,7 @@ func (a *App) GetAvailableShells() []string {
 				shells = append(shells, c)
 			}
 		}
-		// Also check SHELL env
+		// Ensure user's $SHELL is first
 		if shell := os.Getenv("SHELL"); shell != "" {
 			found := false
 			for _, s := range shells {
@@ -137,24 +144,27 @@ func (a *App) GetAvailableShells() []string {
 	return shells
 }
 
-// GetHomeDir returns the user's home directory
+// GetHomeDir returns the user's home directory.
 func (a *App) GetHomeDir() string {
 	home, _ := os.UserHomeDir()
 	return home
 }
 
-// GetHostname returns the machine hostname
+// GetHostname returns the machine hostname.
 func (a *App) GetHostname() string {
 	hostname, _ := os.Hostname()
 	return hostname
 }
 
-// GetUsername returns the current username
+// GetUsername returns the current OS username.
 func (a *App) GetUsername() string {
+	if runtime.GOOS == "windows" {
+		return os.Getenv("USERNAME")
+	}
 	return os.Getenv("USER")
 }
 
-// GetPlatform returns OS platform info
+// GetPlatform returns OS platform info as a map.
 func (a *App) GetPlatform() map[string]string {
 	return map[string]string{
 		"os":      runtime.GOOS,
@@ -163,14 +173,14 @@ func (a *App) GetPlatform() map[string]string {
 	}
 }
 
-// OpenInBrowser opens a URL in the default browser
+// OpenInBrowser opens a URL in the default web browser.
 func (a *App) OpenInBrowser(url string) {
 	if a.ctx != nil {
 		wailsRuntime.BrowserOpenURL(a.ctx, url)
 	}
 }
 
-// SelectDirectory opens a directory picker dialog
+// SelectDirectory opens a native directory picker dialog.
 func (a *App) SelectDirectory(title string) string {
 	if a.ctx != nil {
 		path, _ := wailsRuntime.OpenDirectoryDialog(a.ctx, wailsRuntime.OpenDialogOptions{
@@ -181,19 +191,66 @@ func (a *App) SelectDirectory(title string) string {
 	return ""
 }
 
-// SetWindowTitle changes the window title
+// SetWindowTitle changes the application window title.
 func (a *App) SetWindowTitle(title string) {
 	if a.ctx != nil {
 		wailsRuntime.WindowSetTitle(a.ctx, title)
 	}
 }
 
-// ---- Internal ----
+// ==== Settings ====
 
-// emit sends a notification to the frontend via Wails events
+// GetSettings returns the current user settings loaded from disk.
+func (a *App) GetSettings() (settings.Settings, error) {
+	return settings.LoadSettings()
+}
+
+// SaveSettings persists user settings to disk.
+func (a *App) SaveSettings(s settings.Settings) error {
+	return settings.SaveSettings(s)
+}
+
+// ResetSettings resets all settings to defaults and saves them.
+func (a *App) ResetSettings() error {
+	return settings.ResetSettings()
+}
+
+// GetDefaultShellPreferred returns the user's configured shell from settings,
+// or auto-detects if none is configured.
+func (a *App) GetDefaultShellPreferred() (string, error) {
+	s, err := a.GetSettings()
+	if err != nil {
+		return "", err
+	}
+	if s.Shell != "" {
+		return s.Shell, nil
+	}
+	return a.GetDefaultShell(), nil
+}
+
+// ==== Session Persistence ====
+
+// SaveSessionState persists which tabs were open so they can be restored on restart.
+func (a *App) SaveSessionState(tabs []session.TabState) error {
+	return session.SaveSession(tabs)
+}
+
+// LoadSessionState reads the last saved session state from disk.
+func (a *App) LoadSessionState() (*session.SessionState, error) {
+	return session.LoadSession()
+}
+
+// ClearSessionState removes the saved session file.
+func (a *App) ClearSessionState() error {
+	return session.ClearSession()
+}
+
+// ==== Internal ====
+
+// emit sends a named event with parameters to the frontend via Wails events.
+// This is used for streaming PTY data, exit notifications, SSH data, etc.
 func (a *App) emit(method string, params interface{}) {
 	if a.ctx != nil {
 		wailsRuntime.EventsEmit(a.ctx, method, params)
 	}
 }
-

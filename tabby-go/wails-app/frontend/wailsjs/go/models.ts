@@ -229,3 +229,199 @@ export namespace api {
 
 }
 
+export namespace session {
+	
+	export class TabState {
+	    shell: string;
+	    title: string;
+	    active: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new TabState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.shell = source["shell"];
+	        this.title = source["title"];
+	        this.active = source["active"];
+	    }
+	}
+	export class SessionState {
+	    tabs: TabState[];
+	    version: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new SessionState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.tabs = this.convertValues(source["tabs"], TabState);
+	        this.version = source["version"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+
+export namespace settings {
+	
+	export class Settings {
+	    font_size: number;
+	    font_family: string;
+	    fallback_font: string;
+	    font_weight: number;
+	    font_weight_bold: number;
+	    line_height: number;
+	    line_padding: number;
+	    ligatures: boolean;
+	    theme: string;
+	    css: string;
+	    opacity: number;
+	    spaciness: number;
+	    animations: boolean;
+	    shell: string;
+	    scrollback: number;
+	    cursor_style: string;
+	    cursor_blink: boolean;
+	    bell: string;
+	    frontend: string;
+	    draw_bold_text_in_bright_colors: boolean;
+	    minimum_contrast_ratio: number;
+	    alt_is_meta: boolean;
+	    scroll_on_input: boolean;
+	    copy_on_select: boolean;
+	    copy_as_html: boolean;
+	    bracketed_paste: boolean;
+	    warn_on_multiline_paste: boolean;
+	    replace_newlines_on_paste: boolean;
+	    trim_whitespace_on_paste: boolean;
+	    right_click: string;
+	    paste_on_middle_click: boolean;
+	    word_separator: string;
+	    tab_position: string;
+	    last_tab_closes_window: boolean;
+	    cycle_tabs: boolean;
+	    hide_close_button: boolean;
+	    show_tab_profile_icon: boolean;
+	    pane_resize_step: number;
+	    focus_follows_mouse: boolean;
+	    auto_open: boolean;
+	    recover_tabs: boolean;
+	    frame: string;
+	    dock: string;
+	    dock_hide_on_blur: boolean;
+	    dock_always_on_top: boolean;
+	    vibrancy: boolean;
+	    hide_tray: boolean;
+	    ssh_warn_on_close: boolean;
+	    ssh_verify_host_keys: boolean;
+	    ssh_agent_type: string;
+	    ssh_agent_path: string;
+	    ssh_x11_display: string;
+	    ssh_disable_dynamic_title: boolean;
+	    serial_baud_rate: number;
+	    serial_data_bits: number;
+	    serial_stop_bits: number;
+	    serial_parity: string;
+	    serial_flow_control: string;
+	    use_conpty: boolean;
+	    set_comspec: boolean;
+	    language: string;
+	    enable_analytics: boolean;
+	    enable_automatic_updates: boolean;
+	    enable_experimental_features: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Settings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.font_size = source["font_size"];
+	        this.font_family = source["font_family"];
+	        this.fallback_font = source["fallback_font"];
+	        this.font_weight = source["font_weight"];
+	        this.font_weight_bold = source["font_weight_bold"];
+	        this.line_height = source["line_height"];
+	        this.line_padding = source["line_padding"];
+	        this.ligatures = source["ligatures"];
+	        this.theme = source["theme"];
+	        this.css = source["css"];
+	        this.opacity = source["opacity"];
+	        this.spaciness = source["spaciness"];
+	        this.animations = source["animations"];
+	        this.shell = source["shell"];
+	        this.scrollback = source["scrollback"];
+	        this.cursor_style = source["cursor_style"];
+	        this.cursor_blink = source["cursor_blink"];
+	        this.bell = source["bell"];
+	        this.frontend = source["frontend"];
+	        this.draw_bold_text_in_bright_colors = source["draw_bold_text_in_bright_colors"];
+	        this.minimum_contrast_ratio = source["minimum_contrast_ratio"];
+	        this.alt_is_meta = source["alt_is_meta"];
+	        this.scroll_on_input = source["scroll_on_input"];
+	        this.copy_on_select = source["copy_on_select"];
+	        this.copy_as_html = source["copy_as_html"];
+	        this.bracketed_paste = source["bracketed_paste"];
+	        this.warn_on_multiline_paste = source["warn_on_multiline_paste"];
+	        this.replace_newlines_on_paste = source["replace_newlines_on_paste"];
+	        this.trim_whitespace_on_paste = source["trim_whitespace_on_paste"];
+	        this.right_click = source["right_click"];
+	        this.paste_on_middle_click = source["paste_on_middle_click"];
+	        this.word_separator = source["word_separator"];
+	        this.tab_position = source["tab_position"];
+	        this.last_tab_closes_window = source["last_tab_closes_window"];
+	        this.cycle_tabs = source["cycle_tabs"];
+	        this.hide_close_button = source["hide_close_button"];
+	        this.show_tab_profile_icon = source["show_tab_profile_icon"];
+	        this.pane_resize_step = source["pane_resize_step"];
+	        this.focus_follows_mouse = source["focus_follows_mouse"];
+	        this.auto_open = source["auto_open"];
+	        this.recover_tabs = source["recover_tabs"];
+	        this.frame = source["frame"];
+	        this.dock = source["dock"];
+	        this.dock_hide_on_blur = source["dock_hide_on_blur"];
+	        this.dock_always_on_top = source["dock_always_on_top"];
+	        this.vibrancy = source["vibrancy"];
+	        this.hide_tray = source["hide_tray"];
+	        this.ssh_warn_on_close = source["ssh_warn_on_close"];
+	        this.ssh_verify_host_keys = source["ssh_verify_host_keys"];
+	        this.ssh_agent_type = source["ssh_agent_type"];
+	        this.ssh_agent_path = source["ssh_agent_path"];
+	        this.ssh_x11_display = source["ssh_x11_display"];
+	        this.ssh_disable_dynamic_title = source["ssh_disable_dynamic_title"];
+	        this.serial_baud_rate = source["serial_baud_rate"];
+	        this.serial_data_bits = source["serial_data_bits"];
+	        this.serial_stop_bits = source["serial_stop_bits"];
+	        this.serial_parity = source["serial_parity"];
+	        this.serial_flow_control = source["serial_flow_control"];
+	        this.use_conpty = source["use_conpty"];
+	        this.set_comspec = source["set_comspec"];
+	        this.language = source["language"];
+	        this.enable_analytics = source["enable_analytics"];
+	        this.enable_automatic_updates = source["enable_automatic_updates"];
+	        this.enable_experimental_features = source["enable_experimental_features"];
+	    }
+	}
+
+}
+
