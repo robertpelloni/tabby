@@ -436,6 +436,64 @@ export namespace api {
 	        this.data = source["data"];
 	    }
 	}
+	export class SerialOpenParams {
+	    id: string;
+	    port: string;
+	    baudRate: number;
+	    dataBits?: number;
+	    stopBits?: number;
+	    parity?: string;
+	    flowControl?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SerialOpenParams(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.port = source["port"];
+	        this.baudRate = source["baudRate"];
+	        this.dataBits = source["dataBits"];
+	        this.stopBits = source["stopBits"];
+	        this.parity = source["parity"];
+	        this.flowControl = source["flowControl"];
+	    }
+	}
+	export class SerialOpenResult {
+	    id: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SerialOpenResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	    }
+	}
+	export class SerialPortInfo {
+	    name: string;
+	    manufacturer?: string;
+	    product?: string;
+	    serialNumber?: string;
+	    vid?: string;
+	    pid?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SerialPortInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.manufacturer = source["manufacturer"];
+	        this.product = source["product"];
+	        this.serialNumber = source["serialNumber"];
+	        this.vid = source["vid"];
+	        this.pid = source["pid"];
+	    }
+	}
 
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/robertpelloni/tabby/tabby-go/pkg/api"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/colorscheme"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/profile"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/serial"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/session"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/pty"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ssh"
@@ -23,6 +24,7 @@ type App struct {
 	sshMgr  *ssh.Manager
 	sftpMgr *sftp.Manager
 	ptyMgr  *pty.Manager
+	serialMgr *serial.Manager
 }
 
 // NewApp creates a new App application struct with all managers initialized.
@@ -31,6 +33,7 @@ func NewApp() *App {
 	a.ptyMgr = pty.NewManager(a.emit)
 	a.sshMgr = ssh.NewManager(a.emit)
 	a.sftpMgr = sftp.NewManager(a.sshMgr)
+	a.serialMgr = serial.NewManager(a.emit)
 	return a
 }
 
@@ -313,6 +316,28 @@ func (a *App) LoadSessionState() (*session.SessionState, error) {
 // ClearSessionState removes the saved session file.
 func (a *App) ClearSessionState() error {
 	return session.ClearSession()
+}
+
+// ==== Serial Port Methods ====
+
+// SerialOpen opens a serial port connection.
+func (a *App) SerialOpen(params api.SerialOpenParams) (*api.SerialOpenResult, error) {
+	return a.serialMgr.Open(params)
+}
+
+// SerialWrite writes base64-encoded data to a serial port.
+func (a *App) SerialWrite(id string, data string) error {
+	return a.serialMgr.Write(id, data)
+}
+
+// SerialClose closes a serial port connection.
+func (a *App) SerialClose(id string) error {
+	return a.serialMgr.Close(id)
+}
+
+// SerialListPorts returns a list of available serial ports on the system.
+func (a *App) SerialListPorts() ([]api.SerialPortInfo, error) {
+	return a.serialMgr.ListPorts()
 }
 
 // ==== Internal ====

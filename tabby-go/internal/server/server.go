@@ -698,18 +698,10 @@ func (s *Server) handleSerialListPorts(params interface{}) (*api.SerialListPorts
 	if err != nil {
 		return nil, err
 	}
-	return &api.SerialListPortsResult{Ports: convertPorts(ports)}, nil
+	return &api.SerialListPortsResult{Ports: ports}, nil
 }
 
-func convertPorts(ports []string) []api.SerialPortInfo {
-	result := make([]api.SerialPortInfo, len(ports))
-	for i, p := range ports {
-		result[i] = api.SerialPortInfo{Name: p}
-	}
-	return result
-}
-
-// ---- Telnet Handlers ----
+	// ---- Telnet Handlers ----
 
 func (s *Server) handleTelnetConnect(params interface{}) (interface{}, error) {
 	var p struct {

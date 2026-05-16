@@ -84,4 +84,12 @@ export function SaveSettings(arg1:settings.Settings):Promise<void>;
 
 export function SelectDirectory(arg1:string):Promise<string>;
 
+export function SerialClose(arg1:string):Promise<void>;
+
+export function SerialListPorts():Promise<Array<api.SerialPortInfo>>;
+
+export function SerialOpen(arg1:api.SerialOpenParams):Promise<api.SerialOpenResult>;
+
+export function SerialWrite(arg1:string,arg2:string):Promise<void>;
+
 export function SetWindowTitle(arg1:string):Promise<void>;

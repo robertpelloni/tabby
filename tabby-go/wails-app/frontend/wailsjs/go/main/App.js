@@ -158,6 +158,22 @@ export function SelectDirectory(arg1) {
   return window['go']['main']['App']['SelectDirectory'](arg1);
 }
 
+export function SerialClose(arg1) {
+  return window['go']['main']['App']['SerialClose'](arg1);
+}
+
+export function SerialListPorts() {
+  return window['go']['main']['App']['SerialListPorts']();
+}
+
+export function SerialOpen(arg1) {
+  return window['go']['main']['App']['SerialOpen'](arg1);
+}
+
+export function SerialWrite(arg1, arg2) {
+  return window['go']['main']['App']['SerialWrite'](arg1, arg2);
+}
+
 export function SetWindowTitle(arg1) {
   return window['go']['main']['App']['SetWindowTitle'](arg1);
 }
