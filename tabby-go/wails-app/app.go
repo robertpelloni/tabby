@@ -126,18 +126,18 @@ func (a *App) SFTPUpload(params api.SFTPUploadParams) (*api.SFTPTransferResult, 
 }
 
 // SFTPChmod changes file permissions on the remote server.
-func (a *App) SFTPChmod(params api.SFTPChmodParams) error {
-	return a.sftpMgr.Chmod(params)
+func (a *App) SFTPChmod(sessionID, filePath string, mode uint32) error {
+	return a.sftpMgr.Chmod(sessionID, filePath, mode)
 }
 
 // SFTPReadlink reads a symbolic link on the remote server.
-func (a *App) SFTPReadlink(params api.SFTPReadlinkParams) (string, error) {
-	return a.sftpMgr.Readlink(params)
+func (a *App) SFTPReadlink(sessionID, linkPath string) (string, error) {
+	return a.sftpMgr.Readlink(sessionID, linkPath)
 }
 
 // SFTPSymlink creates a symbolic link on the remote server.
-func (a *App) SFTPSymlink(params api.SFTPSymlinkParams) error {
-	return a.sftpMgr.Symlink(params)
+func (a *App) SFTPSymlink(sessionID, oldPath, newPath string) error {
+	return a.sftpMgr.Symlink(sessionID, oldPath, newPath)
 }
 
 // ==== System Methods ====

@@ -10,6 +10,18 @@ export function GetAvailableShells() {
   return window['go']['main']['App']['GetAvailableShells']();
 }
 
+export function GetColorScheme(arg1) {
+  return window['go']['main']['App']['GetColorScheme'](arg1);
+}
+
+export function GetColorSchemeNames() {
+  return window['go']['main']['App']['GetColorSchemeNames']();
+}
+
+export function GetColorSchemes() {
+  return window['go']['main']['App']['GetColorSchemes']();
+}
+
 export function GetDefaultShell() {
   return window['go']['main']['App']['GetDefaultShell']();
 }
@@ -28,6 +40,10 @@ export function GetHostname() {
 
 export function GetPlatform() {
   return window['go']['main']['App']['GetPlatform']();
+}
+
+export function GetProfiles() {
+  return window['go']['main']['App']['GetProfiles']();
 }
 
 export function GetSettings() {
@@ -66,8 +82,56 @@ export function ResetSettings() {
   return window['go']['main']['App']['ResetSettings']();
 }
 
+export function SFTPChmod(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SFTPChmod'](arg1, arg2, arg3);
+}
+
+export function SFTPDownload(arg1) {
+  return window['go']['main']['App']['SFTPDownload'](arg1);
+}
+
+export function SFTPList(arg1) {
+  return window['go']['main']['App']['SFTPList'](arg1);
+}
+
+export function SFTPOpen(arg1) {
+  return window['go']['main']['App']['SFTPOpen'](arg1);
+}
+
+export function SFTPReadlink(arg1, arg2) {
+  return window['go']['main']['App']['SFTPReadlink'](arg1, arg2);
+}
+
+export function SFTPSymlink(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SFTPSymlink'](arg1, arg2, arg3);
+}
+
+export function SFTPUpload(arg1) {
+  return window['go']['main']['App']['SFTPUpload'](arg1);
+}
+
+export function SSHAddForward(arg1) {
+  return window['go']['main']['App']['SSHAddForward'](arg1);
+}
+
+export function SSHClose(arg1) {
+  return window['go']['main']['App']['SSHClose'](arg1);
+}
+
 export function SSHConnect(arg1) {
   return window['go']['main']['App']['SSHConnect'](arg1);
+}
+
+export function SSHListForwards(arg1) {
+  return window['go']['main']['App']['SSHListForwards'](arg1);
+}
+
+export function SSHRemoveForward(arg1) {
+  return window['go']['main']['App']['SSHRemoveForward'](arg1);
+}
+
+export function SSHResize(arg1) {
+  return window['go']['main']['App']['SSHResize'](arg1);
 }
 
 export function SSHStartShell(arg1) {
@@ -76,6 +140,10 @@ export function SSHStartShell(arg1) {
 
 export function SSHWrite(arg1) {
   return window['go']['main']['App']['SSHWrite'](arg1);
+}
+
+export function SaveProfiles(arg1) {
+  return window['go']['main']['App']['SaveProfiles'](arg1);
 }
 
 export function SaveSessionState(arg1) {

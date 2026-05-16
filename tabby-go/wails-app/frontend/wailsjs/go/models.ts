@@ -38,6 +38,184 @@ export namespace api {
 	        this.pid = source["pid"];
 	    }
 	}
+	export class PortForwardInfo {
+	    id: string;
+	    type: string;
+	    host: string;
+	    port: number;
+	    targetAddress?: string;
+	    targetPort?: number;
+	    active: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new PortForwardInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.type = source["type"];
+	        this.host = source["host"];
+	        this.port = source["port"];
+	        this.targetAddress = source["targetAddress"];
+	        this.targetPort = source["targetPort"];
+	        this.active = source["active"];
+	    }
+	}
+	export class PortForwardParams {
+	    connectionId: string;
+	    type: string;
+	    host: string;
+	    port: number;
+	    targetAddress: string;
+	    targetPort: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new PortForwardParams(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.connectionId = source["connectionId"];
+	        this.type = source["type"];
+	        this.host = source["host"];
+	        this.port = source["port"];
+	        this.targetAddress = source["targetAddress"];
+	        this.targetPort = source["targetPort"];
+	    }
+	}
+	export class PortForwardRemoveParams {
+	    connectionId: string;
+	    forwardId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PortForwardRemoveParams(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.connectionId = source["connectionId"];
+	        this.forwardId = source["forwardId"];
+	    }
+	}
+	export class PortForwardResult {
+	    forwardId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new PortForwardResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.forwardId = source["forwardId"];
+	    }
+	}
+	export class SFTPDownloadParams {
+	    sessionId: string;
+	    remotePath: string;
+	    localPath: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SFTPDownloadParams(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sessionId = source["sessionId"];
+	        this.remotePath = source["remotePath"];
+	        this.localPath = source["localPath"];
+	    }
+	}
+	export class SFTPFile {
+	    name: string;
+	    fullPath: string;
+	    size: number;
+	    mode: number;
+	    modTime: string;
+	    isDir: boolean;
+	    isSymlink: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new SFTPFile(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.fullPath = source["fullPath"];
+	        this.size = source["size"];
+	        this.mode = source["mode"];
+	        this.modTime = source["modTime"];
+	        this.isDir = source["isDir"];
+	        this.isSymlink = source["isSymlink"];
+	    }
+	}
+	export class SFTPListParams {
+	    sessionId: string;
+	    path: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SFTPListParams(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sessionId = source["sessionId"];
+	        this.path = source["path"];
+	    }
+	}
+	export class SFTPOpenParams {
+	    connectionId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SFTPOpenParams(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.connectionId = source["connectionId"];
+	    }
+	}
+	export class SFTPOpenResult {
+	    sessionId: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SFTPOpenResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sessionId = source["sessionId"];
+	    }
+	}
+	export class SFTPTransferResult {
+	    bytesTransferred: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new SFTPTransferResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.bytesTransferred = source["bytesTransferred"];
+	    }
+	}
+	export class SFTPUploadParams {
+	    sessionId: string;
+	    localPath: string;
+	    remotePath: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SFTPUploadParams(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sessionId = source["sessionId"];
+	        this.localPath = source["localPath"];
+	        this.remotePath = source["remotePath"];
+	    }
+	}
 	export class SSHAlgorithms {
 	    hmac?: string[];
 	    kex?: string[];
@@ -80,6 +258,20 @@ export namespace api {
 	        this.agentSocketPath = source["agentSocketPath"];
 	        this.agentType = source["agentType"];
 	        this.keyboardInteractivePassthrough = source["keyboardInteractivePassthrough"];
+	    }
+	}
+	export class SSHCloseParams {
+	    connectionId: string;
+	    sessionId?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SSHCloseParams(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.connectionId = source["connectionId"];
+	        this.sessionId = source["sessionId"];
 	    }
 	}
 	export class SSHConnectParams {
@@ -174,6 +366,24 @@ export namespace api {
 	        this.authMethods = source["authMethods"];
 	    }
 	}
+	export class SSHResizeParams {
+	    connectionId: string;
+	    sessionId: string;
+	    columns: number;
+	    rows: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new SSHResizeParams(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.connectionId = source["connectionId"];
+	        this.sessionId = source["sessionId"];
+	        this.columns = source["columns"];
+	        this.rows = source["rows"];
+	    }
+	}
 	export class SSHSessionParams {
 	    connectionId: string;
 	    columns: number;
@@ -225,6 +435,92 @@ export namespace api {
 	        this.sessionId = source["sessionId"];
 	        this.data = source["data"];
 	    }
+	}
+
+}
+
+export namespace colorscheme {
+	
+	export class ColorScheme {
+	    name: string;
+	    foreground: string;
+	    background: string;
+	    cursor: string;
+	    cursorAccent?: string;
+	    selection?: string;
+	    selectionForeground?: string;
+	    colors: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ColorScheme(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.foreground = source["foreground"];
+	        this.background = source["background"];
+	        this.cursor = source["cursor"];
+	        this.cursorAccent = source["cursorAccent"];
+	        this.selection = source["selection"];
+	        this.selectionForeground = source["selectionForeground"];
+	        this.colors = source["colors"];
+	    }
+	}
+
+}
+
+export namespace profile {
+	
+	export class ConnectionProfile {
+	    id: string;
+	    type: string;
+	    name: string;
+	    group?: string;
+	    icon?: string;
+	    color?: string;
+	    disableDynamicTitle?: boolean;
+	    options: any;
+	    // Go type: time
+	    createdAt: any;
+	    // Go type: time
+	    updatedAt: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new ConnectionProfile(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.type = source["type"];
+	        this.name = source["name"];
+	        this.group = source["group"];
+	        this.icon = source["icon"];
+	        this.color = source["color"];
+	        this.disableDynamicTitle = source["disableDynamicTitle"];
+	        this.options = source["options"];
+	        this.createdAt = this.convertValues(source["createdAt"], null);
+	        this.updatedAt = this.convertValues(source["updatedAt"], null);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 
 }
@@ -285,6 +581,7 @@ export namespace session {
 export namespace settings {
 	
 	export class Settings {
+	    color_scheme: string;
 	    font_size: number;
 	    font_family: string;
 	    fallback_font: string;
@@ -356,6 +653,7 @@ export namespace settings {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.color_scheme = source["color_scheme"];
 	        this.font_size = source["font_size"];
 	        this.font_family = source["font_family"];
 	        this.fallback_font = source["fallback_font"];
