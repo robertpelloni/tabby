@@ -778,3 +778,91 @@ body.light-theme .toggle-label {
 body.light-theme .toggle-container input:checked + .toggle-label {
     background: #007acc;
 }
+
+/* ===== MODAL OVERLAY (SSH Dialog) ===== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 5000;
+    align-items: center;
+    justify-content: center;
+}
+.modal-overlay.active {
+    display: flex;
+}
+.modal-box {
+    background: #1e1e1e;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    padding: 24px;
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.modal-box h3 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #e0e0e0;
+}
+.modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+/* ===== PROFILE ITEMS ===== */
+.profile-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #999;
+    transition: background 0.1s, color 0.1s;
+}
+.profile-item:hover {
+    background: #222;
+    color: #ccc;
+}
+.profile-icon {
+    font-size: 11px;
+    width: 16px;
+    text-align: center;
+}
+.profile-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.profile-editor-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 12px;
+    color: #ccc;
+    border-bottom: 1px solid #2b2b2b;
+}
+.profile-editor-item:last-child {
+    border-bottom: none;
+}
+
+/* ===== LIGHT THEME MODAL ===== */
+body.light-theme .modal-box {
+    background: #f5f5f5;
+    border-color: #ccc;
+}
+body.light-theme .modal-box h3 {
+    color: #333;
+}
+body.light-theme .profile-item:hover {
+    background: #ddd;
+}
+body.light-theme .profile-editor-item {
+    color: #333;
+    border-color: #ccc;
+}

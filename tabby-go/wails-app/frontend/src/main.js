@@ -8,13 +8,19 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { SearchAddon } from '@xterm/addon-search';
 import {
     PTYSpawn, PTYWrite, PTYResize, PTYKill,
+    SSHConnect, SSHStartShell, SSHWrite, SSHResize, SSHClose,
     GetDefaultShell, GetAvailableShells,
+    GetColorSchemes,
     SetWindowTitle, GetSettings, SaveSettings, ResetSettings,
     SaveSessionState, LoadSessionState, ClearSessionState,
+    GetProfiles, SaveProfiles,
+    GetUsername,
 } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 
 // ===== GLOBALS =====
+const COLOR_SCHEMES = {};
+let schemeNames = [];
 const tabs = [];
 let activeTabId = null;
 let tabCounter = 0;
@@ -24,6 +30,7 @@ let findVisible = false;
 let fontSize = 14;
 let activeSplitPane = null;
 let settings = {};
+let savedProfiles = [];
 
 // ===== INIT =====
 async function init() {
@@ -31,6 +38,21 @@ async function init() {
     try { availableShells = await GetAvailableShells(); } catch (_) { availableShells = []; }
     try { settings = await GetSettings(); } catch (_) { settings = {}; }
     if (settings.FontSize) fontSize = settings.FontSize;
+
+    // Load color schemes from Go backend
+    try {
+        const schemes = await GetColorSchemes();
+        if (schemes && schemes.length) {
+            schemes.forEach(s => { COLOR_SCHEMES[s.Name] = s; });
+            schemeNames = schemes.map(s => s.Name);
+        }
+    } catch (_) {
+        schemeNames = ['Tabby Default','Tabby Default Light','Dracula','Solarized Dark','Solarized Light','Monokai','Nord','One Half Dark','One Half Light','Gruvbox Dark','Tokyo Night','Catppuccin Mocha','Catppuccin Latte','Ayu Dark','Atom One Light','Batman'];
+    }
+
+    // Load connection profiles
+    try { savedProfiles = await GetProfiles() || []; } catch (_) { savedProfiles = []; }
+
     buildUI();
     bindGlobalKeys();
     applySettingsToUI();
@@ -38,6 +60,20 @@ async function init() {
     if (!restored) newTab();
 }
 
+// ===== COLOR SCHEME HELPERS =====
+function getColorSchemeTheme(name) { const scheme = COLOR_SCHEMES[name]; if (!scheme) return null; const c = scheme.Colors || []; return { background: scheme.Background, foreground: scheme.Foreground, cursor: scheme.Cursor, cursorAccent: scheme.CursorAccent || undefined, selectionBackground: scheme.Selection || undefined, selectionForeground: scheme.SelectionForeground || undefined, black: c[0], red: c[1], green: c[2], yellow: c[3], blue: c[4], magenta: c[5], cyan: c[6], white: c[7], brightBlack: c[8], brightRed: c[9], brightGreen: c[10], brightYellow: c[11], brightBlue: c[12], brightMagenta: c[13], brightCyan: c[14], brightWhite: c[15] }; }
+function isSchemeLight(name) { const bg = (COLOR_SCHEMES[name] && COLOR_SCHEMES[name].Background) || '#171717'; return isLightColor(bg); }
+function isLightColor(hex) { if (!hex || hex.length < 7 || hex[0] !== '#') return false; const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16); return (0.299*r + 0.587*g + 0.114*b) / 255 > 0.5; }
+function applyColorScheme(name) { const theme = getColorSchemeTheme(name); if (!theme) return; tabs.forEach(t => { if (t.term) t.term.options.theme = theme; }); if (isSchemeLight(name)) { document.body.classList.add('light-theme'); document.body.classList.remove('dark-theme'); } else { document.body.classList.add('dark-theme'); document.body.classList.remove('light-theme'); } renderColorSchemePreview(name); }
+function renderColorSchemePreview(name) { const container = document.getElementById('color-scheme-preview'); if (!container) return; const scheme = COLOR_SCHEMES[name]; if (!scheme) { container.innerHTML = ''; return; } const c = scheme.Colors || []; const all = [scheme.Background, scheme.Foreground, scheme.Cursor, ...c]; container.innerHTML = all.map(color => `<div style="width:16px;height:16px;border-radius:3px;background:${color};border:1px solid #3a3a3a;" title="${color}"></div>`).join(''); }
+// ===== SSH DIALOG =====
+function openSSHDialog() { document.getElementById('ssh-dialog').classList.add('active'); document.getElementById('ssh-host').focus(); }
+function closeSSHDialog() { document.getElementById('ssh-dialog').classList.remove('active'); const t = getActiveTab(); if (t) t.term.focus(); }
+async function doSSHConnect() { const host = document.getElementById('ssh-host').value.trim(); const port = parseInt(document.getElementById('ssh-port').value) || 22; const user = document.getElementById('ssh-user').value.trim(); const auth = document.getElementById('ssh-auth').value; if (!host) { showToast('Host is required', 'error'); return; } closeSSHDialog(); showStatus('Connecting to ' + host + '...'); const authParams = { type: auth }; if (auth === 'password') authParams.password = document.getElementById('ssh-password').value; if (auth === 'publicKey') authParams.privateKeyPaths = [document.getElementById('ssh-key-path').value || '~/.ssh/id_ed25519']; try { const result = await SSHConnect({ host, port, user, auth: authParams, keepaliveInterval: 30, keepaliveCountMax: 3, readyTimeout: 15000 }); showToast('Connected to ' + host, 'success'); const tab = new Tab(defaultShell, 'ssh://' + user + '@' + host); tabs.push(tab); tab.activate(); tab.ptyId = null; tab.sshConnectionId = result.connectionId; tab.setTitle(user + '@' + host); tab.tabEl.querySelector('.tab-icon').textContent = '\U0001f510'; const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: 'xterm-256color' }); tab.sshSessionId = shellResult.sessionId; tab.isSSH = true; tab.term.onData((data) => { if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) }); }); showStatus('SSH - ' + user + '@' + host); if (document.getElementById('ssh-save-profile') && document.getElementById('ssh-save-profile').checked) { savedProfiles.push({ id: 'ssh-' + Date.now(), type: 'ssh', name: user + '@' + host, options: { host, port, user, auth, privateKeys: authParams.privateKeyPaths || [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); } } catch (err) { showToast('SSH failed: ' + err, 'error'); showStatus('SSH failed - ' + host); } }
+// ===== PROFILES =====
+function renderProfiles() { const section = document.getElementById('profiles-section'); const list = document.getElementById('profiles-list'); const editor = document.getElementById('profiles-editor-list'); if (!savedProfiles || savedProfiles.length === 0) { if (section) section.style.display = 'none'; if (editor) editor.innerHTML = '<div style="color:#666;font-size:12px;">No saved profiles yet.</div>'; return; } if (section) section.style.display = 'block'; if (list) { list.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : '\u2318'; return `<div class="profile-item" data-profile-id="${p.id}" title="${p.name}"><span class="profile-icon">${icon}</span><span class="profile-name">${p.name}</span></div>`; }).join(''); list.querySelectorAll('.profile-item').forEach(el => { el.onclick = () => { const profile = savedProfiles.find(p => p.id === el.dataset.profileId); if (profile) connectProfile(profile); }; }); } if (editor) { editor.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : '\u2318'; return `<div class="profile-editor-item"><span>${icon} ${p.name}</span><button class="btn-icon profile-delete" data-id="${p.id}" title="Delete">\u00d7</button></div>`; }).join(''); editor.querySelectorAll('.profile-delete').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; savedProfiles = savedProfiles.filter(p => p.id !== id); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); }; }); } }
+async function connectProfile(profile) { if (profile.type === 'ssh') { const opts = profile.options; openSSHDialog(); document.getElementById('ssh-host').value = opts.host || ''; document.getElementById('ssh-port').value = opts.port || 22; document.getElementById('ssh-user').value = opts.user || ''; document.getElementById('ssh-auth').value = opts.auth || 'agent'; document.getElementById('ssh-auth').dispatchEvent(new Event('change')); if (opts.auth === 'password') document.getElementById('ssh-password').value = opts.password || ''; if (opts.auth === 'publicKey' && opts.privateKeys && opts.privateKeys.length) document.getElementById('ssh-key-path').value = opts.privateKeys[0]; } else if (profile.type === 'local') { newTab(profile.options && profile.options.shell || profile.options && profile.options.command); } }
+function addProfile() { const id = 'profile-' + Date.now(); savedProfiles.push({ id, type: 'ssh', name: 'New SSH Profile', group: '', options: { host: '', port: 22, user: '', auth: 'agent' }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); showToast('Profile added', 'info'); }
 // ===== BUILD UI =====
 function buildUI() {
     document.querySelector('#app').innerHTML = `
@@ -50,6 +86,10 @@ function buildUI() {
             </div>
         </div>
         <div id="tab-list"></div>
+        <div id="profiles-section" style="border-top:1px solid #2b2b2b;padding:8px 0;max-height:200px;overflow-y:auto;display:none;">
+            <div style="padding:0 12px 4px;font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.5px;">Profiles</div>
+            <div id="profiles-list"></div>
+        </div>
         <div id="sidebar-footer">
             <div class="status-dot" id="status-dot"></div>
             <div class="status-text" id="status-text">Ready</div>
@@ -88,10 +128,14 @@ function buildUI() {
             <button class="settings-tab" data-tab="startup">🚀 Startup</button>
             <button class="settings-tab" data-tab="ssh">🔐 SSH</button>
             <button class="settings-tab" data-tab="serial">📡 Serial</button>
+            <button class="settings-tab" data-tab="profiles">📁 Profiles</button>
         </div>
         <div id="settings-content">
             <!-- Appearance -->
             <div class="settings-page active" id="settings-appearance">
+                <h3>Color Scheme</h3>
+                <div class="setting-group"><label>Terminal Color Scheme</label><select id="s-color-scheme"></select></div>
+                <div id="color-scheme-preview" style="display:flex;flex-wrap:wrap;gap:3px;padding:8px 0;"></div>
                 <h3>Font</h3>
                 <div class="setting-group"><label>Font Family</label><input type="text" id="s-font-family" placeholder="Cascadia Code, Fira Code, Consolas..."></div>
                 <div class="setting-group"><label>Font Size</label>
@@ -240,11 +284,22 @@ function buildUI() {
                 </div>
             </div>
         </div>
+            <div class="settings-page" id="settings-profiles">
+                <h3>Saved Profiles</h3>
+                <div id="profiles-editor-list" style="margin-bottom:12px;"></div>
+                <button class="btn-primary" id="btn-add-profile" style="width:100%;margin-bottom:8px;">+ Add SSH Profile</button>
+            </div>
+        </div>
         <div id="settings-actions">
             <button id="btn-reset" class="btn-secondary">Reset to Defaults</button>
             <button id="btn-save" class="btn-primary">Save Settings</button>
         </div>
     </div>`;
+
+    // Populate color scheme dropdown
+    const schemeSelect = document.getElementById('s-color-scheme');
+    schemeNames.forEach(name => { const opt = document.createElement('option'); opt.value = name; opt.textContent = name; schemeSelect.appendChild(opt); });
+    schemeSelect.onchange = () => applyColorScheme(schemeSelect.value);
 
     // Populate shell dropdown
     const shellSelect = document.getElementById('s-shell');
@@ -254,6 +309,9 @@ function buildUI() {
         opt.textContent = `${s.split(/[/\\]/).pop().replace('.exe', '')}  (${s})`;
         shellSelect.appendChild(opt);
     });
+
+    // Render profiles
+    renderProfiles();
 
     // Settings tab navigation
     document.querySelectorAll('.settings-tab').forEach(btn => {
@@ -279,11 +337,18 @@ function buildUI() {
         document.getElementById('main-content').style.opacity = parseFloat(e.target.value);
     };
 
+    // SSH auth toggle
+    document.getElementById('ssh-auth').onchange = (e) => { document.getElementById('ssh-password-group').style.display = e.target.value === 'password' ? 'block' : 'none'; document.getElementById('ssh-key-group').style.display = e.target.value === 'publicKey' ? 'block' : 'none'; };
+
     // Button bindings
     document.getElementById('btn-new-tab').onclick = (e) => showNewTabDropdown(e);
+    document.getElementById('btn-ssh').onclick = () => openSSHDialog();
     document.getElementById('btn-settings').onclick = () => toggleSettings();
     document.getElementById('settings-close').onclick = () => hideSettings();
     document.getElementById('btn-save').onclick = () => saveSettingsFromUI();
+    document.getElementById('ssh-cancel').onclick = () => closeSSHDialog();
+    document.getElementById('ssh-connect').onclick = () => doSSHConnect();
+    document.getElementById('btn-add-profile').onclick = () => addProfile();
     document.getElementById('btn-reset').onclick = () => doResetSettings();
 }
 
@@ -294,6 +359,8 @@ function applySettingsToUI() {
     const check = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
 
     // Appearance
+    set('s-color-scheme', s.ColorScheme || 'Tabby Default');
+    if (s.ColorScheme) applyColorScheme(s.ColorScheme);
     set('s-font-family', s.FontFamily);
     set('s-font-size', s.FontSize || 14);
     document.getElementById('s-font-size-val').textContent = s.FontSize || 14;
@@ -387,31 +454,15 @@ function applyTheme(theme) {
     else if (theme === 'dark') { document.body.classList.add('dark-theme'); document.body.classList.remove('light-theme'); }
     else { document.body.classList.remove('light-theme'); document.body.classList.remove('dark-theme'); }
     // Update xterm themes
-    const isDark = theme !== 'light';
-    tabs.forEach(t => {
-        if (t.term) t.term.options.theme = isDark ? DARK_THEME : LIGHT_THEME;
-    });
+    const isDark = !isSchemeLight(settings.ColorScheme || 'Tabby Default');
+    const schemeTheme = getColorSchemeTheme(settings.ColorScheme || 'Tabby Default'); tabs.forEach(t => { if (t.term && schemeTheme) t.term.options.theme = schemeTheme; });
 }
 
-const DARK_THEME = {
-    background: '#1e1e1e', foreground: '#cccccc', cursor: '#aeafad', selectionBackground: '#264f78',
-    black: '#1e1e1e', red: '#f44747', green: '#6a9955', yellow: '#d7ba7d',
-    blue: '#569cd6', magenta: '#c586c0', cyan: '#4ec9b0', white: '#cccccc',
-    brightBlack: '#666666', brightRed: '#f44747', brightGreen: '#6a9955',
-    brightYellow: '#d7ba7d', brightBlue: '#569cd6', brightMagenta: '#c586c0',
-    brightCyan: '#4ec9b0', brightWhite: '#e0e0e0',
-};
-const LIGHT_THEME = {
-    background: '#ffffff', foreground: '#333333', cursor: '#333333', selectionBackground: '#add6ff',
-    black: '#000000', red: '#cd3131', green: '#00bc00', yellow: '#949800',
-    blue: '#0451a5', magenta: '#bc05bc', cyan: '#0598bc', white: '#555555',
-    brightBlack: '#666666', brightRed: '#cd3131', brightGreen: '#00bc00',
-    brightYellow: '#949800', brightBlue: '#0451a5', brightMagenta: '#bc05bc',
-    brightCyan: '#0598bc', brightWhite: '#a0a0a0',
-};
+const FALLBACK_DARK = { background: '#1e1e1e', foreground: '#cccccc', cursor: '#aeafad', selectionBackground: '#264f78', black: '#1e1e1e', red: '#f44747', green: '#6a9955', yellow: '#d7ba7d', blue: '#569cd6', magenta: '#c586c0', cyan: '#4ec9b0', white: '#cccccc', brightBlack: '#666666', brightRed: '#f44747', brightGreen: '#6a9955', brightYellow: '#d7ba7d', brightBlue: '#569cd6', brightMagenta: '#c586c0', brightCyan: '#4ec9b0', brightWhite: '#e0e0e0' };
 
 async function saveSettingsFromUI() {
     const s = {
+        ColorScheme: document.getElementById('s-color-scheme').value || 'Tabby Default',
         FontFamily: document.getElementById('s-font-family').value.trim(),
         FontSize: parseInt(document.getElementById('s-font-size').value) || 14,
         FallbackFont: document.getElementById('s-fallback-font').value.trim(),
@@ -479,6 +530,7 @@ async function saveSettingsFromUI() {
     catch (_) { showToast('Failed to save settings', 'error'); }
     hideSettings();
 }
+GetUsername().then(u => { const el = document.getElementById('ssh-user'); if (el && !el.value) el.value = u; }).catch(() => {});
 
 function doResetSettings() {
     ResetSettings().then(() => { settings = {}; fontSize = 14; applyFontSize(14); applyTheme('dark'); applySettingsToUI(); showToast('Reset to defaults', 'info'); })
@@ -509,13 +561,13 @@ function showNewTabDropdown(e) {
 class Tab {
     constructor(shell) {
         this.id = `tab-${Date.now()}-${tabCounter++}`;
-        this.ptyId = null; this.title = 'Shell'; this.shell = shell || defaultShell; this.exited = false;
+        this.ptyId = null; this.title = 'Shell'; this.shell = shell || defaultShell; this.exited = false; this.isSSH = false; this.sshConnectionId = null; this.sshSessionId = null;
         const fontFamily = settings.FontFamily || '"Cascadia Code","Fira Code",Consolas,"Courier New",monospace';
         const lineHeight = settings.LineHeight || 1.2;
         const scrollback = settings.Scrollback || 25000;
         const cursorStyle = settings.CursorStyle || 'bar';
         const cursorBlink = settings.CursorBlink ?? true;
-        const theme = settings.Theme || 'dark';
+        const colorScheme = settings.ColorScheme || 'Tabby Default'; const theme = getColorSchemeTheme(colorScheme);
         const fontWeight = settings.FontWeight || 400;
         const fontWeightBold = settings.FontWeightBold || 700;
 
@@ -523,7 +575,7 @@ class Tab {
             cursorBlink, cursorStyle, fontFamily, fontSize, fontWeight, fontWeightBold,
             lineHeight, allowProposedApi: true, scrollback,
             bellStyle: settings.Bell || 'off',
-            theme: theme === 'light' ? LIGHT_THEME : DARK_THEME,
+            theme: theme || FALLBACK_DARK,
         });
         this.fitAddon = new FitAddon(); this.searchAddon = new SearchAddon(); this.webLinksAddon = new WebLinksAddon();
         this.term.loadAddon(this.fitAddon); this.term.loadAddon(this.searchAddon); this.term.loadAddon(this.webLinksAddon);
@@ -547,7 +599,7 @@ class Tab {
         this.term.onData((data) => { if (this.ptyId && !this.exited) PTYWrite(this.ptyId, btoa(data)); });
         this.term.onTitleChange((title) => { if (title) this.setTitle(title); });
 
-        this.dataHandler = (params) => { if ((params.ptyId ?? params.PTYID) === this.ptyId) this.term.write(atob(params.data)); };
+        this.dataHandler = (params) => { if ((params.ptyId ?? params.PTYID) === this.ptyId) this.term.write(atob(params.data)); if (this.isSSH && (params.sessionId ?? params.SessionID) === this.sshSessionId) this.term.write(atob(params.data)); };
         this.exitHandler = (params) => { if ((params.ptyId ?? params.PTYID) === this.ptyId) { this.exited = true; const code = params.exitCode ?? 0; this.term.writeln(`\r\n\x1b[1;33m[Process exited — code ${code}]\x1b[0m`); this.setTitle(`Exit (${code})`); this.tabEl.querySelector('.tab-icon').textContent = '✕'; this.tabEl.querySelector('.tab-icon').style.color = '#f44747'; } };
         window.__ptyDataHandlers = window.__ptyDataHandlers || []; window.__ptyExitHandlers = window.__ptyExitHandlers || [];
         window.__ptyDataHandlers.push(this.dataHandler); window.__ptyExitHandlers.push(this.exitHandler);
@@ -570,7 +622,7 @@ class Tab {
     close() {
         window.__ptyDataHandlers = (window.__ptyDataHandlers || []).filter(h => h !== this.dataHandler);
         window.__ptyExitHandlers = (window.__ptyExitHandlers || []).filter(h => h !== this.exitHandler);
-        if (this.ptyId) PTYKill(this.ptyId, '').catch(() => {});
+        if (this.ptyId) PTYKill(this.ptyId, '').catch(() => {}); if (this.isSSH && this.sshConnectionId) SSHClose({ connectionId: this.sshConnectionId }).catch(() => {});
         this.term.dispose(); this.wrapper.remove(); this.tabEl.remove();
         const idx = tabs.indexOf(this); if (idx > -1) tabs.splice(idx, 1);
         if (activeTabId === this.id) { if (tabs.length > 0) tabs[Math.min(idx, tabs.length - 1)].activate(); else { activeTabId = null; const w = document.getElementById('welcome'); if (w) w.style.display = 'flex'; } }
@@ -581,12 +633,14 @@ class Tab {
     findNext(q) { if (q) this.searchAddon.findNext(q); }
     findPrevious(q) { if (q) this.searchAddon.findPrevious(q); }
     copySelection() { const sel = this.term.getSelection(); if (sel) navigator.clipboard.writeText(sel).then(() => showToast('Copied', 'success')); }
-    async pasteFromClipboard() { try { const text = await navigator.clipboard.readText(); if (text && this.ptyId && !this.exited) PTYWrite(this.ptyId, btoa(text)); } catch (_) { showToast('Clipboard access denied', 'error'); } }
+    async pasteFromClipboard() { try { const text = await navigator.clipboard.readText(); if (text) { if (this.isSSH && this.sshConnectionId && this.sshSessionId) SSHWrite({ connectionId: this.sshConnectionId, sessionId: this.sshSessionId, data: btoa(text) }); else if (this.ptyId && !this.exited) PTYWrite(this.ptyId, btoa(text)); } } catch (_) { showToast('Clipboard access denied', 'error'); } }
 }
 
 // ===== PTY EVENTS =====
 EventsOn('pty.data', (params) => { (window.__ptyDataHandlers || []).forEach(h => h(params)); });
 EventsOn('pty.exit', (params) => { (window.__ptyExitHandlers || []).forEach(h => h(params)); });
+EventsOn('ssh.data', (params) => { (window.__ptyDataHandlers || []).forEach(h => h(params)); });
+EventsOn('ssh.exit', (params) => { (window.__ptyExitHandlers || []).forEach(h => h(params)); });
 
 // ===== TAB MANAGEMENT =====
 function newTab(shell) { const tab = new Tab(shell); tabs.push(tab); tab.activate(); tab.spawn(); return tab; }

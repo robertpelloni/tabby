@@ -7,6 +7,8 @@ import (
 	"runtime"
 
 	"github.com/robertpelloni/tabby/tabby-go/pkg/api"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/colorscheme"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/profile"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/session"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/pty"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ssh"
@@ -76,11 +78,71 @@ func (a *App) SSHWrite(params api.SSHWriteParams) error {
 	return a.sshMgr.Write(params)
 }
 
+// SSHResize resizes an SSH shell session.
+func (a *App) SSHResize(params api.SSHResizeParams) error {
+	return a.sshMgr.Resize(params)
+}
+
+// SSHClose closes an SSH connection or session.
+func (a *App) SSHClose(params api.SSHCloseParams) error {
+	return a.sshMgr.Close(params)
+}
+
+// SSHAddForward adds a port forward to an active SSH connection.
+func (a *App) SSHAddForward(params api.PortForwardParams) (*api.PortForwardResult, error) {
+	return a.sshMgr.AddForward(params)
+}
+
+// SSHRemoveForward removes a port forward.
+func (a *App) SSHRemoveForward(params api.PortForwardRemoveParams) error {
+	return a.sshMgr.RemoveForward(params)
+}
+
+// SSHListForwards lists active port forwards for a connection.
+func (a *App) SSHListForwards(connectionID string) []api.PortForwardInfo {
+	return a.sshMgr.ListForwards(connectionID)
+}
+
+// ==== SFTP Methods ====
+
+// SFTPOpen opens an SFTP session over an existing SSH connection.
+func (a *App) SFTPOpen(params api.SFTPOpenParams) (*api.SFTPOpenResult, error) {
+	return a.sftpMgr.Open(params)
+}
+
+// SFTPList lists files in a directory on the remote server.
+func (a *App) SFTPList(params api.SFTPListParams) ([]api.SFTPFile, error) {
+	return a.sftpMgr.List(params)
+}
+
+// SFTPDownload downloads a file from the remote server.
+func (a *App) SFTPDownload(params api.SFTPDownloadParams) (*api.SFTPTransferResult, error) {
+	return a.sftpMgr.Download(params)
+}
+
+// SFTPUpload uploads a file to the remote server.
+func (a *App) SFTPUpload(params api.SFTPUploadParams) (*api.SFTPTransferResult, error) {
+	return a.sftpMgr.Upload(params)
+}
+
+// SFTPChmod changes file permissions on the remote server.
+func (a *App) SFTPChmod(params api.SFTPChmodParams) error {
+	return a.sftpMgr.Chmod(params)
+}
+
+// SFTPReadlink reads a symbolic link on the remote server.
+func (a *App) SFTPReadlink(params api.SFTPReadlinkParams) (string, error) {
+	return a.sftpMgr.Readlink(params)
+}
+
+// SFTPSymlink creates a symbolic link on the remote server.
+func (a *App) SFTPSymlink(params api.SFTPSymlinkParams) error {
+	return a.sftpMgr.Symlink(params)
+}
+
 // ==== System Methods ====
 
 // GetDefaultShell returns the default shell for the current OS.
-// On Windows: prefers PowerShell, falls back to cmd.exe.
-// On Unix: uses $SHELL env, falls back to /bin/bash.
 func (a *App) GetDefaultShell() string {
 	if runtime.GOOS == "windows" {
 		if path, err := exec.LookPath("powershell.exe"); err == nil {
@@ -101,44 +163,25 @@ func (a *App) GetDefaultShell() string {
 func (a *App) GetAvailableShells() []string {
 	var shells []string
 	if runtime.GOOS == "windows" {
-		candidates := []string{
-			"powershell.exe",
-			"pwsh.exe",
-			"cmd.exe",
-			"bash.exe",
-			"wsl.exe",
-		}
+		candidates := []string{"powershell.exe", "pwsh.exe", "cmd.exe", "bash.exe", "wsl.exe"}
 		for _, c := range candidates {
 			if path, err := exec.LookPath(c); err == nil {
 				shells = append(shells, path)
 			}
 		}
 	} else {
-		candidates := []string{
-			"/bin/bash",
-			"/bin/zsh",
-			"/bin/fish",
-			"/bin/sh",
-			"/usr/local/bin/fish",
-			"/opt/homebrew/bin/fish",
-		}
+		candidates := []string{"/bin/bash", "/bin/zsh", "/bin/fish", "/bin/sh", "/usr/local/bin/fish", "/opt/homebrew/bin/fish"}
 		for _, c := range candidates {
 			if _, err := os.Stat(c); err == nil {
 				shells = append(shells, c)
 			}
 		}
-		// Ensure user's $SHELL is first
 		if shell := os.Getenv("SHELL"); shell != "" {
 			found := false
 			for _, s := range shells {
-				if s == shell {
-					found = true
-					break
-				}
+				if s == shell { found = true; break }
 			}
-			if !found {
-				shells = append([]string{shell}, shells...)
-			}
+			if !found { shells = append([]string{shell}, shells...) }
 		}
 	}
 	return shells
@@ -183,9 +226,7 @@ func (a *App) OpenInBrowser(url string) {
 // SelectDirectory opens a native directory picker dialog.
 func (a *App) SelectDirectory(title string) string {
 	if a.ctx != nil {
-		path, _ := wailsRuntime.OpenDirectoryDialog(a.ctx, wailsRuntime.OpenDialogOptions{
-			Title: title,
-		})
+		path, _ := wailsRuntime.OpenDirectoryDialog(a.ctx, wailsRuntime.OpenDialogOptions{Title: title})
 		return path
 	}
 	return ""
@@ -196,6 +237,23 @@ func (a *App) SetWindowTitle(title string) {
 	if a.ctx != nil {
 		wailsRuntime.WindowSetTitle(a.ctx, title)
 	}
+}
+
+// ==== Color Schemes ====
+
+// GetColorSchemes returns all built-in color schemes.
+func (a *App) GetColorSchemes() []colorscheme.ColorScheme {
+	return colorscheme.BuiltInSchemes
+}
+
+// GetColorSchemeNames returns just the names of all built-in color schemes.
+func (a *App) GetColorSchemeNames() []string {
+	return colorscheme.GetSchemeNames()
+}
+
+// GetColorScheme returns a single color scheme by name.
+func (a *App) GetColorScheme(name string) *colorscheme.ColorScheme {
+	return colorscheme.GetBuiltInScheme(name)
 }
 
 // ==== Settings ====
@@ -228,6 +286,18 @@ func (a *App) GetDefaultShellPreferred() (string, error) {
 	return a.GetDefaultShell(), nil
 }
 
+// ==== Connection Profiles ====
+
+// GetProfiles returns all saved connection profiles.
+func (a *App) GetProfiles() ([]profile.ConnectionProfile, error) {
+	return profile.LoadProfiles()
+}
+
+// SaveProfiles persists connection profiles to disk.
+func (a *App) SaveProfiles(profiles []profile.ConnectionProfile) error {
+	return profile.SaveProfiles(profiles)
+}
+
 // ==== Session Persistence ====
 
 // SaveSessionState persists which tabs were open so they can be restored on restart.
@@ -248,7 +318,6 @@ func (a *App) ClearSessionState() error {
 // ==== Internal ====
 
 // emit sends a named event with parameters to the frontend via Wails events.
-// This is used for streaming PTY data, exit notifications, SSH data, etc.
 func (a *App) emit(method string, params interface{}) {
 	if a.ctx != nil {
 		wailsRuntime.EventsEmit(a.ctx, method, params)

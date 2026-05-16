@@ -13,6 +13,8 @@ import (
 
 // Settings holds all user-configurable preferences, mirroring the original Tabby settings.
 type Settings struct {
+	// ---- Color Scheme ----
+	ColorScheme string `toml:"color_scheme" json:"color_scheme"` // Name of a built-in color scheme
 	// ---- Appearance ----
 	FontSize     int     `toml:"font_size" json:"font_size"`
 	FontFamily   string  `toml:"font_family" json:"font_family"`
@@ -110,6 +112,9 @@ type Settings struct {
 // with platform-specific overrides.
 func DefaultSettings() Settings {
 	s := Settings{
+		// Color Scheme
+		ColorScheme: "Tabby Default",
+
 		// Appearance
 		FontSize:     14,
 		FontFamily:   "Cascadia Code,Fira Code,Consolas,Courier New,monospace",
@@ -282,4 +287,26 @@ func SaveSettings(s Settings) error {
 // ResetSettings resets settings to defaults and saves them.
 func ResetSettings() error {
 	return SaveSettings(DefaultSettings())
+}
+
+// ListColorSchemes returns the names of available color schemes.
+func ListColorSchemes() []string {
+	return []string{
+		"Tabby Default",
+		"Tabby Default Light",
+		"Dracula",
+		"Solarized Dark",
+		"Solarized Light",
+		"Monokai",
+		"Nord",
+		"One Half Dark",
+		"One Half Light",
+		"Gruvbox Dark",
+		"Tokyo Night",
+		"Catppuccin Mocha",
+		"Catppuccin Latte",
+		"Ayu Dark",
+		"Atom One Light",
+		"Batman",
+	}
 }
