@@ -32,7 +32,7 @@ SFTPChmod, SFTPReadlink, SFTPSymlink,
 
 ImportSSHConfig,
 
-GetUsername, GetHomeDir, GetPlatform, GetNotifications, GetUnreadNotifications, MarkNotificationRead, ClearNotifications,
+GetUsername, GetHomeDir, GetPlatform, GetNotifications, GetUnreadNotifications, MarkNotificationRead, ClearNotifications, SelectDirectory,
 
 } from '../wailsjs/go/main/App';
 
@@ -969,28 +969,14 @@ async function sftpDownloadSelected() {
 }
 
 async function sftpDownloadFile(remotePath, fileName) {
-
   try {
-
-    const result = await SFTPDownload({
-
-      sessionId: sftpSessionId,
-
-      remotePath: remotePath,
-
-      localPath: fileName
-
-    });
-
-    showToast('Downloaded: ' + fileName, 'success');
-
-  } catch (err) {
-
-    showToast('Download failed: ' + err, 'error');
-
-  }
-
+    const dir = await SelectDirectory('Choose download folder for ' + fileName);
+    const localPath = (dir ? dir.replace(/\/$/, '') + '/' + fileName : fileName);
+    const result = await SFTPDownload({ sessionId: sftpSessionId, remotePath: remotePath, localPath: localPath });
+    showToast('Downloaded: ' + fileName + ' -> ' + localPath, 'success');
+  } catch (err) { showToast('Download failed: ' + err, 'error'); }
 }
+
 
 async function sftpUploadFile(event) {
 
@@ -1706,9 +1692,32 @@ async function showAboutDialog() {
 
 
 // ===== NOTIFICATION CENTER =====
-function showNotificationCenter() {
+async function showNotificationCenter() {
   const panel = document.getElementById('notification-center');
-  if (panel) panel.classList.toggle('active');
+  if (panel) {
+    panel.classList.toggle('active');
+    if (panel.classList.contains('active')) {
+      try {
+        const notifs = await GetNotifications();
+        const list = document.getElementById('notification-list');
+        if (list) {
+          if (!notifs || notifs.length === 0) {
+            list.innerHTML = '<div style="color:#666;font-size:12px;text-align:center;padding:20px;">No notifications</div>';
+          } else {
+            list.innerHTML = notifs.map(n => {
+              const levelColor = n.Level === 2 ? '#f44747' : n.Level === 1 ? '#e8a84c' : '#4ca8e8';
+              const time = new Date(n.Timestamp).toLocaleTimeString();
+              return '<div class="notif-item" style="padding:8px 12px;border-bottom:1px solid #2a2a2a;">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+                '<span style="font-size:12px;color:' + levelColor + ';font-weight:600;">' + (n.Title || 'Notification') + '</span>' +
+                '<span style="font-size:10px;color:#666;">' + time + '</span></div>' +
+                '<div style="font-size:11px;color:#aaa;margin-top:4px;">' + (n.Message || '') + '</div></div>';
+            }).join('');
+          }
+        }
+      } catch (err) { console.error('Failed to load notifications:', err); }
+    }
+  }
 }
 
 // ===== CUSTOM CSS =====
@@ -1819,7 +1828,7 @@ function buildUI() {
 
                 <button class="btn-icon" id="btn-new-tab" title="New Tab (Ctrl+Shift+T)">+</button>
 
-                <button class="btn-icon" id="btn-serial" title="Serial Port">\ud83d\udce1</button><button class="btn-icon" id="btn-telnet" title="Telnet Connect">\ud83c\udf10</button><button class="btn-icon" id="btn-command-palette" title="Command Palette (Ctrl+Shift+P)">&#9881;</button><button class="btn-icon" id="btn-import-ssh-config" title="Import SSH Config">&#128272;</button><button class="btn-icon" id="btn-settings" title="Settings (Ctrl+,)">⚙</button>
+                <button class="btn-icon" id="btn-serial" title="Serial Port">\ud83d\udce1</button><button class="btn-icon" id="btn-telnet" title="Telnet Connect">\ud83c\udf10</button><button class="btn-icon" id="btn-notifications" title="Notifications">&#x1f514;</button><button class="btn-icon" id="btn-command-palette" title="Command Palette (Ctrl+Shift+P)">&#9881;</button><button class="btn-icon" id="btn-import-ssh-config" title="Import SSH Config">&#128272;</button><button class="btn-icon" id="btn-settings" title="Settings (Ctrl+,)">⚙</button>
 
             </div>
 
@@ -2389,6 +2398,7 @@ function buildUI() {
     document.getElementById('sftp-dialog').ondrop = (e) => { e.preventDefault(); sftpHandleDrop(e); };
     document.getElementById('sftp-close-btn').onclick = () => closeSFTPBrowser();
 
+    document.getElementById('btn-notifications').onclick = () => showNotificationCenter();
     document.getElementById('btn-command-palette').onclick = () => toggleCommandPalette();
 
     document.getElementById('btn-import-ssh-config').onclick = () => importSSHConfig();

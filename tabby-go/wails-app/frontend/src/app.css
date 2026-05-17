@@ -1242,3 +1242,7 @@ body.light-theme .profile-group-header {
     border-color: #ddd;
     background: #f0f0f0;
 }
+
+/* ===== NOTIFICATION BELL ===== */
+#btn-notifications { font-size: 14px; line-height: 1; }
+body.light-theme #btn-notifications { color: #555; }
