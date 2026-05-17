@@ -601,7 +601,7 @@ function buildToolbar(tab) {
   html += '<button class="toolbar-btn" onclick="getActiveTab().pasteFromClipboard()" title="Paste">P</button>';
   html += '<button class="toolbar-btn" onclick="toggleFind()" title="Find">F</button>';
   html += '<button class="toolbar-btn" onclick="clearTerminal()" title="Clear">X</button>';
-  html += '<button class="toolbar-btn toolbar-pin" onclick="toggleToolbarPin(\''" + tab.id + "'\')" title="Pin">Pin</button>';
+  html += '<button class="toolbar-btn toolbar-pin" data-tab-id="' + tab.id + '" onclick="toggleToolbarPin(this.dataset.tabId)" title="Pin">Pin</button>';
   html += '</div>';
   return html;
 }
