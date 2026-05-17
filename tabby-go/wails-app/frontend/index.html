@@ -27,6 +27,7 @@
     <div class="setting-group" id="ssh-key-group" style="display:none;"><label>Private Key Path</label><input type="text" id="ssh-key-path" placeholder="~/.ssh/id_ed25519"></div>
     <div class="setting-group"><label>Jump Host</label><input type="text" id="ssh-jump-host" placeholder="bastion.example.com (optional)"></div>
   <div class="setting-group"><label>Jump Host</label><input type="text" id="ssh-jump-host" placeholder="bastion.example.com (optional)"></div>
+  <div class="setting-group"><label>Login Script</label><textarea id="ssh-login-script" rows="3" placeholder="Commands to run after connect (one per line)&#10;# This is a comment&#10;cd /var/log&#10;ls -la" style="width:100%;background:#1e1e1e;border:1px solid #3a3a3a;color:#ccc;padding:8px;border-radius:4px;font-family:monospace;font-size:12px;resize:vertical;"></textarea></div>
   <div class="setting-group"><label>Save as Profile</label><div class="toggle-container"><input type="checkbox" id="ssh-save-profile"><label for="ssh-save-profile" class="toggle-label"></label></div></div>
     <div class="modal-actions">
       <button class="btn-secondary" id="ssh-cancel">Cancel</button>
@@ -142,7 +143,37 @@
   </div>
 </div>
 
+<!-- Profile Edit Dialog -->
+<div id="profile-edit-dialog" class="modal-overlay">
+  <div class="modal-box">
+    <h3>Edit Profile</h3>
+    <input type="hidden" id="edit-profile-id">
+    <div class="setting-group"><label>Name</label><input type="text" id="edit-profile-name"></div>
+    <div class="setting-group"><label>Group</label><input type="text" id="edit-profile-group" placeholder="e.g. Production"></div>
+    <div class="setting-group"><label>Host</label><input type="text" id="edit-profile-host"></div>
+    <div class="setting-group"><label>Port</label><input type="number" id="edit-profile-port" value="22"></div>
+    <div class="setting-group"><label>User</label><input type="text" id="edit-profile-user"></div>
+    <div class="setting-group"><label>Auth</label>
+      <select id="edit-profile-auth"><option value="agent">SSH Agent</option><option value="publicKey">Public Key</option><option value="password">Password</option></select>
+    </div>
+    <div class="setting-group"><label>Private Key Path</label><input type="text" id="edit-profile-key" placeholder="~/.ssh/id_ed25519"></div>
+    <div class="setting-group"><label>Jump Host</label><input type="text" id="edit-profile-jump" placeholder="bastion.example.com"></div>
+    <div class="setting-group"><label>Login Script</label><textarea id="edit-profile-login-script" rows="3" style="width:100%;background:#1e1e1e;border:1px solid #3a3a3a;color:#ccc;padding:8px;border-radius:4px;font-family:monospace;font-size:12px;resize:vertical;" placeholder="Commands to run after connect"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="edit-profile-cancel">Cancel</button>
+      <button class="btn-primary" id="edit-profile-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tab Search Bar -->
+<div id="tab-search-bar" class="tab-search-bar">
+  <input type="text" id="tab-search-input" placeholder="Search tabs...">
+  <div id="tab-search-results" class="tab-search-results"></div>
+</div>
+
 <!-- SFTP File Browser Dialog -->
+
 <div id="sftp-dialog" class="modal-overlay">
   <div class="modal-box" style="width:650px;max-height:80vh;">
     <h3 style="display:flex;justify-content:space-between;align-items:center;">

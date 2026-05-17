@@ -166,7 +166,11 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
 
     }
 
-    tab.setTitle(user + '@' + host + jumpLabel); tab.tabEl.querySelector('.tab-icon').textContent = '\U0001f510'; const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: 'xterm-256color' }); tab.sshSessionId = shellResult.sessionId; tab.isSSH = true; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.term.onData((data) => { if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) }); }); let statusText = 'SSH - ' + user + '@' + host;
+    tab.setTitle(user + '@' + host + jumpLabel); tab.tabEl.querySelector('.tab-icon').textContent = '\U0001f510'; const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: 'xterm-256color' }); tab.sshSessionId = shellResult.sessionId; tab.isSSH = true; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.term.onData((data) => { if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) }); });
+    setupInputProcessing(tab.term, tab);
+    const loginScriptEl = document.getElementById('ssh-login-script');
+    if (loginScriptEl && loginScriptEl.value.trim()) runLoginScript(tab, loginScriptEl.value);
+ let statusText = 'SSH - ' + user + '@' + host;
 
     if (result.jumpChain && result.jumpChain.length > 0) {
 
@@ -1555,9 +1559,127 @@ async function importSSHConfig() {
 
 
 
+
+// ===== PROFILE EDITOR =====
+function editProfile(profile) {
+  const modal = document.getElementById('profile-edit-dialog');
+  if (!modal) return;
+  modal.classList.add('active');
+  document.getElementById('edit-profile-id').value = profile.id;
+  document.getElementById('edit-profile-name').value = profile.name || '';
+  document.getElementById('edit-profile-group').value = profile.group || '';
+  const opts = profile.options || {};
+  document.getElementById('edit-profile-host').value = opts.host || '';
+  document.getElementById('edit-profile-port').value = opts.port || 22;
+  document.getElementById('edit-profile-user').value = opts.user || '';
+  document.getElementById('edit-profile-auth').value = opts.auth || 'agent';
+  document.getElementById('edit-profile-key').value = (opts.privateKeys && opts.privateKeys[0]) || '';
+  document.getElementById('edit-profile-jump').value = opts.jumpHost || '';
+  document.getElementById('edit-profile-login-script').value = opts.loginScript || '';
+}
+function closeProfileEditor() {
+  document.getElementById('profile-edit-dialog').classList.remove('active');
+  const t = getActiveTab(); if (t) t.term.focus();
+}
+function saveProfileEdit() {
+  const id = document.getElementById('edit-profile-id').value;
+  const profile = savedProfiles.find(p => p.id === id);
+  if (!profile) return;
+  profile.name = document.getElementById('edit-profile-name').value.trim();
+  profile.group = document.getElementById('edit-profile-group').value.trim();
+  if (!profile.options) profile.options = {};
+  profile.options.host = document.getElementById('edit-profile-host').value.trim();
+  profile.options.port = parseInt(document.getElementById('edit-profile-port').value) || 22;
+  profile.options.user = document.getElementById('edit-profile-user').value.trim();
+  profile.options.auth = document.getElementById('edit-profile-auth').value;
+  const keyPath = document.getElementById('edit-profile-key').value.trim();
+  profile.options.privateKeys = keyPath ? [keyPath] : [];
+  profile.options.jumpHost = document.getElementById('edit-profile-jump').value.trim();
+  profile.options.loginScript = document.getElementById('edit-profile-login-script').value.trim();
+  profile.updatedAt = new Date().toISOString();
+  SaveProfiles(savedProfiles).catch(() => {});
+  renderProfiles();
+  closeProfileEditor();
+  showToast('Profile saved: ' + profile.name, 'success');
+}
+
+// ===== TAB SEARCH =====
+let tabSearchVisible = false;
+function toggleTabSearch() {
+  tabSearchVisible = !tabSearchVisible;
+  const el = document.getElementById('tab-search-bar');
+  if (tabSearchVisible) {
+    el.classList.add('active');
+    const input = document.getElementById('tab-search-input');
+    input.value = '';
+    input.focus();
+    filterTabs();
+  } else {
+    el.classList.remove('active');
+    const t = getActiveTab(); if (t) t.term.focus();
+  }
+}
+function filterTabs() {
+  const query = (document.getElementById('tab-search-input').value || '').toLowerCase();
+  const results = document.getElementById('tab-search-results');
+  if (!results) return;
+  const filtered = tabs.filter(t => (t.title || '').toLowerCase().includes(query));
+  results.innerHTML = filtered.map((t, i) => {
+    const type = t.isSSH ? 'SSH' : (t.isSerial ? 'SER' : (t.isTelnet ? 'TEL' : 'LOCAL'));
+    return '<div class="tab-search-item" data-tab-id="' + t.id + '">' +
+      '<span class="tab-search-type">' + type + '</span>' +
+      '<span class="tab-search-title">' + (t.title || 'shell') + '</span></div>';
+  }).join('');
+  results.querySelectorAll('.tab-search-item').forEach(el => {
+    el.onclick = () => {
+      const tab = tabs.find(t => t.id === el.dataset.tabId);
+      if (tab) { tab.activate(); toggleTabSearch(); }
+    };
+  });
+}
+
+// ===== LOGIN SCRIPTS =====
+function runLoginScript(tab, script) {
+  if (!script || !script.trim()) return;
+  const lines = script.split('\n');
+  let delay = 500; // Initial delay after connection
+  lines.forEach((line, i) => {
+    setTimeout(() => {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) return; // Skip comments and empty lines
+      if (tab.isSSH && tab.sshConnectionId && tab.sshSessionId) {
+        SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(trimmed + '\r') });
+      } else if (tab.ptyId && !tab.exited) {
+        PTYWrite(tab.ptyId, btoa(trimmed + '\r'));
+      } else if (tab.telnetConnectionId) {
+        TelnetWrite(tab.telnetConnectionId, btoa(trimmed + '\r'));
+      }
+    }, delay + (i * 300));
+  });
+}
+
+// ===== INPUT PROCESSING =====
+// Right-click paste support
+function setupInputProcessing(term, tab) {
+  // Handle right-click paste
+  term.element.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (settings.RightClickPaste !== false) {
+      tab.pasteFromClipboard();
+    }
+  });
+  // Handle copy on select
+  if (settings.CopyOnSelect) {
+    term.onSelectionChange(() => {
+      const sel = term.getSelection();
+      if (sel) navigator.clipboard.writeText(sel).catch(() => {});
+    });
+  }
+}
+
 // ===== PROFILES =====
 
-function renderProfiles() { const section = document.getElementById('profiles-section'); const list = document.getElementById('profiles-list'); const editor = document.getElementById('profiles-editor-list'); if (!savedProfiles || savedProfiles.length === 0) { if (section) section.style.display = 'none'; if (editor) editor.innerHTML = '<div style="color:#666;font-size:12px;">No saved profiles yet.</div>'; return; } if (section) section.style.display = 'block'; if (list) { list.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : '\u2318'; return `<div class="profile-item" data-profile-id="${p.id}" title="${p.name}"><span class="profile-icon">${icon}</span><span class="profile-name">${p.name}</span></div>`; }).join(''); list.querySelectorAll('.profile-item').forEach(el => { el.onclick = () => { const profile = savedProfiles.find(p => p.id === el.dataset.profileId); if (profile) connectProfile(profile); }; }); } if (editor) { editor.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : '\u2318'; return `<div class="profile-editor-item"><span>${icon} ${p.name}</span><button class="btn-icon profile-delete" data-id="${p.id}" title="Delete">\u00d7</button></div>`; }).join(''); editor.querySelectorAll('.profile-delete').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; savedProfiles = savedProfiles.filter(p => p.id !== id); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); }; }); } }
+function renderProfiles() { const section = document.getElementById('profiles-section'); const list = document.getElementById('profiles-list'); const editor = document.getElementById('profiles-editor-list'); if (!savedProfiles || savedProfiles.length === 0) { if (section) section.style.display = 'none'; if (editor) editor.innerHTML = '<div style="color:#666;font-size:12px;">No saved profiles yet.</div>'; return; } if (section) section.style.display = 'block'; if (list) { list.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : '\u2318'; return `<div class="profile-item" data-profile-id="${p.id}" title="${p.name}"><span class="profile-icon">${icon}</span><span class="profile-name">${p.name}</span></div>`; }).join(''); list.querySelectorAll('.profile-item').forEach(el => { el.onclick = () => { const profile = savedProfiles.find(p => p.id === el.dataset.profileId); if (profile) connectProfile(profile); }; }); } if (editor) { editor.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : '\u2318'; return `<div class="profile-editor-item"><span>${icon} ${p.name}</span><button class="btn-icon profile-edit" data-id="${p.id}" title="Edit">\u270e</button><button class="btn-icon profile-delete" data-id="${p.id}" title="Delete">\u00d7</button></div>`; }).join(''); editor.querySelectorAll('.profile-edit').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; const profile = savedProfiles.find(p => p.id === id); if (profile) editProfile(profile); }; }); editor.querySelectorAll('.profile-delete').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; savedProfiles = savedProfiles.filter(p => p.id !== id); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); }; }); } }
 
 async function connectProfile(profile) { if (profile.type === 'ssh') { const opts = profile.options; openSSHDialog(); document.getElementById('ssh-host').value = opts.host || ''; document.getElementById('ssh-port').value = opts.port || 22; document.getElementById('ssh-user').value = opts.user || ''; document.getElementById('ssh-auth').value = opts.auth || 'agent'; document.getElementById('ssh-auth').dispatchEvent(new Event('change')); if (opts.auth === 'password') document.getElementById('ssh-password').value = opts.password || ''; if (opts.auth === 'publicKey' && opts.privateKeys && opts.privateKeys.length) document.getElementById('ssh-key-path').value = opts.privateKeys[0]; } else if (profile.type === 'serial') {
 
@@ -2202,6 +2324,10 @@ function buildUI() {
     document.getElementById('ssh-connect').onclick = () => doSSHConnect();
 
     document.getElementById('btn-add-profile').onclick = () => addProfile();
+    document.getElementById('edit-profile-save').onclick = () => saveProfileEdit();
+    document.getElementById('edit-profile-cancel').onclick = () => closeProfileEditor();
+    document.getElementById('tab-search-input').oninput = () => filterTabs();
+    document.getElementById('tab-search-input').onkeydown = (e) => { if (e.key === 'Escape') toggleTabSearch(); };
 
     document.getElementById('btn-reset').onclick = () => doResetSettings();
 
@@ -2710,6 +2836,7 @@ class Tab {
 
 
         this.term.onData((data) => { if (this.ptyId && !this.exited) PTYWrite(this.ptyId, btoa(data)); });
+  setupInputProcessing(this.term, this);
 
         this.term.onTitleChange((title) => { if (title) this.setTitle(title); });
 
@@ -3050,7 +3177,8 @@ function bindGlobalKeys() {
 
     if (ctrl && shift && e.key === 'P') { e.preventDefault(); toggleCommandPalette(); return; }
 
-    if (ctrl && shift && e.key === 'S') { e.preventDefault(); openSerialDialog(); return; }
+    if (ctrl && shift && e.key === 'F') { e.preventDefault(); toggleTabSearch(); return; }
+      if (ctrl && shift && e.key === 'S') { e.preventDefault(); openSerialDialog(); return; }
 
     if (ctrl && shift && e.key === 'N') { e.preventDefault(); openTelnetDialog(); return; }
 

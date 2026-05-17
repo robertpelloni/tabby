@@ -1107,3 +1107,96 @@ body.light-theme .palette-item { color: #333; }
 body.light-theme .palette-item:hover,
 body.light-theme .palette-item.selected { background: #0078d4; color: #fff; }
 body.light-theme #cmd-palette-input { background: #f5f5f5; border-color: #ddd; color: #333; }
+
+/* ===== TAB SEARCH BAR ===== */
+.tab-search-bar {
+    display: none;
+    position: fixed;
+    top: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    width: 400px;
+    background: #1e1e1e;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.tab-search-bar.active { display: block; }
+.tab-search-bar input {
+    width: 100%;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #333;
+    color: #ccc;
+    font-size: 14px;
+    outline: none;
+}
+.tab-search-results {
+    max-height: 250px;
+    overflow-y: auto;
+}
+.tab-search-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    cursor: pointer;
+    color: #ccc;
+    font-size: 13px;
+    transition: background 0.08s;
+}
+.tab-search-item:hover { background: #094771; color: #fff; }
+.tab-search-type {
+    padding: 2px 6px;
+    background: #2a2a2a;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #888;
+    min-width: 40px;
+    text-align: center;
+}
+.tab-search-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ===== PROFILE EDIT BUTTON ===== */
+.profile-edit {
+    color: #4ec94e !important;
+    margin-right: 4px;
+}
+.profile-edit:hover { color: #6bdb6b !important; }
+
+/* ===== LOGIN SCRIPT TEXTAREA ===== */
+#ssh-login-script,
+#edit-profile-login-script {
+    width: 100%;
+    min-height: 60px;
+    background: #1e1e1e;
+    border: 1px solid #3a3a3a;
+    color: #ccc;
+    padding: 8px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+    font-size: 12px;
+    resize: vertical;
+}
+
+/* ===== LIGHT THEME ===== */
+body.light-theme .tab-search-bar {
+    background: #fff;
+    border-color: #ddd;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+body.light-theme .tab-search-bar input { color: #333; border-color: #ddd; }
+body.light-theme .tab-search-item { color: #333; }
+body.light-theme .tab-search-item:hover { background: #0078d4; color: #fff; }
+body.light-theme .tab-search-type { background: #e0e0e0; color: #666; }
+body.light-theme .profile-edit { color: #155724 !important; }
+body.light-theme #ssh-login-script,
+body.light-theme #edit-profile-login-script {
+    background: #f5f5f5;
+    border-color: #ccc;
+    color: #333;
+}
