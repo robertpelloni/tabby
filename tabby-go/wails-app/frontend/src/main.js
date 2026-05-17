@@ -14,6 +14,7 @@ import {
  GetProfiles, SaveProfiles, SFTPOpen, SFTPList, SFTPDownload, SFTPUpload, SFTPDelete,
 SFTPRename, SFTPMkdir, SFTPStat, SFTPClose, SFTPRmdir, SFTPReadDir, SFTPMkdirAll,
 SFTPChmod, SFTPReadlink, SFTPSymlink,
+ImportSSHConfig,
 GetUsername,
 } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
@@ -797,6 +798,200 @@ async function importSSHConfig() {
 }
 
 
+
+
+// ===== TERMINAL TOOLBAR =====
+function buildToolbar(tab) {
+  let html = '<div class="terminal-toolbar" id="toolbar-' + tab.id + '">';
+  if (tab.isSSH) {
+    html += '<span class="toolbar-badge ssh">SSH</span>';
+    html += '<span class="toolbar-info">' + escHtml(tab.title || 'ssh') + '</span>';
+    html += '<button class="toolbar-btn" onclick="openSFTPBrowser(getActiveTab().sshConnectionId)" title="SFTP">\U0001f4c2</button>';
+    html += '<button class="toolbar-btn" onclick="openForwardDialog(getActiveTab().sshConnectionId)" title="Forward">\U0001f504</button>';
+  } else if (tab.isSerial) {
+    html += '<span class="toolbar-badge serial">SER</span>';
+    html += '<span class="toolbar-info">' + escHtml(tab.title || 'serial') + '</span>';
+  } else if (tab.isTelnet) {
+    html += '<span class="toolbar-badge telnet">TEL</span>';
+    html += '<span class="toolbar-info">' + escHtml(tab.title || 'telnet') + '</span>';
+  } else {
+    html += '<span class="toolbar-badge local">LOCAL</span>';
+    html += '<span class="toolbar-info">' + escHtml(tab.title || 'shell') + '</span>';
+  }
+  html += '<div class="toolbar-spacer"></div>';
+  html += '<button class="toolbar-btn" onclick="getActiveTab().copySelection()" title="Copy">C</button>';
+  html += '<button class="toolbar-btn" onclick="getActiveTab().pasteFromClipboard()" title="Paste">P</button>';
+  html += '<button class="toolbar-btn" onclick="toggleFind()" title="Find">F</button>';
+  html += '<button class="toolbar-btn" onclick="clearTerminal()" title="Clear">X</button>';
+  html += '<button class="toolbar-btn toolbar-pin" onclick="toggleToolbarPin(\''" + tab.id + "'\')" title="Pin">Pin</button>';
+  html += '</div>';
+  return html;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function updateToolbar(tab) {
+  if (!tab || !tab.wrapper) return;
+  let toolbar = tab.wrapper.querySelector('.terminal-toolbar');
+  const div = document.createElement('div');
+  div.innerHTML = buildToolbar(tab);
+  const newToolbar = div.firstElementChild;
+  if (toolbar) toolbar.replaceWith(newToolbar);
+  else tab.wrapper.insertBefore(newToolbar, tab.wrapper.firstChild);
+}
+
+function toggleToolbarPin(tabId) {
+  const tab = tabs.find(t => t.id === tabId);
+  if (!tab) return;
+  tab.pinToolbar = !tab.pinToolbar;
+  const toolbar = tab.wrapper.querySelector('.terminal-toolbar');
+  if (toolbar) {
+    toolbar.classList.toggle('pinned', tab.pinToolbar);
+    toolbar.classList.toggle('unpinned', !tab.pinToolbar);
+  }
+}
+
+function clearTerminal() {
+  const tab = getActiveTab();
+  if (tab) { tab.term.clear(); tab.term.focus(); }
+}
+
+function showToolbarForTab(tab) {
+  if (!tab || !tab.wrapper || tab.pinToolbar) return;
+  const toolbar = tab.wrapper.querySelector('.terminal-toolbar');
+  if (toolbar) toolbar.classList.add('visible');
+}
+
+function hideToolbarForTab(tab) {
+  if (!tab || !tab.wrapper || tab.pinToolbar) return;
+  const toolbar = tab.wrapper.querySelector('.terminal-toolbar');
+  if (toolbar) toolbar.classList.remove('visible');
+}
+
+// ===== COMMAND PALETTE =====
+const PALETTE_COMMANDS = [
+  { id: 'new-tab', label: 'New Tab', icon: '+', action: function() { newTab(); } },
+  { id: 'close-tab', label: 'Close Tab', icon: 'x', action: function() { var t = getActiveTab(); if (t) t.close(); } },
+  { id: 'ssh-connect', label: 'SSH Connect...', icon: '#', action: function() { openSSHDialog(); } },
+  { id: 'serial-connect', label: 'Serial Port...', icon: '~', action: function() { openSerialDialog(); } },
+  { id: 'telnet-connect', label: 'Telnet Connect...', icon: '=', action: function() { openTelnetDialog(); } },
+  { id: 'import-ssh-config', label: 'Import SSH Config', icon: '@', action: function() { importSSHConfig(); } },
+  { id: 'toggle-settings', label: 'Settings', icon: '*', action: function() { toggleSettings(); } },
+  { id: 'split-horizontal', label: 'Split Horizontal', icon: '-', action: function() { splitPane('horizontal'); } },
+  { id: 'split-vertical', label: 'Split Vertical', icon: '|', action: function() { splitPane('vertical'); } },
+  { id: 'find', label: 'Find in Terminal', icon: '?', action: function() { toggleFind(); } },
+  { id: 'clear-terminal', label: 'Clear Terminal', icon: '!', action: function() { clearTerminal(); } },
+  { id: 'copy', label: 'Copy Selection', icon: 'C', action: function() { var t = getActiveTab(); if (t) t.copySelection(); } },
+  { id: 'paste', label: 'Paste from Clipboard', icon: 'V', action: function() { var t = getActiveTab(); if (t) t.pasteFromClipboard(); } },
+  { id: 'zoom-in', label: 'Increase Font Size', icon: '+', action: function() { fontSize = Math.min(32, fontSize + 1); tabs.forEach(function(t) { t.term.options.fontSize = fontSize; }); showToast('Font: ' + fontSize, 'info'); } },
+  { id: 'zoom-out', label: 'Decrease Font Size', icon: '-', action: function() { fontSize = Math.max(8, fontSize - 1); tabs.forEach(function(t) { t.term.options.fontSize = fontSize; }); showToast('Font: ' + fontSize, 'info'); } },
+  { id: 'zoom-reset', label: 'Reset Font Size', icon: '0', action: function() { fontSize = 14; tabs.forEach(function(t) { t.term.options.fontSize = fontSize; }); showToast('Font: 14', 'info'); } },
+  { id: 'toggle-fullscreen', label: 'Toggle Fullscreen', icon: 'F', action: function() { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } },
+  { id: 'sftp-browser', label: 'SFTP File Browser', icon: 'F', action: function() { var t = getActiveTab(); if (t && t.isSSH) openSFTPBrowser(t.sshConnectionId); else showToast('Requires active SSH tab', 'info'); } },
+  { id: 'port-forward', label: 'Port Forwarding', icon: 'P', action: function() { var t = getActiveTab(); if (t && t.isSSH) openForwardDialog(t.sshConnectionId); else showToast('Requires active SSH tab', 'info'); } },
+  { id: 'save-session', label: 'Save Session State', icon: 'S', action: function() { saveSession(); } },
+  { id: 'reload-colors', label: 'Reload Color Schemes', icon: 'R', action: function() { reloadColorSchemes(); } },
+];
+
+var paletteVisible = false;
+var paletteSelectedIdx = 0;
+
+function toggleCommandPalette() {
+  paletteVisible = !paletteVisible;
+  var el = document.getElementById('command-palette');
+  if (paletteVisible) {
+    el.classList.add('active');
+    var input = document.getElementById('cmd-palette-input');
+    input.value = '';
+    input.focus();
+    paletteSelectedIdx = 0;
+    filterCommandPalette();
+  } else {
+    el.classList.remove('active');
+    var tab = getActiveTab();
+    if (tab) tab.term.focus();
+  }
+}
+
+function filterCommandPalette() {
+  var query = (document.getElementById('cmd-palette-input').value || '').toLowerCase();
+  var container = document.getElementById('cmd-palette-items');
+  var filtered = PALETTE_COMMANDS.filter(function(cmd) { return cmd.label.toLowerCase().includes(query); });
+  paletteSelectedIdx = 0;
+  container.innerHTML = filtered.map(function(cmd, i) {
+    return '<div class="palette-item' + (i === 0 ? ' selected' : '') + '" data-id="' + cmd.id + '">' +
+      '<span class="palette-icon">' + cmd.icon + '</span>' +
+      '<span class="palette-label">' + cmd.label + '</span></div>';
+  }).join('');
+  container.querySelectorAll('.palette-item').forEach(function(el) {
+    el.onclick = function() { executePaletteCommand(el.dataset.id); };
+  });
+}
+
+function handlePaletteKey(e) {
+  var items = document.querySelectorAll('.palette-item');
+  if (e.key === 'Escape') { e.preventDefault(); toggleCommandPalette(); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); paletteSelectedIdx = Math.min(paletteSelectedIdx + 1, items.length - 1); items.forEach(function(el, i) { el.classList.toggle('selected', i === paletteSelectedIdx); }); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); paletteSelectedIdx = Math.max(paletteSelectedIdx - 1, 0); items.forEach(function(el, i) { el.classList.toggle('selected', i === paletteSelectedIdx); }); }
+  else if (e.key === 'Enter') { e.preventDefault(); var sel = items[paletteSelectedIdx]; if (sel) sel.click(); }
+}
+
+function executePaletteCommand(id) {
+  var cmd = PALETTE_COMMANDS.find(function(c) { return c.id === id; });
+  if (cmd) { toggleCommandPalette(); cmd.action(); }
+}
+
+async function reloadColorSchemes() {
+  try {
+    const schemes = await GetColorSchemes();
+    if (schemes && schemes.length) {
+      schemes.forEach(function(s) { COLOR_SCHEMES[s.Name] = s; });
+      schemeNames = schemes.map(function(s) { return s.Name; });
+      showToast('Loaded ' + schemes.length + ' color schemes', 'success');
+    }
+  } catch (err) { showToast('Failed to reload schemes: ' + err, 'error'); }
+}
+
+// ===== SSH CONFIG IMPORT =====
+async function importSSHConfig() {
+  try {
+    const result = await ImportSSHConfig();
+    if (result && result.length > 0) {
+      let imported = 0;
+      let skipped = 0;
+      for (var i = 0; i < result.length; i++) {
+        var host = result[i];
+        var opts = host.options || host.Options || {};
+        var h = opts.host || opts.Host || '';
+        var p = opts.port || opts.Port || 22;
+        var u = opts.user || opts.User || 'root';
+        var name = u + '@' + h;
+        var exists = savedProfiles.find(function(pr) { return pr.name === name && pr.type === 'ssh'; });
+        if (exists) { skipped++; continue; }
+        savedProfiles.push({
+          id: 'ssh-import-' + Date.now() + '-' + imported,
+          type: 'ssh',
+          name: name,
+          options: { host: h, port: p, user: u, auth: ((opts.privateKeys && opts.privateKeys.length) ? 'publicKey' : 'agent'), privateKeys: opts.privateKeys || opts.PrivateKeys || [], jumpHost: opts.jumpHost || opts.JumpHost || '' },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        imported++;
+      }
+      await SaveProfiles(savedProfiles);
+      renderProfiles();
+      showToast('Imported ' + imported + ' hosts' + (skipped ? ', skipped ' + skipped + ' duplicates' : ''), 'success');
+    } else {
+      showToast('No SSH hosts found in config', 'info');
+    }
+  } catch (err) {
+    showToast('SSH config import failed: ' + err, 'error');
+  }
+}
+
+
 // ===== PROFILES =====
 function renderProfiles() { const section = document.getElementById('profiles-section'); const list = document.getElementById('profiles-list'); const editor = document.getElementById('profiles-editor-list'); if (!savedProfiles || savedProfiles.length === 0) { if (section) section.style.display = 'none'; if (editor) editor.innerHTML = '<div style="color:#666;font-size:12px;">No saved profiles yet.</div>'; return; } if (section) section.style.display = 'block'; if (list) { list.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : '\u2318'; return `<div class="profile-item" data-profile-id="${p.id}" title="${p.name}"><span class="profile-icon">${icon}</span><span class="profile-name">${p.name}</span></div>`; }).join(''); list.querySelectorAll('.profile-item').forEach(el => { el.onclick = () => { const profile = savedProfiles.find(p => p.id === el.dataset.profileId); if (profile) connectProfile(profile); }; }); } if (editor) { editor.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : '\u2318'; return `<div class="profile-editor-item"><span>${icon} ${p.name}</span><button class="btn-icon profile-delete" data-id="${p.id}" title="Delete">\u00d7</button></div>`; }).join(''); editor.querySelectorAll('.profile-delete').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; savedProfiles = savedProfiles.filter(p => p.id !== id); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); }; }); } }
 async function connectProfile(profile) { if (profile.type === 'ssh') { const opts = profile.options; openSSHDialog(); document.getElementById('ssh-host').value = opts.host || ''; document.getElementById('ssh-port').value = opts.port || 22; document.getElementById('ssh-user').value = opts.user || ''; document.getElementById('ssh-auth').value = opts.auth || 'agent'; document.getElementById('ssh-auth').dispatchEvent(new Event('change')); if (opts.auth === 'password') document.getElementById('ssh-password').value = opts.password || ''; if (opts.auth === 'publicKey' && opts.privateKeys && opts.privateKeys.length) document.getElementById('ssh-key-path').value = opts.privateKeys[0]; } else if (profile.type === 'serial') {
@@ -824,7 +1019,7 @@ function buildUI() {
             <div class="logo"><span>⌘</span> Tabby</div>
             <div style="display:flex;gap:4px;">
                 <button class="btn-icon" id="btn-new-tab" title="New Tab (Ctrl+Shift+T)">+</button>
-                <button class="btn-icon" id="btn-serial" title="Serial Port">\ud83d\udce1</button><button class="btn-icon" id="btn-telnet" title="Telnet Connect">\ud83c\udf10</button><button class="btn-icon" id="btn-settings" title="Settings (Ctrl+,)">⚙</button>
+                <button class="btn-icon" id="btn-serial" title="Serial Port">\ud83d\udce1</button><button class="btn-icon" id="btn-telnet" title="Telnet Connect">\ud83c\udf10</button><button class="btn-icon" id="btn-command-palette" title="Command Palette (Ctrl+Shift+P)">&#9881;</button><button class="btn-icon" id="btn-import-ssh-config" title="Import SSH Config">&#128272;</button><button class="btn-icon" id="btn-settings" title="Settings (Ctrl+,)">⚙</button>
             </div>
         </div>
         <div id="tab-list"></div>
@@ -1112,6 +1307,10 @@ function buildUI() {
     document.getElementById('btn-import-ssh-config').onclick = () => importSSHConfig();
     document.getElementById('cmd-palette-input').oninput = () => filterCommandPalette();
     document.getElementById('cmd-palette-input').onkeydown = (e) => handlePaletteKey(e);
+    document.getElementById('btn-command-palette').onclick = () => toggleCommandPalette();
+    document.getElementById('btn-import-ssh-config').onclick = () => importSSHConfig();
+    document.getElementById('cmd-palette-input').oninput = () => filterCommandPalette();
+    document.getElementById('cmd-palette-input').onkeydown = (e) => handlePaletteKey(e);
     document.getElementById('settings-close').onclick = () => hideSettings();
     document.getElementById('btn-save').onclick = () => saveSettingsFromUI();
     document.getElementById('ssh-cancel').onclick = () => closeSSHDialog();
@@ -1351,6 +1550,9 @@ class Tab {
         this.wrapper = document.createElement('div'); this.wrapper.className = 'terminal-wrapper';
     this.wrapper.onmouseenter = () => showToolbarForTab(this);
     this.wrapper.onmouseleave = () => hideToolbarForTab(this);
+    this.pinToolbar = false;
+    this.wrapper.onmouseenter = () => showToolbarForTab(this);
+    this.wrapper.onmouseleave = () => hideToolbarForTab(this);
     this.pinToolbar = false; this.wrapper.id = this.id;
         document.getElementById('main-content').appendChild(this.wrapper); this.term.open(this.wrapper);
 
@@ -1384,7 +1586,7 @@ class Tab {
     activate() {
         const w = document.getElementById('welcome'); if (w) w.style.display = 'none';
         tabs.forEach(t => { t.wrapper.classList.remove('active'); t.tabEl.classList.remove('active'); });
-        this.wrapper.classList.add('active'); this.tabEl.classList.add('active'); activeTabId = this.id;
+        this.wrapper.classList.add('active'); this.tabEl.classList.add('active'); activeTabId = this.id; updateToolbar(this);
         this.term.focus();
         requestAnimationFrame(() => { this.fitAddon.fit(); if (this.ptyId && !this.exited) PTYResize(this.ptyId, this.term.cols, this.term.rows);
       if (this.isTelnet && this.telnetConnectionId) TelnetResize(this.telnetConnectionId, this.term.cols, this.term.rows); });
@@ -1498,6 +1700,7 @@ function bindGlobalKeys() {
         const inInput = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT');
 
         if (ctrl && shift && e.key === 'P') { e.preventDefault(); toggleCommandPalette(); return; }
+    if (ctrl && shift && e.key === 'P') { e.preventDefault(); toggleCommandPalette(); return; }
     if (ctrl && shift && e.key === 'S') { e.preventDefault(); openSerialDialog(); return; }
     if (ctrl && shift && e.key === 'N') { e.preventDefault(); openTelnetDialog(); return; }
     if (ctrl && !shift && e.key === ',') { e.preventDefault(); toggleSettings(); return; }
