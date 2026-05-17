@@ -154,6 +154,11 @@ func ImportSSHConfigAsProfiles(path string) ([]ConnectionProfile, error) {
 			if currentOpts != nil {
 				fmt.Sscanf(value, "%d", &currentOpts.ReadyTimeout)
 			}
+
+		case "proxyjump":
+			if currentOpts != nil {
+				currentOpts.JumpHost = value
+			}
 		}
 	}
 	if current != nil {

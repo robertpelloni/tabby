@@ -54,6 +54,10 @@ export function GetUsername() {
   return window['go']['main']['App']['GetUsername']();
 }
 
+export function ImportSSHConfig() {
+  return window['go']['main']['App']['ImportSSHConfig']();
+}
+
 export function LoadSessionState() {
   return window['go']['main']['App']['LoadSessionState']();
 }

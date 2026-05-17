@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -403,6 +404,29 @@ func (a *App) SerialClose(id string) error {
 // SerialListPorts returns a list of available serial ports on the system.
 func (a *App) SerialListPorts() ([]api.SerialPortInfo, error) {
 	return a.serialMgr.ListPorts()
+}
+
+// ==== SSH Config Import ====
+
+// ImportSSHConfig reads ~/.ssh/config and returns parsed host entries.
+func (a *App) ImportSSHConfig() ([]profile.ConnectionProfile, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("cannot determine home directory: %w", err)
+	}
+	configPath := home + "/.ssh/config"
+	// Also check Windows OpenSSH path
+	if runtime.GOOS == "windows" {
+		alt := home + "/.ssh/config"
+		if _, err := os.Stat(alt); err != nil {
+			configPath = home + "/.ssh/config"
+		}
+	}
+	profiles, err := profile.ImportSSHConfigAsProfiles(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to import SSH config: %w", err)
+	}
+	return profiles, nil
 }
 
 // ==== Internal ====

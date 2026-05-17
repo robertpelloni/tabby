@@ -33,6 +33,8 @@ export function GetSettings():Promise<settings.Settings>;
 
 export function GetUsername():Promise<string>;
 
+export function ImportSSHConfig():Promise<Array<profile.ConnectionProfile>>;
+
 export function LoadSessionState():Promise<session.SessionState>;
 
 export function OpenInBrowser(arg1:string):Promise<void>;
