@@ -1358,6 +1358,8 @@ const PALETTE_COMMANDS = [
   { id: 'save-session', label: 'Save Session State', icon: 'S', action: function() { saveSession(); } },
 
   { id: 'reload-colors', label: 'Reload Color Schemes', icon: 'R', action: function() { reloadColorSchemes(); } },
+  { id: 'tab-search', label: 'Search Tabs...', icon: 'T', action: function() { toggleTabSearch(); } },
+  { id: 'about', label: 'About Tabby Go', icon: 'i', action: function() { showAboutDialog(); } },
 
 ];
 
@@ -1664,7 +1666,7 @@ function setupInputProcessing(term, tab) {
   // Handle right-click paste
   term.element.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    if (settings.RightClickPaste !== false) {
+    if (settings.RightClick && settings.RightClick !== "off") {
       tab.pasteFromClipboard();
     }
   });
@@ -1676,6 +1678,27 @@ function setupInputProcessing(term, tab) {
     });
   }
 }
+
+
+// ===== ABOUT DIALOG =====
+async function showAboutDialog() {
+  try {
+    const platform = await GetPlatform();
+    const home = await GetHomeDir();
+    const hostname = await GetHostname();
+    const username = await GetUsername();
+    const shell = await GetDefaultShell();
+    const info = 'Tabby Go v' + (platform.version || '1.0.0') + '\r\n'
+      + 'Platform: ' + (platform.os || 'unknown') + '/' + (platform.arch || 'unknown') + '\r\n'
+      + 'User: ' + username + '@' + hostname + '\r\n'
+      + 'Home: ' + home + '\r\n'
+      + 'Shell: ' + shell;
+    alert(info);
+  } catch (err) {
+    alert('Tabby Go v1.0.0\r\nA modern terminal emulator built with Go + Wails');
+  }
+}
+
 
 // ===== PROFILES =====
 
