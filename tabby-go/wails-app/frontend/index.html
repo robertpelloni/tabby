@@ -25,7 +25,9 @@
     </div>
     <div class="setting-group" id="ssh-password-group" style="display:none;"><label>Password</label><input type="password" id="ssh-password"></div>
     <div class="setting-group" id="ssh-key-group" style="display:none;"><label>Private Key Path</label><input type="text" id="ssh-key-path" placeholder="~/.ssh/id_ed25519"></div>
-    <div class="setting-group"><label>Save as Profile</label><div class="toggle-container"><input type="checkbox" id="ssh-save-profile"><label for="ssh-save-profile" class="toggle-label"></label></div></div>
+    <div class="setting-group"><label>Jump Host</label><input type="text" id="ssh-jump-host" placeholder="bastion.example.com (optional)"></div>
+  <div class="setting-group"><label>Jump Host</label><input type="text" id="ssh-jump-host" placeholder="bastion.example.com (optional)"></div>
+  <div class="setting-group"><label>Save as Profile</label><div class="toggle-container"><input type="checkbox" id="ssh-save-profile"><label for="ssh-save-profile" class="toggle-label"></label></div></div>
     <div class="modal-actions">
       <button class="btn-secondary" id="ssh-cancel">Cancel</button>
       <button class="btn-primary" id="ssh-connect">Connect</button>
@@ -61,7 +63,9 @@
     <div class="setting-group"><label>Parity</label>
       <select id="serial-parity"><option value="none" selected>None</option><option value="even">Even</option><option value="odd">Odd</option></select>
     </div>
-    <div class="setting-group"><label>Save as Profile</label><div class="toggle-container"><input type="checkbox" id="serial-save-profile"><label for="serial-save-profile" class="toggle-label"></label></div></div>
+    <div class="setting-group"><label>Jump Host</label><input type="text" id="ssh-jump-host" placeholder="bastion.example.com (optional)"></div>
+  <div class="setting-group"><label>Jump Host</label><input type="text" id="ssh-jump-host" placeholder="bastion.example.com (optional)"></div>
+  <div class="setting-group"><label>Save as Profile</label><div class="toggle-container"><input type="checkbox" id="serial-save-profile"><label for="serial-save-profile" class="toggle-label"></label></div></div>
     <div class="modal-actions">
       <button class="btn-secondary" id="serial-cancel">Cancel</button>
       <button class="btn-primary" id="serial-connect">Connect</button>
@@ -75,7 +79,9 @@
     <h3>🌐 Telnet Connect</h3>
     <div class="setting-group"><label>Host</label><input type="text" id="telnet-host" placeholder="example.com"></div>
     <div class="setting-group"><label>Port</label><input type="number" id="telnet-port" value="23" min="1" max="65535"></div>
-    <div class="setting-group"><label>Save as Profile</label><div class="toggle-container"><input type="checkbox" id="telnet-save-profile"><label for="telnet-save-profile" class="toggle-label"></label></div></div>
+    <div class="setting-group"><label>Jump Host</label><input type="text" id="ssh-jump-host" placeholder="bastion.example.com (optional)"></div>
+  <div class="setting-group"><label>Jump Host</label><input type="text" id="ssh-jump-host" placeholder="bastion.example.com (optional)"></div>
+  <div class="setting-group"><label>Save as Profile</label><div class="toggle-container"><input type="checkbox" id="telnet-save-profile"><label for="telnet-save-profile" class="toggle-label"></label></div></div>
     <div class="modal-actions">
       <button class="btn-secondary" id="telnet-cancel">Cancel</button>
       <button class="btn-primary" id="telnet-connect">Connect</button>

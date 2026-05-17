@@ -352,6 +352,7 @@ export namespace api {
 	    remoteAddress: string;
 	    banner?: string;
 	    authMethods: string[];
+	    jumpChain?: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new SSHConnectionResult(source);
@@ -364,6 +365,7 @@ export namespace api {
 	        this.remoteAddress = source["remoteAddress"];
 	        this.banner = source["banner"];
 	        this.authMethods = source["authMethods"];
+	        this.jumpChain = source["jumpChain"];
 	    }
 	}
 	export class SSHResizeParams {
