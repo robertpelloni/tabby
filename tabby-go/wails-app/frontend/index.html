@@ -206,5 +206,16 @@
 </div>
 
 <script src="./src/main.js" type="module"></script>
+<!-- Notification Center -->
+<div id="notification-center">
+  <div style="padding:12px 16px;border-bottom:1px solid #3a3a3a;display:flex;justify-content:space-between;align-items:center;">
+    <strong style="color:#ccc;font-size:14px;">Notifications</strong>
+    <button class="btn-icon" onclick="document.getElementById('notification-center').classList.remove('active')" title="Close">&times;</button>
+  </div>
+  <div id="notification-list" style="padding:8px;max-height:300px;overflow-y:auto;">
+    <div style="color:#666;font-size:12px;text-align:center;padding:20px;">No notifications</div>
+  </div>
+</div>
+
 </body>
 </html>

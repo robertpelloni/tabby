@@ -17,6 +17,7 @@ import (
 	"github.com/robertpelloni/tabby/tabby-go/pkg/sftp"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/settings"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/telnet"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/notification"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -27,7 +28,8 @@ type App struct {
 	sftpMgr  *sftp.Manager
 	ptyMgr   *pty.Manager
 	serialMgr *serial.Manager
-	telnetMgr *telnet.Manager
+	telnetMgr  *telnet.Manager
+	notifMgr  *notification.Manager
 }
 
 // NewApp creates a new App application struct with all managers initialized.
@@ -38,6 +40,7 @@ func NewApp() *App {
 	a.sftpMgr = sftp.NewManager(a.sshMgr)
 	a.serialMgr = serial.NewManager(a.emit)
 	a.telnetMgr = telnet.NewManager(a.emit)
+	a.notifMgr = notification.NewManager()
 	return a
 }
 
@@ -427,6 +430,27 @@ func (a *App) ImportSSHConfig() ([]profile.ConnectionProfile, error) {
 		return nil, fmt.Errorf("failed to import SSH config: %w", err)
 	}
 	return profiles, nil
+}
+
+// ==== Notification Methods ====
+// GetNotifications returns all notifications.
+func (a *App) GetNotifications() []notification.Notification {
+	return a.notifMgr.GetAll()
+}
+
+// GetUnreadNotifications returns unread notifications.
+func (a *App) GetUnreadNotifications() []notification.Notification {
+	return a.notifMgr.GetUnread()
+}
+
+// MarkNotificationRead marks a notification as read.
+func (a *App) MarkNotificationRead(id string) {
+	a.notifMgr.MarkRead(id)
+}
+
+// ClearNotifications removes all notifications.
+func (a *App) ClearNotifications() {
+	a.notifMgr.Clear()
 }
 
 // ==== Internal ====

@@ -32,7 +32,7 @@ SFTPChmod, SFTPReadlink, SFTPSymlink,
 
 ImportSSHConfig,
 
-GetUsername, GetHomeDir, GetPlatform,
+GetUsername, GetHomeDir, GetPlatform, GetNotifications, GetUnreadNotifications, MarkNotificationRead, ClearNotifications,
 
 } from '../wailsjs/go/main/App';
 
@@ -83,6 +83,8 @@ async function init() {
     try { settings = await GetSettings(); } catch (_) { settings = {}; }
 
     if (settings.FontSize) fontSize = settings.FontSize;
+  const savedCSS = localStorage.getItem('tabby-custom-css');
+  if (savedCSS) applyCustomCSS(savedCSS);
 
 
 
@@ -1360,6 +1362,8 @@ const PALETTE_COMMANDS = [
   { id: 'reload-colors', label: 'Reload Color Schemes', icon: 'R', action: function() { reloadColorSchemes(); } },
   { id: 'tab-search', label: 'Search Tabs...', icon: 'T', action: function() { toggleTabSearch(); } },
   { id: 'about', label: 'About Tabby Go', icon: 'i', action: function() { showAboutDialog(); } },
+  { id: 'notifications', label: 'Show Notifications', icon: '!', action: function() { showNotificationCenter(); } },
+  { id: 'custom-css', label: 'Edit Custom CSS', icon: 'C', action: function() { editCustomCSS(); } },
 
 ];
 
@@ -1700,9 +1704,70 @@ async function showAboutDialog() {
 }
 
 
+
+// ===== NOTIFICATION CENTER =====
+function showNotificationCenter() {
+  const panel = document.getElementById('notification-center');
+  if (panel) panel.classList.toggle('active');
+}
+
+// ===== CUSTOM CSS =====
+function editCustomCSS() {
+  const css = prompt('Enter custom CSS (applied on top of color scheme):', localStorage.getItem('tabby-custom-css') || '');
+  if (css === null) return;
+  localStorage.setItem('tabby-custom-css', css);
+  applyCustomCSS(css);
+  showToast('Custom CSS applied', 'success');
+}
+function applyCustomCSS(css) {
+  let el = document.getElementById('tabby-custom-css');
+  if (!el) { el = document.createElement('style'); el.id = 'tabby-custom-css'; document.head.appendChild(el); }
+  el.textContent = css;
+}
+
+// ===== SFTP DRAG & DROP =====
+async function sftpHandleDrop(event) {
+  const files = event.dataTransfer.files;
+  if (!files || files.length === 0) return;
+  for (const file of files) {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const b64 = reader.result.split(',')[1];
+      const remotePath = sftpCurrentPath.replace(/\/$/, '') + '/' + file.name;
+      try {
+        await SFTPUpload({ sessionId: sftpSessionId, remotePath: remotePath, data: b64 });
+        showToast('Uploaded: ' + file.name, 'success');
+        sftpNavigate(sftpCurrentPath);
+      } catch (err) { showToast('Upload failed: ' + err, 'error'); }
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+// ===== PROFILE GROUP RENDERING =====
+function renderProfileGroups() {
+  const groups = getProfileGroups();
+  const list = document.getElementById('profiles-list');
+  if (!list) return;
+  let html = '';
+  Object.keys(groups).sort().forEach(groupName => {
+    if (groupName !== 'Ungrouped' || Object.keys(groups).length > 1) {
+      html += '<div class="profile-group-header">' + groupName + '</div>';
+    }
+    groups[groupName].forEach(p => {
+      const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : p.type === 'telnet' ? '\U0001f310' : '\u2318';
+      html += '<div class="profile-item" data-profile-id="' + p.id + '" title="' + p.name + '"><span class="profile-icon">' + icon + '</span><span class="profile-name">' + p.name + '</span></div>';
+    });
+  });
+  list.innerHTML = html;
+  list.querySelectorAll('.profile-item').forEach(el => {
+    el.onclick = () => { const profile = savedProfiles.find(p => p.id === el.dataset.profileId); if (profile) connectProfile(profile); };
+  });
+}
+
 // ===== PROFILES =====
 
-function renderProfiles() { const section = document.getElementById('profiles-section'); const list = document.getElementById('profiles-list'); const editor = document.getElementById('profiles-editor-list'); if (!savedProfiles || savedProfiles.length === 0) { if (section) section.style.display = 'none'; if (editor) editor.innerHTML = '<div style="color:#666;font-size:12px;">No saved profiles yet.</div>'; return; } if (section) section.style.display = 'block'; if (list) { list.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : '\u2318'; return `<div class="profile-item" data-profile-id="${p.id}" title="${p.name}"><span class="profile-icon">${icon}</span><span class="profile-name">${p.name}</span></div>`; }).join(''); list.querySelectorAll('.profile-item').forEach(el => { el.onclick = () => { const profile = savedProfiles.find(p => p.id === el.dataset.profileId); if (profile) connectProfile(profile); }; }); } if (editor) { editor.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : '\u2318'; return `<div class="profile-editor-item"><span>${icon} ${p.name}</span><button class="btn-icon profile-edit" data-id="${p.id}" title="Edit">\u270e</button><button class="btn-icon profile-delete" data-id="${p.id}" title="Delete">\u00d7</button></div>`; }).join(''); editor.querySelectorAll('.profile-edit').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; const profile = savedProfiles.find(p => p.id === id); if (profile) editProfile(profile); }; }); editor.querySelectorAll('.profile-delete').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; savedProfiles = savedProfiles.filter(p => p.id !== id); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); }; }); } }
+function renderProfiles() { const section = document.getElementById('profiles-section'); const list = document.getElementById('profiles-list'); const editor = document.getElementById('profiles-editor-list'); if (!savedProfiles || savedProfiles.length === 0) { if (section) section.style.display = 'none'; if (editor) editor.innerHTML = '<div style="color:#666;font-size:12px;">No saved profiles yet.</div>'; return; } if (section) section.style.display = 'block'; if (list) {  } if (editor) { editor.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : p.type === 'telnet' ? '\U0001f310' : '\u2318'; return `<div class="profile-editor-item"><span>${icon} ${p.name}</span><button class="btn-icon profile-edit" data-id="${p.id}" title="Edit">\u270e</button><button class="btn-icon profile-delete" data-id="${p.id}" title="Delete">\u00d7</button></div>`; }).join(''); editor.querySelectorAll('.profile-edit').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; const profile = savedProfiles.find(p => p.id === id); if (profile) editProfile(profile); }; }); editor.querySelectorAll('.profile-delete').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; savedProfiles = savedProfiles.filter(p => p.id !== id); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); }; }); } }
 
 async function connectProfile(profile) { if (profile.type === 'ssh') { const opts = profile.options; openSSHDialog(); document.getElementById('ssh-host').value = opts.host || ''; document.getElementById('ssh-port').value = opts.port || 22; document.getElementById('ssh-user').value = opts.user || ''; document.getElementById('ssh-auth').value = opts.auth || 'agent'; document.getElementById('ssh-auth').dispatchEvent(new Event('change')); if (opts.auth === 'password') document.getElementById('ssh-password').value = opts.password || ''; if (opts.auth === 'publicKey' && opts.privateKeys && opts.privateKeys.length) document.getElementById('ssh-key-path').value = opts.privateKeys[0]; } else if (profile.type === 'serial') {
 
@@ -2320,6 +2385,8 @@ function buildUI() {
 
     document.getElementById('sftp-delete-btn').onclick = () => sftpDeleteSelected();
 
+    document.getElementById('sftp-dialog').ondragover = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; };
+    document.getElementById('sftp-dialog').ondrop = (e) => { e.preventDefault(); sftpHandleDrop(e); };
     document.getElementById('sftp-close-btn').onclick = () => closeSFTPBrowser();
 
     document.getElementById('btn-command-palette').onclick = () => toggleCommandPalette();
@@ -2811,6 +2878,24 @@ class Tab {
         this.fitAddon = new FitAddon(); this.searchAddon = new SearchAddon(); this.webLinksAddon = new WebLinksAddon();
 
         this.term.loadAddon(this.fitAddon); this.term.loadAddon(this.searchAddon); this.term.loadAddon(this.webLinksAddon);
+  this.term.registerLinkProvider({
+    provideLinks: (y, callback) => {
+      const line = this.term.buffer.active.getLine(y - 1);
+      if (!line) { callback(undefined); return; }
+      const text = line.translateToString(true);
+      const urlRegex = /https?:\/\/[^\s)\]}>]+/g;
+      let match; const links = [];
+      while ((match = urlRegex.exec(text)) !== null) {
+        links.push({
+          text: match[0],
+          range: { start: { x: match.index + 1, y }, end: { x: match.index + match[0].length, y } },
+          activate: () => OpenInBrowser(match[0]),
+          decorations: { underline: true, cursorPointer: true }
+        });
+      }
+      callback(links.length ? links : undefined);
+    }
+  });
 
 
 

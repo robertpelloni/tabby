@@ -1200,3 +1200,45 @@ body.light-theme #edit-profile-login-script {
     border-color: #ccc;
     color: #333;
 }
+
+/* ===== NOTIFICATION CENTER ===== */
+#notification-center {
+    display: none;
+    position: fixed;
+    top: 36px;
+    right: 8px;
+    width: 320px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: #1e1e1e;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    z-index: 100;
+}
+#notification-center.active { display: block; }
+
+/* ===== PROFILE GROUP HEADER ===== */
+.profile-group-header {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-top: 1px solid #333;
+    background: #252526;
+}
+.profile-group-header:first-child { border-top: none; }
+
+/* ===== LIGHT THEME ===== */
+body.light-theme #notification-center {
+    background: #fff;
+    border-color: #ddd;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+body.light-theme .profile-group-header {
+    color: #666;
+    border-color: #ddd;
+    background: #f0f0f0;
+}
