@@ -86,6 +86,14 @@ export function SFTPChmod(arg1, arg2, arg3) {
   return window['go']['main']['App']['SFTPChmod'](arg1, arg2, arg3);
 }
 
+export function SFTPClose(arg1) {
+  return window['go']['main']['App']['SFTPClose'](arg1);
+}
+
+export function SFTPDelete(arg1, arg2) {
+  return window['go']['main']['App']['SFTPDelete'](arg1, arg2);
+}
+
 export function SFTPDownload(arg1) {
   return window['go']['main']['App']['SFTPDownload'](arg1);
 }
@@ -94,12 +102,36 @@ export function SFTPList(arg1) {
   return window['go']['main']['App']['SFTPList'](arg1);
 }
 
+export function SFTPMkdir(arg1, arg2) {
+  return window['go']['main']['App']['SFTPMkdir'](arg1, arg2);
+}
+
+export function SFTPMkdirAll(arg1, arg2) {
+  return window['go']['main']['App']['SFTPMkdirAll'](arg1, arg2);
+}
+
 export function SFTPOpen(arg1) {
   return window['go']['main']['App']['SFTPOpen'](arg1);
 }
 
+export function SFTPReadDir(arg1, arg2) {
+  return window['go']['main']['App']['SFTPReadDir'](arg1, arg2);
+}
+
 export function SFTPReadlink(arg1, arg2) {
   return window['go']['main']['App']['SFTPReadlink'](arg1, arg2);
+}
+
+export function SFTPRename(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SFTPRename'](arg1, arg2, arg3);
+}
+
+export function SFTPRmdir(arg1, arg2) {
+  return window['go']['main']['App']['SFTPRmdir'](arg1, arg2);
+}
+
+export function SFTPStat(arg1, arg2) {
+  return window['go']['main']['App']['SFTPStat'](arg1, arg2);
 }
 
 export function SFTPSymlink(arg1, arg2, arg3) {

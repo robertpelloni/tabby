@@ -146,6 +146,46 @@ func (a *App) SFTPSymlink(sessionID, oldPath, newPath string) error {
 	return a.sftpMgr.Symlink(sessionID, oldPath, newPath)
 }
 
+// SFTPDelete deletes a file on the remote server.
+func (a *App) SFTPDelete(sessionID, filePath string) error {
+	return a.sftpMgr.Delete(sessionID, filePath)
+}
+
+// SFTPRename renames a file on the remote server.
+func (a *App) SFTPRename(sessionID, oldPath, newPath string) error {
+	return a.sftpMgr.Rename(sessionID, oldPath, newPath)
+}
+
+// SFTPMkdir creates a directory on the remote server.
+func (a *App) SFTPMkdir(sessionID, dirPath string) error {
+	return a.sftpMgr.Mkdir(sessionID, dirPath)
+}
+
+// SFTPStat gets file info on the remote server.
+func (a *App) SFTPStat(sessionID, filePath string) (*api.SFTPFile, error) {
+	return a.sftpMgr.Stat(sessionID, filePath)
+}
+
+// SFTPClose closes an SFTP session.
+func (a *App) SFTPClose(sessionID string) error {
+	return a.sftpMgr.Close(sessionID)
+}
+
+// SFTPRmdir removes a directory on the remote server.
+func (a *App) SFTPRmdir(sessionID, dirPath string) error {
+	return a.sftpMgr.Rmdir(sessionID, dirPath)
+}
+
+// SFTPReadDir reads a directory listing on the remote server.
+func (a *App) SFTPReadDir(sessionID, dirPath string) ([]api.SFTPFile, error) {
+	return a.sftpMgr.ReadDir(sessionID, dirPath)
+}
+
+// SFTPMkdirAll creates a directory and all parent directories.
+func (a *App) SFTPMkdirAll(sessionID, dirPath string) error {
+	return a.sftpMgr.MkdirAll(sessionID, dirPath)
+}
+
 // ==== System Methods ====
 
 // GetDefaultShell returns the default shell for the current OS.

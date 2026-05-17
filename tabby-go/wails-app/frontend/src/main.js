@@ -11,7 +11,10 @@ import {
  GetDefaultShell, GetAvailableShells, GetColorSchemes,
  SetWindowTitle, GetSettings, SaveSettings, ResetSettings,
  SaveSessionState, LoadSessionState, ClearSessionState,
- GetProfiles, SaveProfiles, GetUsername,
+ GetProfiles, SaveProfiles, SFTPOpen, SFTPList, SFTPDownload, SFTPUpload, SFTPDelete,
+SFTPRename, SFTPMkdir, SFTPStat, SFTPClose, SFTPRmdir, SFTPReadDir, SFTPMkdirAll,
+SFTPChmod, SFTPReadlink, SFTPSymlink,
+GetUsername,
 } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 
@@ -306,6 +309,255 @@ function showHostKeyDialog(fingerprint, host) {
 function closeHostKeyDialog(accepted) {
   document.getElementById('hostkey-dialog').classList.remove('active');
   if (hostKeyResolve) { hostKeyResolve(accepted); hostKeyResolve = null; }
+}
+
+
+
+
+// ===== SFTP FILE BROWSER =====
+let sftpSessionId = null;
+let sftpConnectionId = null;
+let sftpCurrentPath = '/';
+let sftpSelectedFile = null;
+let sftpFileData = [];
+
+async function openSFTPBrowser(connectionId) {
+  sftpConnectionId = connectionId;
+  document.getElementById('sftp-dialog').classList.add('active');
+  document.getElementById('sftp-session-label').textContent = 'SSH: ' + connectionId;
+  try {
+    const result = await SFTPOpen({ connectionId });
+    sftpSessionId = result.sessionId || result.SessionID;
+    sftpNavigate('/');
+  } catch (err) {
+    showToast('Failed to open SFTP: ' + err, 'error');
+    closeSFTPBrowser();
+  }
+}
+function closeSFTPBrowser() {
+  document.getElementById('sftp-dialog').classList.remove('active');
+  if (sftpSessionId) {
+    SFTPClose(sftpSessionId).catch(() => {});
+    sftpSessionId = null;
+  }
+  const t = getActiveTab();
+  if (t) t.term.focus();
+}
+async function sftpNavigate(path) {
+  if (!sftpSessionId) return;
+  if (!path) path = sftpCurrentPath;
+  sftpCurrentPath = path;
+  document.getElementById('sftp-path').value = path;
+  const container = document.getElementById('sftp-file-list');
+  container.innerHTML = '<div style="padding:20px;text-align:center;color:#666;">Loading...</div>';
+  try {
+    const files = await SFTPReadDir(sftpSessionId, path);
+    sftpFileData = files || [];
+    // Sort: directories first, then files, alphabetically
+    sftpFileData.sort((a, b) => {
+      const aDir = a.IsDir || a.isdir || false;
+      const bDir = b.IsDir || b.isdir || false;
+      if (aDir && !bDir) return -1;
+      if (!aDir && bDir) return 1;
+      return (a.Name || a.name || '').localeCompare(b.Name || b.name || '');
+    });
+    renderSFTPList();
+  } catch (err) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:#f44747;">Error: ' + err + '</div>';
+  }
+}
+function renderSFTPList() {
+  const container = document.getElementById('sftp-file-list');
+  if (sftpFileData.length === 0) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:#666;">Empty directory</div>';
+    return;
+  }
+  let html = '';
+  sftpFileData.forEach((f, i) => {
+    const name = f.Name || f.name || 'unknown';
+    const isDir = f.IsDir || f.isdir || false;
+    const size = f.Size || f.size || 0;
+    const modTime = f.ModTime || f.modTime || '';
+    const perm = f.Mode || f.mode || '';
+    const icon = isDir ? '\ud83d\udcc1' : '\ud83d\udcc4';
+    const sizeStr = isDir ? '--' : formatBytes(size);
+    const selected = sftpSelectedFile === name;
+    html += '<div class="sftp-file-item' + (selected ? ' selected' : '') + '" data-idx="' + i + '">'
+      + '<span class="sftp-icon">' + icon + '</span>'
+      + '<span class="sftp-name">' + name + '</span>'
+      + '<span class="sftp-size">' + sizeStr + '</span>'
+      + '<span class="sftp-perm">' + perm + '</span>'
+      + '</div>';
+  });
+  container.innerHTML = html;
+  container.querySelectorAll('.sftp-file-item').forEach(el => {
+    el.onclick = () => {
+      const idx = parseInt(el.dataset.idx);
+      const f = sftpFileData[idx];
+      const name = f.Name || f.name;
+      const isDir = f.IsDir || f.isdir || false;
+      if (isDir) {
+        sftpNavigate(sftpCurrentPath.replace(/\/$/, '') + '/' + name);
+      } else {
+        sftpSelectedFile = name;
+        renderSFTPList();
+      }
+    };
+    el.ondblclick = () => {
+      const idx = parseInt(el.dataset.idx);
+      const f = sftpFileData[idx];
+      const name = f.Name || f.name;
+      const isDir = f.IsDir || f.isdir || false;
+      if (isDir) {
+        sftpNavigate(sftpCurrentPath.replace(/\/$/, '') + '/' + name);
+      } else {
+        sftpDownloadFile(sftpCurrentPath.replace(/\/$/, '') + '/' + name, name);
+      }
+    };
+    el.oncontextmenu = (e) => {
+      e.preventDefault();
+      const idx = parseInt(el.dataset.idx);
+      sftpSelectedFile = (sftpFileData[idx].Name || sftpFileData[idx].name);
+      renderSFTPList();
+      showSFTPContextMenu(e, sftpFileData[idx]);
+    };
+  });
+}
+async function sftpGoUp() {
+  if (sftpCurrentPath === '/') return;
+  const parts = sftpCurrentPath.replace(/\/$/, '').split('/');
+  parts.pop();
+  sftpNavigate(parts.length ? parts.join('/') : '/');
+}
+async function sftpMkdir() {
+  const name = prompt('New folder name:');
+  if (!name) return;
+  try {
+    const path = sftpCurrentPath.replace(/\/$/, '') + '/' + name;
+    await SFTPMkdir(sftpSessionId, path);
+    showToast('Folder created: ' + name, 'success');
+    sftpNavigate(sftpCurrentPath);
+  } catch (err) {
+    showToast('Failed to create folder: ' + err, 'error');
+  }
+}
+async function sftpDeleteSelected() {
+  if (!sftpSelectedFile) { showToast('Select a file first', 'info'); return; }
+  if (!confirm('Delete ' + sftpSelectedFile + '?')) return;
+  try {
+    const path = sftpCurrentPath.replace(/\/$/, '') + '/' + sftpSelectedFile;
+    const file = sftpFileData.find(f => (f.Name || f.name) === sftpSelectedFile);
+    const isDir = file && (file.IsDir || file.isdir || false);
+    if (isDir) {
+      await SFTPRmdir(sftpSessionId, path);
+    } else {
+      await SFTPDelete(sftpSessionId, path);
+    }
+    showToast('Deleted: ' + sftpSelectedFile, 'success');
+    sftpSelectedFile = null;
+    sftpNavigate(sftpCurrentPath);
+  } catch (err) {
+    showToast('Failed to delete: ' + err, 'error');
+  }
+}
+async function sftpDownloadSelected() {
+  if (!sftpSelectedFile) { showToast('Select a file first', 'info'); return; }
+  const path = sftpCurrentPath.replace(/\/$/, '') + '/' + sftpSelectedFile;
+  sftpDownloadFile(path, sftpSelectedFile);
+}
+async function sftpDownloadFile(remotePath, fileName) {
+  try {
+    const result = await SFTPDownload({
+      sessionId: sftpSessionId,
+      remotePath: remotePath,
+      localPath: fileName
+    });
+    showToast('Downloaded: ' + fileName, 'success');
+  } catch (err) {
+    showToast('Download failed: ' + err, 'error');
+  }
+}
+async function sftpUploadFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    const localPath = file.name;
+    const remotePath = sftpCurrentPath.replace(/\/$/, '') + '/' + file.name;
+    // Read file as base64
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const b64 = reader.result.split(',')[1];
+      try {
+        await SFTPUpload({
+          sessionId: sftpSessionId,
+          remotePath: remotePath,
+          data: b64
+        });
+        showToast('Uploaded: ' + file.name, 'success');
+        sftpNavigate(sftpCurrentPath);
+      } catch (err) {
+        showToast('Upload failed: ' + err, 'error');
+      }
+    };
+    reader.readAsDataURL(file);
+  } catch (err) {
+    showToast('Upload failed: ' + err, 'error');
+  }
+  event.target.value = '';
+}
+function showSFTPContextMenu(e, file) {
+  document.querySelectorAll('.context-menu').forEach(m => m.remove());
+  const name = file.Name || file.name;
+  const isDir = file.IsDir || file.isdir || false;
+  const menu = document.createElement('div');
+  menu.className = 'context-menu';
+  let items = '<div class="context-menu-item" data-action="download">\u2b07 Download</div>';
+  if (!isDir) {
+    items += '<div class="context-menu-item" data-action="rename">\u2702 Rename</div>';
+  }
+  items += '<div class="context-menu-item" data-action="delete" style="color:#f44747;">\ud83d\uddd1 Delete</div>';
+  menu.innerHTML = items;
+  document.body.appendChild(menu);
+  menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+  menu.style.top = Math.min(e.clientY, window.innerHeight - 150) + 'px';
+  const close = () => menu.remove();
+  menu.onclick = async (ev) => {
+    const item = ev.target.closest('.context-menu-item');
+    if (!item) return;
+    close();
+    const action = item.dataset.action;
+    const path = sftpCurrentPath.replace(/\/$/, '') + '/' + name;
+    if (action === 'download') {
+      await sftpDownloadFile(path, name);
+    } else if (action === 'rename') {
+      const newName = prompt('New name:', name);
+      if (newName && newName !== name) {
+        const newPath = sftpCurrentPath.replace(/\/$/, '') + '/' + newName;
+        try {
+          await SFTPRename(sftpSessionId, path, newPath);
+          showToast('Renamed to ' + newName, 'success');
+          sftpNavigate(sftpCurrentPath);
+        } catch (err) { showToast('Rename failed: ' + err, 'error'); }
+      }
+    } else if (action === 'delete') {
+      if (!confirm('Delete ' + name + '?')) return;
+      try {
+        if (isDir) await SFTPRmdir(sftpSessionId, path);
+        else await SFTPDelete(sftpSessionId, path);
+        showToast('Deleted: ' + name, 'success');
+        sftpSelectedFile = null;
+        sftpNavigate(sftpCurrentPath);
+      } catch (err) { showToast('Delete failed: ' + err, 'error'); }
+    }
+  };
+  setTimeout(() => document.addEventListener('click', close, { once: true }), 10);
+}
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
 
@@ -610,6 +862,16 @@ function buildUI() {
     document.getElementById('forward-type').onchange = () => toggleForwardFields();
     document.getElementById('hostkey-accept').onclick = () => closeHostKeyDialog(true);
     document.getElementById('hostkey-reject').onclick = () => closeHostKeyDialog(false);
+    document.getElementById('sftp-go-up').onclick = () => sftpGoUp();
+    document.getElementById('sftp-refresh').onclick = () => sftpNavigate(sftpCurrentPath);
+    document.getElementById('sftp-go').onclick = () => sftpNavigate(document.getElementById('sftp-path').value.trim());
+    document.getElementById('sftp-path').onkeydown = (e) => { if (e.key === 'Enter') sftpNavigate(document.getElementById('sftp-path').value.trim()); };
+    document.getElementById('sftp-mkdir-btn').onclick = () => sftpMkdir();
+    document.getElementById('sftp-upload-btn').onclick = () => document.getElementById('sftp-upload-input').click();
+    document.getElementById('sftp-upload-input').onchange = (e) => sftpUploadFile(e);
+    document.getElementById('sftp-download-btn').onclick = () => sftpDownloadSelected();
+    document.getElementById('sftp-delete-btn').onclick = () => sftpDeleteSelected();
+    document.getElementById('sftp-close-btn').onclick = () => closeSFTPBrowser();
     document.getElementById('settings-close').onclick = () => hideSettings();
     document.getElementById('btn-save').onclick = () => saveSettingsFromUI();
     document.getElementById('ssh-cancel').onclick = () => closeSSHDialog();
@@ -959,6 +1221,7 @@ function showTabContextMenu(e, tab) {
             case 'close-others': { [...tabs].forEach(t => { if (t !== tab) t.close(); }); tab.activate(); break; }
             case 'close-right': { const idx = tabs.indexOf(tab); for (let i = tabs.length - 1; i > idx; i--) tabs[i].close(); break; }
             case 'forward': if (tab.isSSH && tab.sshConnectionId) openForwardDialog(tab.sshConnectionId); break;
+      case 'sftp': if (tab.isSSH && tab.sshConnectionId) openSFTPBrowser(tab.sshConnectionId); break;
       case 'close': tab.close(); break;
         }
     };

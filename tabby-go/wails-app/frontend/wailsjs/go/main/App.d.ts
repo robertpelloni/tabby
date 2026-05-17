@@ -49,13 +49,29 @@ export function ResetSettings():Promise<void>;
 
 export function SFTPChmod(arg1:string,arg2:string,arg3:number):Promise<void>;
 
+export function SFTPClose(arg1:string):Promise<void>;
+
+export function SFTPDelete(arg1:string,arg2:string):Promise<void>;
+
 export function SFTPDownload(arg1:api.SFTPDownloadParams):Promise<api.SFTPTransferResult>;
 
 export function SFTPList(arg1:api.SFTPListParams):Promise<Array<api.SFTPFile>>;
 
+export function SFTPMkdir(arg1:string,arg2:string):Promise<void>;
+
+export function SFTPMkdirAll(arg1:string,arg2:string):Promise<void>;
+
 export function SFTPOpen(arg1:api.SFTPOpenParams):Promise<api.SFTPOpenResult>;
 
+export function SFTPReadDir(arg1:string,arg2:string):Promise<Array<api.SFTPFile>>;
+
 export function SFTPReadlink(arg1:string,arg2:string):Promise<string>;
+
+export function SFTPRename(arg1:string,arg2:string,arg3:string):Promise<void>;
+
+export function SFTPRmdir(arg1:string,arg2:string):Promise<void>;
+
+export function SFTPStat(arg1:string,arg2:string):Promise<api.SFTPFile>;
 
 export function SFTPSymlink(arg1:string,arg2:string,arg3:string):Promise<void>;
 
