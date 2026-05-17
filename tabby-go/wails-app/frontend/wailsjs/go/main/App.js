@@ -177,3 +177,19 @@ export function SerialWrite(arg1, arg2) {
 export function SetWindowTitle(arg1) {
   return window['go']['main']['App']['SetWindowTitle'](arg1);
 }
+
+export function TelnetClose(arg1) {
+  return window['go']['main']['App']['TelnetClose'](arg1);
+}
+
+export function TelnetConnect(arg1, arg2) {
+  return window['go']['main']['App']['TelnetConnect'](arg1, arg2);
+}
+
+export function TelnetResize(arg1, arg2, arg3) {
+  return window['go']['main']['App']['TelnetResize'](arg1, arg2, arg3);
+}
+
+export function TelnetWrite(arg1, arg2) {
+  return window['go']['main']['App']['TelnetWrite'](arg1, arg2);
+}

@@ -781,3 +781,24 @@ export namespace settings {
 
 }
 
+export namespace telnet {
+	
+	export class TelnetConnectResult {
+	    connectionId: string;
+	    host: string;
+	    port: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new TelnetConnectResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.connectionId = source["connectionId"];
+	        this.host = source["host"];
+	        this.port = source["port"];
+	    }
+	}
+
+}
+

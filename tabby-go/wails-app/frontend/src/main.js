@@ -2,24 +2,23 @@ import './style.css';
 import './app.css';
 import '@xterm/xterm/css/xterm.css';
 
-import { Terminal } from '@xterm/xterm';
-import { FitAddon } from '@xterm/addon-fit';
-import { WebLinksAddon } from '@xterm/addon-web-links';
-import { SearchAddon } from '@xterm/addon-search';
 import {
-    PTYSpawn, PTYWrite, PTYResize, PTYKill,
-    SSHConnect, SSHStartShell, SSHWrite, SSHResize, SSHClose,
-    GetDefaultShell, GetAvailableShells,
-    GetColorSchemes,
-    SetWindowTitle, GetSettings, SaveSettings, ResetSettings,
-    SaveSessionState, LoadSessionState, ClearSessionState,
-    GetProfiles, SaveProfiles,
-    GetUsername,
+ PTYSpawn, PTYWrite, PTYResize, PTYKill,
+ SSHConnect, SSHStartShell, SSHWrite, SSHResize, SSHClose,
+ SSHAddForward, SSHRemoveForward, SSHListForwards,
+ SerialOpen, SerialWrite, SerialClose, SerialListPorts,
+ TelnetConnect, TelnetWrite, TelnetResize, TelnetClose,
+ GetDefaultShell, GetAvailableShells, GetColorSchemes,
+ SetWindowTitle, GetSettings, SaveSettings, ResetSettings,
+ SaveSessionState, LoadSessionState, ClearSessionState,
+ GetProfiles, SaveProfiles, GetUsername,
 } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 
 // ===== GLOBALS =====
 const COLOR_SCHEMES = {};
+window.__serialDataHandlers = [];
+window.__telnetDataHandlers = [];
 let schemeNames = [];
 const tabs = [];
 let activeTabId = null;
@@ -70,9 +69,264 @@ function renderColorSchemePreview(name) { const container = document.getElementB
 function openSSHDialog() { document.getElementById('ssh-dialog').classList.add('active'); document.getElementById('ssh-host').focus(); }
 function closeSSHDialog() { document.getElementById('ssh-dialog').classList.remove('active'); const t = getActiveTab(); if (t) t.term.focus(); }
 async function doSSHConnect() { const host = document.getElementById('ssh-host').value.trim(); const port = parseInt(document.getElementById('ssh-port').value) || 22; const user = document.getElementById('ssh-user').value.trim(); const auth = document.getElementById('ssh-auth').value; if (!host) { showToast('Host is required', 'error'); return; } closeSSHDialog(); showStatus('Connecting to ' + host + '...'); const authParams = { type: auth }; if (auth === 'password') authParams.password = document.getElementById('ssh-password').value; if (auth === 'publicKey') authParams.privateKeyPaths = [document.getElementById('ssh-key-path').value || '~/.ssh/id_ed25519']; try { const result = await SSHConnect({ host, port, user, auth: authParams, keepaliveInterval: 30, keepaliveCountMax: 3, readyTimeout: 15000 }); showToast('Connected to ' + host, 'success'); const tab = new Tab(defaultShell, 'ssh://' + user + '@' + host); tabs.push(tab); tab.activate(); tab.ptyId = null; tab.sshConnectionId = result.connectionId; tab.setTitle(user + '@' + host); tab.tabEl.querySelector('.tab-icon').textContent = '\U0001f510'; const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: 'xterm-256color' }); tab.sshSessionId = shellResult.sessionId; tab.isSSH = true; tab.term.onData((data) => { if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) }); }); showStatus('SSH - ' + user + '@' + host); if (document.getElementById('ssh-save-profile') && document.getElementById('ssh-save-profile').checked) { savedProfiles.push({ id: 'ssh-' + Date.now(), type: 'ssh', name: user + '@' + host, options: { host, port, user, auth, privateKeys: authParams.privateKeyPaths || [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); } } catch (err) { showToast('SSH failed: ' + err, 'error'); showStatus('SSH failed - ' + host); } }
+
+
+// ===== SERIAL PORT DIALOG =====
+function openSerialDialog() {
+  document.getElementById('serial-dialog').classList.add('active');
+  refreshSerialPorts();
+}
+function closeSerialDialog() {
+  document.getElementById('serial-dialog').classList.remove('active');
+  const t = getActiveTab();
+  if (t) t.term.focus();
+}
+async function refreshSerialPorts() {
+  const select = document.getElementById('serial-port-select');
+  select.innerHTML = '<option value="">-- Scanning... --</option>';
+  try {
+    const ports = await SerialListPorts();
+    select.innerHTML = '<option value="">-- Select Port --</option>';
+    if (ports && ports.length) {
+      ports.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.Name;
+        opt.textContent = p.Name;
+        select.appendChild(opt);
+      });
+    } else {
+      select.innerHTML = '<option value="">-- No ports found --</option>';
+    }
+  } catch (err) {
+    select.innerHTML = '<option value="">-- Error scanning --</option>';
+    showToast('Failed to list serial ports: ' + err, 'error');
+  }
+}
+async function doSerialConnect() {
+  const port = document.getElementById('serial-port-select').value;
+  const baud = parseInt(document.getElementById('serial-baud').value) || 115200;
+  const dataBits = parseInt(document.getElementById('serial-data-bits').value) || 8;
+  const stopBits = parseInt(document.getElementById('serial-stop-bits').value) || 1;
+  const parity = document.getElementById('serial-parity').value;
+  if (!port) { showToast('Select a serial port', 'error'); return; }
+  closeSerialDialog();
+  showStatus('Connecting to ' + port + '...');
+  try {
+    const result = await SerialOpen({ port, baudRate: baud, dataBits, stopBits, parity });
+    showToast('Serial connected: ' + port, 'success');
+    const tab = new Tab(defaultShell);
+    tabs.push(tab);
+    tab.activate();
+    tab.ptyId = null;
+    tab.serialId = result.ID || result.id;
+    tab.isSerial = true;
+    tab.setTitle(port.split('/').pop().split('\\').pop());
+    tab.tabEl.querySelector('.tab-icon').textContent = '\ud83d\udce1';
+    tab.serialDataHandler = (params) => {
+      if ((params.serialId || params.SerialID) === tab.serialId) tab.term.write(atob(params.data || params.Data));
+    };
+    window.__serialDataHandlers.push(tab.serialDataHandler);
+    tab.term.onData((data) => {
+      if (tab.serialId) SerialWrite(tab.serialId, btoa(data));
+    });
+    showStatus('Serial - ' + port + ' @ ' + baud);
+    if (document.getElementById('serial-save-profile') && document.getElementById('serial-save-profile').checked) {
+      savedProfiles.push({ id: 'serial-' + Date.now(), type: 'serial', name: port + ' @ ' + baud, options: { port, baudRate: baud, dataBits, stopBits, parity }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+      SaveProfiles(savedProfiles).catch(() => {});
+      renderProfiles();
+    }
+  } catch (err) {
+    showToast('Serial failed: ' + err, 'error');
+    showStatus('Serial failed - ' + port);
+  }
+}
+
+// ===== TELNET DIALOG =====
+function openTelnetDialog() {
+  document.getElementById('telnet-dialog').classList.add('active');
+  document.getElementById('telnet-host').focus();
+}
+function closeTelnetDialog() {
+  document.getElementById('telnet-dialog').classList.remove('active');
+  const t = getActiveTab();
+  if (t) t.term.focus();
+}
+async function doTelnetConnect() {
+  const host = document.getElementById('telnet-host').value.trim();
+  const port = parseInt(document.getElementById('telnet-port').value) || 23;
+  if (!host) { showToast('Host is required', 'error'); return; }
+  closeTelnetDialog();
+  showStatus('Connecting to ' + host + ':' + port + '...');
+  try {
+    const result = await TelnetConnect(host, port);
+    showToast('Telnet connected: ' + host, 'success');
+    const tab = new Tab(defaultShell);
+    tabs.push(tab);
+    tab.activate();
+    tab.ptyId = null;
+    tab.telnetConnectionId = result.ConnectionID || result.connectionId;
+    tab.isTelnet = true;
+    tab.setTitle(host + ':' + port);
+    tab.tabEl.querySelector('.tab-icon').textContent = '\ud83c\udf10';
+    tab.telnetDataHandler = (params) => {
+      const cid = params.ConnectionID || params.connectionId;
+      if (cid === tab.telnetConnectionId) tab.term.write(atob(params.Data || params.data));
+    };
+    window.__telnetDataHandlers.push(tab.telnetDataHandler);
+    tab.term.onData((data) => {
+      if (tab.telnetConnectionId) TelnetWrite(tab.telnetConnectionId, btoa(data));
+    });
+    showStatus('Telnet - ' + host + ':' + port);
+    if (document.getElementById('telnet-save-profile') && document.getElementById('telnet-save-profile').checked) {
+      savedProfiles.push({ id: 'telnet-' + Date.now(), type: 'telnet', name: host + ':' + port, options: { host, port }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+      SaveProfiles(savedProfiles).catch(() => {});
+      renderProfiles();
+    }
+  } catch (err) {
+    showToast('Telnet failed: ' + err, 'error');
+    showStatus('Telnet failed - ' + host);
+  }
+}
+
+// ===== PORT FORWARDING DIALOG =====
+function openForwardDialog(sshConnectionId) {
+  document.getElementById('forward-dialog').classList.add('active');
+  document.getElementById('forward-conn-id').value = sshConnectionId || '';
+  document.getElementById('forward-type').value = 'local';
+  document.getElementById('forward-local-addr').value = '';
+  document.getElementById('forward-remote-addr').value = '';
+  toggleForwardFields();
+  loadForwardList(sshConnectionId);
+}
+function closeForwardDialog() {
+  document.getElementById('forward-dialog').classList.remove('active');
+  const t = getActiveTab();
+  if (t) t.term.focus();
+}
+function toggleForwardFields() {
+  const type = document.getElementById('forward-type').value;
+  const lg = document.getElementById('forward-local-group');
+  const rg = document.getElementById('forward-remote-group');
+  const la = document.getElementById('forward-local-addr');
+  if (type === 'dynamic') {
+    lg.style.display = 'block'; rg.style.display = 'none';
+    la.placeholder = 'localhost:1080 (SOCKS5)';
+  } else if (type === 'local') {
+    lg.style.display = 'block'; rg.style.display = 'block';
+    la.placeholder = 'localhost:8080';
+    document.getElementById('forward-remote-addr').placeholder = 'remotehost:80';
+  } else {
+    lg.style.display = 'block'; rg.style.display = 'block';
+    la.placeholder = 'remotehost:8080';
+    document.getElementById('forward-remote-addr').placeholder = 'localhost:80';
+  }
+}
+async function doAddForward() {
+  const connId = document.getElementById('forward-conn-id').value;
+  const type = document.getElementById('forward-type').value;
+  const localAddr = document.getElementById('forward-local-addr').value.trim();
+  const remoteAddr = document.getElementById('forward-remote-addr').value.trim();
+  if (!connId) { showToast('No SSH connection', 'error'); return; }
+  try {
+    const params = { connectionId: connId, type };
+    if (type === 'local') {
+      const [lh, lp] = parseAddr(localAddr, 'localhost');
+      const [rh, rp] = parseAddr(remoteAddr, 'localhost');
+      params.localHost = lh; params.localPort = lp;
+      params.remoteHost = rh; params.remotePort = rp;
+    } else if (type === 'remote') {
+      const [rh, rp] = parseAddr(localAddr, '0.0.0.0');
+      const [lh, lp] = parseAddr(remoteAddr, 'localhost');
+      params.remoteHost = rh; params.remotePort = rp;
+      params.localHost = lh; params.localPort = lp;
+    } else {
+      const [lh, lp] = parseAddr(localAddr, 'localhost');
+      params.localHost = lh; params.localPort = lp;
+    }
+    await SSHAddForward(params);
+    showToast('Forward added', 'success');
+    loadForwardList(connId);
+  } catch (err) {
+    showToast('Failed to add forward: ' + err, 'error');
+  }
+}
+async function loadForwardList(connId) {
+  const container = document.getElementById('forward-list');
+  if (!connId) { container.innerHTML = ''; return; }
+  try {
+    const forwards = await SSHListForwards(connId);
+    if (!forwards || forwards.length === 0) {
+      container.innerHTML = '<div style="color:#666;font-size:12px;">No active forwards</div>';
+    } else {
+      container.innerHTML = forwards.map((f, i) => {
+        const ft = (f.Type || f.type || 'local');
+        const icon = ft === 'local' ? '-L' : ft === 'remote' ? '-R' : '-D';
+        const lh = f.LocalHost || f.localHost || '';
+        const lp = f.LocalPort || f.localPort || '';
+        const rh = f.RemoteHost || f.remoteHost || '';
+        const rp = f.RemotePort || f.remotePort || '';
+        const label = ft === 'dynamic'
+          ? icon + ' ' + lh + ':' + lp
+          : icon + ' ' + lh + ':' + lp + ' \u2192 ' + rh + ':' + rp;
+        return '<div class="profile-editor-item"><span style="font-size:12px;color:#ccc;">' + label + '</span><button class="btn-icon forward-remove" data-idx="' + i + '" title="Remove">\u00d7</button></div>';
+      }).join('');
+      container.querySelectorAll('.forward-remove').forEach(btn => {
+        btn.onclick = async () => {
+          const idx = parseInt(btn.dataset.idx);
+          try {
+            await SSHRemoveForward({ connectionId: connId, forwardIndex: idx });
+            showToast('Forward removed', 'info');
+            loadForwardList(connId);
+          } catch (err) { showToast('Remove failed: ' + err, 'error'); }
+        };
+      });
+    }
+  } catch (err) {
+    container.innerHTML = '<div style="color:#f44747;font-size:12px;">Error: ' + err + '</div>';
+  }
+}
+function parseAddr(addr, defaultHost) {
+  const parts = addr.split(':');
+  if (parts.length === 2) return [parts[0], parseInt(parts[1]) || 0];
+  if (parts.length === 1 && parts[0]) return [defaultHost, parseInt(parts[0]) || 0];
+  return [defaultHost, 0];
+}
+
+// ===== HOST KEY VERIFICATION =====
+let hostKeyResolve = null;
+function showHostKeyDialog(fingerprint, host) {
+  return new Promise((resolve) => {
+    hostKeyResolve = resolve;
+    document.getElementById('hostkey-dialog').classList.add('active');
+    document.getElementById('hostkey-message').textContent =
+      'The host ' + host + ' is not in your known hosts. The fingerprint is:';
+    document.getElementById('hostkey-fingerprint').textContent = fingerprint;
+  });
+}
+function closeHostKeyDialog(accepted) {
+  document.getElementById('hostkey-dialog').classList.remove('active');
+  if (hostKeyResolve) { hostKeyResolve(accepted); hostKeyResolve = null; }
+}
+
+
 // ===== PROFILES =====
 function renderProfiles() { const section = document.getElementById('profiles-section'); const list = document.getElementById('profiles-list'); const editor = document.getElementById('profiles-editor-list'); if (!savedProfiles || savedProfiles.length === 0) { if (section) section.style.display = 'none'; if (editor) editor.innerHTML = '<div style="color:#666;font-size:12px;">No saved profiles yet.</div>'; return; } if (section) section.style.display = 'block'; if (list) { list.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : '\u2318'; return `<div class="profile-item" data-profile-id="${p.id}" title="${p.name}"><span class="profile-icon">${icon}</span><span class="profile-name">${p.name}</span></div>`; }).join(''); list.querySelectorAll('.profile-item').forEach(el => { el.onclick = () => { const profile = savedProfiles.find(p => p.id === el.dataset.profileId); if (profile) connectProfile(profile); }; }); } if (editor) { editor.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : '\u2318'; return `<div class="profile-editor-item"><span>${icon} ${p.name}</span><button class="btn-icon profile-delete" data-id="${p.id}" title="Delete">\u00d7</button></div>`; }).join(''); editor.querySelectorAll('.profile-delete').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; savedProfiles = savedProfiles.filter(p => p.id !== id); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); }; }); } }
-async function connectProfile(profile) { if (profile.type === 'ssh') { const opts = profile.options; openSSHDialog(); document.getElementById('ssh-host').value = opts.host || ''; document.getElementById('ssh-port').value = opts.port || 22; document.getElementById('ssh-user').value = opts.user || ''; document.getElementById('ssh-auth').value = opts.auth || 'agent'; document.getElementById('ssh-auth').dispatchEvent(new Event('change')); if (opts.auth === 'password') document.getElementById('ssh-password').value = opts.password || ''; if (opts.auth === 'publicKey' && opts.privateKeys && opts.privateKeys.length) document.getElementById('ssh-key-path').value = opts.privateKeys[0]; } else if (profile.type === 'local') { newTab(profile.options && profile.options.shell || profile.options && profile.options.command); } }
+async function connectProfile(profile) { if (profile.type === 'ssh') { const opts = profile.options; openSSHDialog(); document.getElementById('ssh-host').value = opts.host || ''; document.getElementById('ssh-port').value = opts.port || 22; document.getElementById('ssh-user').value = opts.user || ''; document.getElementById('ssh-auth').value = opts.auth || 'agent'; document.getElementById('ssh-auth').dispatchEvent(new Event('change')); if (opts.auth === 'password') document.getElementById('ssh-password').value = opts.password || ''; if (opts.auth === 'publicKey' && opts.privateKeys && opts.privateKeys.length) document.getElementById('ssh-key-path').value = opts.privateKeys[0]; } else if (profile.type === 'serial') {
+    openSerialDialog();
+    setTimeout(() => {
+      const opts = profile.options;
+      refreshSerialPorts();
+      document.getElementById('serial-baud').value = opts.baudRate || 115200;
+      document.getElementById('serial-data-bits').value = opts.dataBits || 8;
+      document.getElementById('serial-stop-bits').value = opts.stopBits || 1;
+      document.getElementById('serial-parity').value = opts.parity || 'none';
+    }, 300);
+  } else if (profile.type === 'telnet') {
+    openTelnetDialog();
+    const opts = profile.options;
+    document.getElementById('telnet-host').value = opts.host || '';
+    document.getElementById('telnet-port').value = opts.port || 23;
+  } else if (profile.type === 'local') { newTab(profile.options && profile.options.shell || profile.options && profile.options.command); } }
 function addProfile() { const id = 'profile-' + Date.now(); savedProfiles.push({ id, type: 'ssh', name: 'New SSH Profile', group: '', options: { host: '', port: 22, user: '', auth: 'agent' }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); showToast('Profile added', 'info'); }
 // ===== BUILD UI =====
 function buildUI() {
@@ -82,7 +336,7 @@ function buildUI() {
             <div class="logo"><span>⌘</span> Tabby</div>
             <div style="display:flex;gap:4px;">
                 <button class="btn-icon" id="btn-new-tab" title="New Tab (Ctrl+Shift+T)">+</button>
-                <button class="btn-icon" id="btn-settings" title="Settings (Ctrl+,)">⚙</button>
+                <button class="btn-icon" id="btn-serial" title="Serial Port">\ud83d\udce1</button><button class="btn-icon" id="btn-telnet" title="Telnet Connect">\ud83c\udf10</button><button class="btn-icon" id="btn-settings" title="Settings (Ctrl+,)">⚙</button>
             </div>
         </div>
         <div id="tab-list"></div>
@@ -343,7 +597,19 @@ function buildUI() {
     // Button bindings
     document.getElementById('btn-new-tab').onclick = (e) => showNewTabDropdown(e);
     document.getElementById('btn-ssh').onclick = () => openSSHDialog();
+    document.getElementById('btn-serial').onclick = () => openSerialDialog();
+    document.getElementById('btn-telnet').onclick = () => openTelnetDialog();
     document.getElementById('btn-settings').onclick = () => toggleSettings();
+    document.getElementById('serial-refresh').onclick = () => refreshSerialPorts();
+    document.getElementById('serial-cancel').onclick = () => closeSerialDialog();
+    document.getElementById('serial-connect').onclick = () => doSerialConnect();
+    document.getElementById('telnet-cancel').onclick = () => closeTelnetDialog();
+    document.getElementById('telnet-connect').onclick = () => doTelnetConnect();
+    document.getElementById('forward-cancel').onclick = () => closeForwardDialog();
+    document.getElementById('forward-add').onclick = () => doAddForward();
+    document.getElementById('forward-type').onchange = () => toggleForwardFields();
+    document.getElementById('hostkey-accept').onclick = () => closeHostKeyDialog(true);
+    document.getElementById('hostkey-reject').onclick = () => closeHostKeyDialog(false);
     document.getElementById('settings-close').onclick = () => hideSettings();
     document.getElementById('btn-save').onclick = () => saveSettingsFromUI();
     document.getElementById('ssh-cancel').onclick = () => closeSSHDialog();
@@ -615,7 +881,8 @@ class Tab {
         tabs.forEach(t => { t.wrapper.classList.remove('active'); t.tabEl.classList.remove('active'); });
         this.wrapper.classList.add('active'); this.tabEl.classList.add('active'); activeTabId = this.id;
         this.term.focus();
-        requestAnimationFrame(() => { this.fitAddon.fit(); if (this.ptyId && !this.exited) PTYResize(this.ptyId, this.term.cols, this.term.rows); });
+        requestAnimationFrame(() => { this.fitAddon.fit(); if (this.ptyId && !this.exited) PTYResize(this.ptyId, this.term.cols, this.term.rows);
+      if (this.isTelnet && this.telnetConnectionId) TelnetResize(this.telnetConnectionId, this.term.cols, this.term.rows); });
         saveSession();
     }
 
@@ -623,6 +890,8 @@ class Tab {
         window.__ptyDataHandlers = (window.__ptyDataHandlers || []).filter(h => h !== this.dataHandler);
         window.__ptyExitHandlers = (window.__ptyExitHandlers || []).filter(h => h !== this.exitHandler);
         if (this.ptyId) PTYKill(this.ptyId, '').catch(() => {}); if (this.isSSH && this.sshConnectionId) SSHClose({ connectionId: this.sshConnectionId }).catch(() => {});
+    if (this.isSerial && this.serialId) { SerialClose(this.serialId).catch(() => {}); window.__serialDataHandlers = (window.__serialDataHandlers || []).filter(h => h !== this.serialDataHandler); }
+    if (this.isTelnet && this.telnetConnectionId) { TelnetClose(this.telnetConnectionId).catch(() => {}); window.__telnetDataHandlers = (window.__telnetDataHandlers || []).filter(h => h !== this.telnetDataHandler); }
         this.term.dispose(); this.wrapper.remove(); this.tabEl.remove();
         const idx = tabs.indexOf(this); if (idx > -1) tabs.splice(idx, 1);
         if (activeTabId === this.id) { if (tabs.length > 0) tabs[Math.min(idx, tabs.length - 1)].activate(); else { activeTabId = null; const w = document.getElementById('welcome'); if (w) w.style.display = 'flex'; } }
@@ -689,7 +958,8 @@ function showTabContextMenu(e, tab) {
             case 'duplicate': newTab(tab.shell); break;
             case 'close-others': { [...tabs].forEach(t => { if (t !== tab) t.close(); }); tab.activate(); break; }
             case 'close-right': { const idx = tabs.indexOf(tab); for (let i = tabs.length - 1; i > idx; i--) tabs[i].close(); break; }
-            case 'close': tab.close(); break;
+            case 'forward': if (tab.isSSH && tab.sshConnectionId) openForwardDialog(tab.sshConnectionId); break;
+      case 'close': tab.close(); break;
         }
     };
     setTimeout(() => document.addEventListener('click', close, { once: true }), 10);
@@ -721,7 +991,9 @@ function bindGlobalKeys() {
         const ctrl = e.ctrlKey || e.metaKey; const shift = e.shiftKey;
         const inInput = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT');
 
-        if (ctrl && !shift && e.key === ',') { e.preventDefault(); toggleSettings(); return; }
+        if (ctrl && shift && e.key === 'S') { e.preventDefault(); openSerialDialog(); return; }
+    if (ctrl && shift && e.key === 'N') { e.preventDefault(); openTelnetDialog(); return; }
+    if (ctrl && !shift && e.key === ',') { e.preventDefault(); toggleSettings(); return; }
         if (ctrl && shift && (e.key === 'T' || e.key === 't')) { e.preventDefault(); newTab(); return; }
         if (ctrl && !shift && e.key === 'w' && !inInput) { e.preventDefault(); const t = getActiveTab(); if (t) t.close(); return; }
         if (ctrl && e.key === 'Tab' && !shift) { e.preventDefault(); nextTab(); return; }

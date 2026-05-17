@@ -5,6 +5,7 @@ import {profile} from '../models';
 import {settings} from '../models';
 import {session} from '../models';
 import {api} from '../models';
+import {telnet} from '../models';
 
 export function ClearSessionState():Promise<void>;
 
@@ -93,3 +94,11 @@ export function SerialOpen(arg1:api.SerialOpenParams):Promise<api.SerialOpenResu
 export function SerialWrite(arg1:string,arg2:string):Promise<void>;
 
 export function SetWindowTitle(arg1:string):Promise<void>;
+
+export function TelnetClose(arg1:string):Promise<void>;
+
+export function TelnetConnect(arg1:string,arg2:number):Promise<telnet.TelnetConnectResult>;
+
+export function TelnetResize(arg1:string,arg2:number,arg3:number):Promise<void>;
+
+export function TelnetWrite(arg1:string,arg2:string):Promise<void>;

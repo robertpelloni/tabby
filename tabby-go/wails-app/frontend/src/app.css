@@ -866,3 +866,66 @@ body.light-theme .profile-editor-item {
     color: #333;
     border-color: #ccc;
 }
+
+/* ===== CONNECTION TOOLBAR ICONS ===== */
+#btn-serial, #btn-telnet {
+    font-size: 14px;
+    line-height: 1;
+}
+
+/* ===== SERIAL PORT REFRESH BUTTON ===== */
+#serial-refresh {
+    margin-left: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid #3a3a3a;
+    background: #2d2d2d;
+    border-radius: 4px;
+    padding: 2px 8px;
+    transition: background 0.1s;
+}
+#serial-refresh:hover {
+    background: #3a3a3a;
+}
+
+/* ===== FORWARD REMOVE BUTTON ===== */
+.forward-remove {
+    color: #f44747;
+    font-size: 16px;
+    font-weight: bold;
+}
+.forward-remove:hover {
+    color: #ff6b6b;
+}
+
+/* ===== HOST KEY DIALOG ===== */
+#hostkey-fingerprint {
+    display: block;
+    padding: 8px 12px;
+    background: #2d2d2d;
+    border: 1px solid #3a3a3a;
+    border-radius: 4px;
+    margin-top: 4px;
+    user-select: all;
+}
+
+/* ===== CONNECTION TYPE ICONS ===== */
+.tab-icon {
+    font-size: 12px;
+    width: 16px;
+    display: inline-block;
+    text-align: center;
+}
+
+/* ===== LIGHT THEME EXTENSIONS ===== */
+body.light-theme #serial-refresh {
+    background: #e0e0e0;
+    border-color: #ccc;
+}
+body.light-theme #serial-refresh:hover {
+    background: #ccc;
+}
+body.light-theme #hostkey-fingerprint {
+    background: #e8e8e8;
+    border-color: #ccc;
+}

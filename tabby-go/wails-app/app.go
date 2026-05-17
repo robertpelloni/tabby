@@ -15,16 +15,18 @@ import (
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ssh"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/sftp"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/settings"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/telnet"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct holds all the application state and backend managers.
 type App struct {
 	ctx     context.Context
-	sshMgr  *ssh.Manager
-	sftpMgr *sftp.Manager
-	ptyMgr  *pty.Manager
+	sshMgr   *ssh.Manager
+	sftpMgr  *sftp.Manager
+	ptyMgr   *pty.Manager
 	serialMgr *serial.Manager
+	telnetMgr *telnet.Manager
 }
 
 // NewApp creates a new App application struct with all managers initialized.
@@ -34,6 +36,7 @@ func NewApp() *App {
 	a.sshMgr = ssh.NewManager(a.emit)
 	a.sftpMgr = sftp.NewManager(a.sshMgr)
 	a.serialMgr = serial.NewManager(a.emit)
+	a.telnetMgr = telnet.NewManager(a.emit)
 	return a
 }
 
@@ -316,6 +319,28 @@ func (a *App) LoadSessionState() (*session.SessionState, error) {
 // ClearSessionState removes the saved session file.
 func (a *App) ClearSessionState() error {
 	return session.ClearSession()
+}
+
+// ==== Telnet Methods ====
+
+// TelnetConnect establishes a Telnet connection.
+func (a *App) TelnetConnect(host string, port int) (*telnet.TelnetConnectResult, error) {
+	return a.telnetMgr.Connect(telnet.TelnetConnectParams{Host: host, Port: port})
+}
+
+// TelnetWrite sends base64-encoded data to a Telnet connection.
+func (a *App) TelnetWrite(connectionID string, data string) error {
+	return a.telnetMgr.Write(connectionID, data)
+}
+
+// TelnetResize resizes the terminal for NAWS support.
+func (a *App) TelnetResize(connectionID string, width, height int) error {
+	return a.telnetMgr.Resize(connectionID, width, height)
+}
+
+// TelnetClose closes a Telnet connection.
+func (a *App) TelnetClose(connectionID string) error {
+	return a.telnetMgr.Close(connectionID)
 }
 
 // ==== Serial Port Methods ====
