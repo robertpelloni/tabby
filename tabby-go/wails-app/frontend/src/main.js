@@ -1940,6 +1940,42 @@ function runSnippet() {
   }
 }
 
+// ===== PASSWORD DIALOG =====
+function showPasswordDialog(title, message) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    const dlg = document.createElement('div');
+    dlg.className = 'modal-dialog';
+    const hdr = document.createElement('div');
+    hdr.className = 'modal-header';
+    hdr.innerHTML = '<h3>' + title + '</h3>';
+    const body = document.createElement('div');
+    body.className = 'modal-body';
+    body.innerHTML = '<p>' + message + '</p><input type="password" id="password-dialog-input" class="text-input" autofocus>';
+    const ftr = document.createElement('div');
+    ftr.className = 'modal-footer';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn btn-secondary';
+    cancelBtn.textContent = 'Cancel';
+    const okBtn = document.createElement('button');
+    okBtn.className = 'btn btn-primary';
+    okBtn.textContent = 'Connect';
+    ftr.appendChild(cancelBtn);
+    ftr.appendChild(okBtn);
+    dlg.appendChild(hdr);
+    dlg.appendChild(body);
+    dlg.appendChild(ftr);
+    overlay.appendChild(dlg);
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector('#password-dialog-input');
+    input.focus();
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { resolve(input.value); overlay.remove(); } if (e.key === 'Escape') { resolve(null); overlay.remove(); } });
+    okBtn.onclick = () => { resolve(input.value); overlay.remove(); };
+    cancelBtn.onclick = () => { resolve(null); overlay.remove(); };
+  });
+}
+
 // ===== KEYCHAIN =====
 async function saveCredentialDialog() {
   const key = prompt('Enter credential key (e.g. ssh:host:user):');
@@ -3035,6 +3071,23 @@ function showNewTabDropdown(e) {
 }
 
 
+
+// ===== SCROLL TO BOTTOM =====
+function addScrollToBottom(term, container) {
+  const btn = document.createElement('button');
+  btn.className = 'scroll-to-bottom-btn';
+  btn.textContent = '\u2193';
+  btn.title = 'Scroll to bottom';
+  btn.style.cssText = 'position:absolute;bottom:30px;right:20px;width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text);cursor:pointer;display:none;z-index:10;font-size:16px;line-height:32px;text-align:center;opacity:0.8;';
+  container.style.position = 'relative';
+  container.appendChild(btn);
+  term.onScroll(() => {
+    const atBottom = term.buffer.active.viewportY >= term.buffer.active.length - term.rows;
+    btn.style.display = atBottom ? 'none' : 'block';
+  });
+  btn.onclick = () => term.scrollToBottom();
+  return btn;
+}
 
 // ===== TAB CLASS =====
 
