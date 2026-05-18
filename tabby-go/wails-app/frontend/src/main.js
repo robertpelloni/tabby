@@ -44,9 +44,9 @@ import { EventsOn, WindowSetAlwaysOnTop } from '../wailsjs/runtime/runtime';
 
 const COLOR_SCHEMES = {};
 
-window.__serialDataHandlers = [];
+window.__serialDataHandlers = []; window.__serialExitHandlers = [];
 
-window.__telnetDataHandlers = [];
+window.__telnetDataHandlers = []; window.__telnetExitHandlers = [];
 
 let schemeNames = [];
 
@@ -334,6 +334,8 @@ async function doSerialConnect() {
     };
 
     window.__serialDataHandlers.push(tab.serialDataHandler);
+      tab.serialExitHandler = (params) => { if ((params.serialId || params.SerialID) === tab.serialId) { setTabStatus(tab, 'disconnected'); } };
+      window.__serialExitHandlers.push(tab.serialExitHandler);
 
     tab.term.onData((data) => {
 
@@ -429,6 +431,8 @@ async function doTelnetConnect() {
     };
 
     window.__telnetDataHandlers.push(tab.telnetDataHandler);
+      tab.telnetExitHandler = (params) => { const cid = params.ConnectionID || params.connectionId; if (cid === tab.telnetConnectionId) { setTabStatus(tab, 'disconnected'); } };
+      window.__telnetExitHandlers.push(tab.telnetExitHandler);
 
     tab.term.onData((data) => {
 
@@ -3470,7 +3474,7 @@ this.lastActivity = Date.now(); this.term.onData((data) => { if (this.ptyId && !
 
 
 
-        this.dataHandler = (params) => { if ((params.ptyId ?? params.PTYID) === this.ptyId) this.term.write(atob(params.data)); if (this.isSSH && (params.sessionId ?? params.SessionID) === this.sshSessionId) this.term.write(atob(params.data)); };
+        this.dataHandler = (params) => { const pid = params.ptyId ?? params.PTYID; const sid = params.sessionId ?? params.SessionID; const serid = params.serialId ?? params.SerialID; const cid = params.connectionId ?? params.ConnectionID; if (pid && pid === this.ptyId) this.term.write(atob(params.data)); else if (this.isSSH && sid && sid === this.sshSessionId) this.term.write(atob(params.data)); else if (this.isSerial && serid && serid === this.serialId) this.term.write(atob(params.data)); else if (this.isTelnet && cid && cid === this.telnetConnectionId) this.term.write(atob(params.data)); };
 
         this.exitHandler = (params) => { if ((params.ptyId ?? params.PTYID) === this.ptyId) { this.exited = true; setTabStatus(this, 'disconnected'); const code = params.exitCode ?? 0; this.term.writeln(`\r\n\x1b[1;33m[Process exited — code ${code}]\x1b[0m`); this.setTitle(`Exit (${code})`); this.tabEl.querySelector('.tab-icon').textContent = '✕'; this.tabEl.querySelector('.tab-icon').style.color = '#f44747'; } };
 
@@ -3520,9 +3524,11 @@ this.lastActivity = Date.now(); this.term.onData((data) => { if (this.ptyId && !
 
         if (this.ptyId) PTYKill(this.ptyId, '').catch(() => {}); if (this.isSSH && this.sshConnectionId) SSHClose({ connectionId: this.sshConnectionId }).catch(() => {});
 
-    if (this.isSerial && this.serialId) { SerialClose(this.serialId).catch(() => {}); window.__serialDataHandlers = (window.__serialDataHandlers || []).filter(h => h !== this.serialDataHandler); }
+    if (this.isSerial && this.serialId) { SerialClose(this.serialId).catch(() => {}); window.__serialDataHandlers = (window.__serialDataHandlers || []).filter(h => h !== this.serialDataHandler);
+      window.__serialExitHandlers = (window.__serialExitHandlers || []).filter(h => h !== this.serialExitHandler); }
 
-    if (this.isTelnet && this.telnetConnectionId) { TelnetClose(this.telnetConnectionId).catch(() => {}); window.__telnetDataHandlers = (window.__telnetDataHandlers || []).filter(h => h !== this.telnetDataHandler); }
+    if (this.isTelnet && this.telnetConnectionId) { TelnetClose(this.telnetConnectionId).catch(() => {}); window.__telnetDataHandlers = (window.__telnetDataHandlers || []).filter(h => h !== this.telnetDataHandler);
+      window.__telnetExitHandlers = (window.__telnetExitHandlers || []).filter(h => h !== this.telnetExitHandler); }
 
         this.term.dispose(); this.wrapper.remove(); this.tabEl.remove();
 
