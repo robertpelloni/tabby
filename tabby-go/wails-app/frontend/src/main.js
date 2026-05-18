@@ -206,7 +206,7 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
  setTabStatus(tab, 'connected'); logConnection(tab, 'SSH connected to ' + host);
  const sp = tab.wrapper.querySelector('.connecting-spinner'); if (sp) sp.remove();
  showToast('Connected to ' + host, 'success');
- tab.sshConnectionId = result.connectionId; tab.sshConnectionId = result.connectionId;
+ tab.sshConnectionId = result.connectionId; 
     tab.sessionData = JSON.stringify({ type: 'ssh', host, port, user, auth: authParams }); let jumpLabel = '';
 
     if (result.jumpChain && result.jumpChain.length > 0) {
@@ -215,7 +215,7 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
 
     }
 
-    tab.setTitle(user + '@' + host + jumpLabel); tab.tabEl.querySelector('.tab-icon').textContent = '🔐'; const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: 'xterm-256color' }); tab.sshSessionId = shellResult.sessionId; tab.isSSH = true; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.term.onData((data) => { if (data.includes('\n') && data.trim().split('\n').length > 1) { if (settings.PasteWarning !== false && !confirm('Paste multi-line content? (' + data.trim().split('\n').length + ' lines)')) return; } if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) }); });
+    tab.setTitle(user + '@' + host + jumpLabel); tab.tabEl.querySelector('.tab-icon').textContent = '🔐'; const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: 'xterm-256color' }); tab.sshSessionId = shellResult.sessionId; tab.isSSH = true; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.term.onData((data) => { if (data.includes('\n') && data.trim().split('\n').length > 1) { if (settings.PasteWarning !== false && !confirm('Paste multi-line content? (' + data.trim().split('\n').length + ' lines)')) return; } if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) }); });
     setupInputProcessing(tab.term, tab);
     const loginScriptEl = document.getElementById('ssh-login-script');
     if (loginScriptEl && loginScriptEl.value.trim()) runLoginScript(tab, loginScriptEl.value);
@@ -3471,9 +3471,7 @@ class Tab {
   if (sel) m.innerHTML += '<div class="context-menu-item" data-action="search">Search Web</div>';
   m.innerHTML += '<div class="context-menu-item" data-action="clear">Clear Terminal</div>';
   m.innerHTML += '<div class="context-menu-item" data-action="select-all">Select All</div>';
-  m.innerHTML += '<div class="context-menu-item" data-action="reset">Reset Terminal</div>';
-  m.innerHTML += '<div class="context-menu-item" data-action="select-all">Select All</div>';
-  m.innerHTML += '<div class="context-menu-item" data-action="reset">Reset Terminal</div>';
+ m.innerHTML += '<div class="context-menu-item" data-action="reset">Reset Terminal</div>';
   document.body.appendChild(m);
   const rm = () => m.remove();
   m.querySelectorAll('.context-menu-item').forEach(it => {
@@ -3485,8 +3483,8 @@ class Tab {
       if (a === 'clear') this.term.clear();
       if (a === 'select-all') this.term.selectAll();
       if (a === 'reset') this.term.reset();
-      if (a === 'select-all') this.term.selectAll();
-      if (a === 'reset') this.term.reset();
+      
+      
       rm();
     };
   });
@@ -3508,7 +3506,7 @@ this.lastActivity = Date.now(); this.term.onData((data) => { if (this.ptyId && !
 
         this.dataHandler = (params) => { const pid = params.ptyId ?? params.PTYID; const sid = params.sessionId ?? params.SessionID; const serid = params.serialId ?? params.SerialID; const cid = params.connectionId ?? params.ConnectionID; if (pid && pid === this.ptyId) this.term.write(atob(params.data)); else if (this.isSSH && sid && sid === this.sshSessionId) this.term.write(atob(params.data)); else if (this.isSerial && serid && serid === this.serialId) this.term.write(atob(params.data)); else if (this.isTelnet && cid && cid === this.telnetConnectionId) this.term.write(atob(params.data)); };
 
-        this.exitHandler = (params) => { if ((params.ptyId ?? params.PTYID) === this.ptyId) { this.exited = true; setTabStatus(this, 'disconnected'); const code = params.exitCode ?? 0; this.term.writeln(`\r\n\x1b[1;33m[Process exited — code ${code}]\x1b[0m`); this.setTitle(`Exit (${code})`); this.tabEl.querySelector('.tab-icon').textContent = '✕'; this.tabEl.querySelector('.tab-icon').style.color = '#f44747'; } };
+        this.exitHandler = (params) => { const pid = params.ptyId ?? params.PTYID; const sid = params.sessionId ?? params.SessionID; const cid = params.connectionId ?? params.ConnectionID; let matched = false; if (pid && pid === this.ptyId) matched = true; else if (this.isSSH && sid && sid === this.sshSessionId) matched = true; else if (this.isSSH && cid && cid === this.sshConnectionId) matched = true; if (matched) { this.exited = true; setTabStatus(this, 'disconnected'); const code = params.exitCode ?? 0; this.term.writeln(`\r\n\x1b[1;33m[Process exited — code ${code}]\x1b[0m`); this.setTitle(`Exit (${code})`); this.tabEl.querySelector('.tab-icon').textContent = '✕'; this.tabEl.querySelector('.tab-icon').style.color = '#f44747'; } };
 
         window.__ptyDataHandlers = window.__ptyDataHandlers || []; window.__ptyExitHandlers = window.__ptyExitHandlers || [];
 
@@ -3794,20 +3792,56 @@ async function reconnectTab(tab) {
     try {
       const session = JSON.parse(tab.sessionData);
       if (session.type === 'ssh') {
-        connectSSH(session.host, session.port, session.user, session.auth);
         showToast('Reconnecting to ' + session.host + '...', 'info');
+        setTabStatus(tab, 'connecting');
+        const result = await SSHConnect({ host: session.host, port: session.port || 22, user: session.user, auth: session.auth, keepaliveInterval: 30, keepaliveCountMax: 3, readyTimeout: 15000 });
+        tab.sshConnectionId = result.connectionId;
+        tab.isSSH = true; tab.sshHost = session.host; tab.sshPort = session.port || 22; tab.sshUser = session.user;
+        const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: 'xterm-256color' });
+        tab.sshSessionId = shellResult.sessionId;
+        setTabStatus(tab, 'connected');
+        tab.setTitle(session.user + '@' + session.host);
+        tab.tabEl.querySelector('.tab-icon').textContent = '🔐';
+        tab.term.onData((data) => {
+          if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) });
+        });
+        showToast('Reconnected to ' + session.host, 'success');
       } else if (session.type === 'telnet') {
-        connectTelnet(session.host, session.port);
         showToast('Reconnecting to ' + session.host + '...', 'info');
+        setTabStatus(tab, 'connecting');
+        const result = await TelnetConnect(session.host, session.port || 23);
+        tab.telnetConnectionId = result.ConnectionID || result.connectionId;
+        tab.isTelnet = true; tab.telnetHost = session.host; tab.telnetPort = session.port || 23;
+        setTabStatus(tab, 'connected');
+        tab.setTitle(session.host + ':' + (session.port || 23));
+        tab.tabEl.querySelector('.tab-icon').textContent = '🌐';
+        tab.term.onData((data) => {
+          if (tab.telnetConnectionId) TelnetWrite(tab.telnetConnectionId, btoa(data));
+        });
+        showToast('Reconnected to ' + session.host, 'success');
+      } else if (session.type === 'serial') {
+        showToast('Reconnecting to ' + session.port + '...', 'info');
+        setTabStatus(tab, 'connecting');
+        const result = await SerialOpen({ port: session.port, baudRate: session.baudRate || 115200, dataBits: 8, stopBits: 1, parity: 'none' });
+        tab.serialId = result.ID || result.id;
+        tab.isSerial = true; tab.serialPort = session.port;
+        setTabStatus(tab, 'connected');
+        tab.setTitle(session.port.split('/').pop().split('\\').pop());
+        tab.tabEl.querySelector('.tab-icon').textContent = '📡';
+        tab.term.onData((data) => {
+          if (tab.serialId) SerialWrite(tab.serialId, btoa(data));
+        });
+        showToast('Reconnected to ' + session.port, 'success');
       } else {
-        spawnLocalShell();
+        tab.spawn();
         showToast('Reconnecting local shell...', 'info');
       }
-      tab.close();
-    } catch (e) { showToast('Reconnect failed: ' + e.message, 'error'); }
+    } catch (e) {
+      showToast('Reconnect failed: ' + e.message, 'error');
+      setTabStatus(tab, 'disconnected');
+    }
   } else {
-    spawnLocalShell();
-    tab.close();
+    tab.spawn();
   }
 }
 
@@ -3842,7 +3876,7 @@ async function restoreSession() {
         tab.setTitle((saved.User || "root") + "@" + saved.Host + " [reconnecting...]");
         tab.term.writeln("\x1b[1;33m[Reconnecting to " + (saved.User || "root") + "@" + saved.Host + "...]\x1b[0m");
         try {
-          setTabStatus(t, 'connecting'); logConnection(t, 'SSH connecting to ' + host + ':' + port); const result = await SSHConnect({ host: saved.Host, port: saved.Port || 22, user: saved.User || "root", auth: { type: "agent" }, keepaliveInterval: 30, keepaliveCountMax: 3, readyTimeout: 15000 }); setTabStatus(t, 'connected'); logConnection(t, 'SSH connected');
+          setTabStatus(tab, 'connecting'); logConnection(tab, 'SSH connecting to ' + saved.Host + ':' + (saved.Port || 22)); const result = await SSHConnect({ host: saved.Host, port: saved.Port || 22, user: saved.User || "root", auth: { type: "agent" }, keepaliveInterval: 30, keepaliveCountMax: 3, readyTimeout: 15000 }); setTabStatus(tab, 'connected'); logConnection(tab, 'SSH connected');
           tab.sshConnectionId = result.connectionId;
           tab.sshHost = saved.Host; tab.sshPort = saved.Port || 22; tab.sshUser = saved.User || "root"; tab.isSSH = true;
           const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: "xterm-256color" });
