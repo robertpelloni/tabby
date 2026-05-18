@@ -51,6 +51,10 @@ export function GetUpdateStatus():Promise<updater.UpdateStatus>;
 
 export function GetUsername():Promise<string>;
 
+export function HandleHostKeyResponse(arg1:string,arg2:boolean):Promise<void>;
+
+export function HandleKeyboardInteractiveResponse(arg1:string,arg2:Array<string>):Promise<void>;
+
 export function ImportSSHConfig():Promise<Array<profile.ConnectionProfile>>;
 
 export function IsOSKeyringAvailable():Promise<boolean>;

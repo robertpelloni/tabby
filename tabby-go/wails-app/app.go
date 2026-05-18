@@ -107,6 +107,20 @@ func (a *App) SSHClose(params api.SSHCloseParams) error {
 	return a.sshMgr.Close(params)
 }
 
+// ==== SSH Auth Challenge Responses ====
+
+// HandleHostKeyResponse responds to a host key verification prompt.
+// The frontend calls this after the user accepts or rejects a host key.
+func (a *App) HandleHostKeyResponse(connectionID string, accepted bool) {
+	a.sshMgr.HandleHostKeyResponse(connectionID, accepted)
+}
+
+// HandleKeyboardInteractiveResponse responds to a keyboard-interactive auth challenge.
+// The frontend calls this after the user provides answers to the prompts.
+func (a *App) HandleKeyboardInteractiveResponse(connectionID string, responses []string) {
+	a.sshMgr.HandleKeyboardInteractiveResponse(connectionID, responses)
+}
+
 // SSHAddForward adds a port forward to an active SSH connection.
 func (a *App) SSHAddForward(params api.PortForwardParams) (*api.PortForwardResult, error) {
 	return a.sshMgr.AddForward(params)

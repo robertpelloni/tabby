@@ -86,6 +86,14 @@ export function GetUsername() {
   return window['go']['main']['App']['GetUsername']();
 }
 
+export function HandleHostKeyResponse(arg1, arg2) {
+  return window['go']['main']['App']['HandleHostKeyResponse'](arg1, arg2);
+}
+
+export function HandleKeyboardInteractiveResponse(arg1, arg2) {
+  return window['go']['main']['App']['HandleKeyboardInteractiveResponse'](arg1, arg2);
+}
+
 export function ImportSSHConfig() {
   return window['go']['main']['App']['ImportSSHConfig']();
 }

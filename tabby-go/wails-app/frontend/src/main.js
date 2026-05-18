@@ -12,7 +12,7 @@ import {
 
  SSHConnect, SSHStartShell, SSHWrite, SSHResize, SSHClose,
 
- SSHAddForward, SSHRemoveForward, SSHListForwards,
+ SSHAddForward, SSHRemoveForward, SSHListForwards, HandleHostKeyResponse, HandleKeyboardInteractiveResponse,
 
  SerialOpen, SerialWrite, SerialClose, SerialListPorts,
 
@@ -678,6 +678,30 @@ function parseAddr(addr, defaultHost) {
 
 }
 
+
+
+// ===== SSH AUTH CHALLENGE HANDLERS =====
+async function handleKeyboardInteractive(params) {
+  const connID = params.connectionId || params.ConnectionID;
+  const name = params.name || '';
+  const instruction = params.instruction || '';
+  const prompts = params.prompts || [];
+  const responses = [];
+  for (const p of prompts) {
+    const answer = await showPasswordDialog('SSH Authentication', p.prompt || 'Response:');
+    if (answer === null) { responses.push(''); } else { responses.push(answer); }
+  }
+  HandleKeyboardInteractiveResponse(connID, responses);
+}
+async function handleHostKeyPrompt(params) {
+  const connID = params.connectionId || params.ConnectionID;
+  const host = params.host || 'unknown';
+  const keyType = params.keyType || 'unknown';
+  const fingerprint = params.fingerprint || 'unknown';
+  const msg = 'Host key for ' + host + ' (' + keyType + ')' + String.fromCharCode(10) + 'Fingerprint: ' + fingerprint + String.fromCharCode(10) + String.fromCharCode(10) + 'Accept this host key?';
+  const accepted = confirm(msg);
+  HandleHostKeyResponse(connID, accepted);
+}
 
 
 // ===== HOST KEY VERIFICATION =====
@@ -3577,6 +3601,8 @@ EventsOn('serial.data', (params) => { (window.__serialDataHandlers || []).forEac
 EventsOn('serial.exit', (params) => { (window.__serialExitHandlers || []).forEach(h => h(params)); });
 EventsOn('telnet.data', (params) => { (window.__telnetDataHandlers || []).forEach(h => h(params)); });
 EventsOn('telnet.exit', (params) => { (window.__telnetExitHandlers || []).forEach(h => h(params)); });
+EventsOn('ssh.keyboardInteractive', (params) => { handleKeyboardInteractive(params); });
+EventsOn('ssh.hostKeyPrompt', (params) => { handleHostKeyPrompt(params); });
 EventsOn('menu:new-tab', () => newTab());
 EventsOn('menu:settings', () => openSettings());
 EventsOn('menu:copy', () => { const t = getActiveTab(); if (t && t.term) document.execCommand('copy'); });
