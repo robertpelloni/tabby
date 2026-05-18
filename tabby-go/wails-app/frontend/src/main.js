@@ -197,8 +197,16 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
 
     }
 
-    const result = await SSHConnect(sshParams); setTabStatus(tab, 'connected'); logConnection(tab, 'SSH connected to ' + host);
-  const sp = tab.wrapper.querySelector('.connecting-spinner'); if (sp) sp.remove(); showToast('Connected to ' + host, 'success'); const tab = new Tab(defaultShell, 'ssh://' + user + '@' + host); tab.connectionType = 'ssh'; tabs.push(tab); tab.activate(); tab.ptyId = null; tab.sshConnectionId = result.connectionId;
+    const tab = new Tab(defaultShell, 'ssh://' + user + '@' + host);
+ tab.connectionType = 'ssh';
+ tabs.push(tab);
+ tab.activate();
+ tab.ptyId = null;
+ const result = await SSHConnect(sshParams);
+ setTabStatus(tab, 'connected'); logConnection(tab, 'SSH connected to ' + host);
+ const sp = tab.wrapper.querySelector('.connecting-spinner'); if (sp) sp.remove();
+ showToast('Connected to ' + host, 'success');
+ tab.sshConnectionId = result.connectionId; tab.sshConnectionId = result.connectionId;
     tab.sessionData = JSON.stringify({ type: 'ssh', host, port, user, auth: authParams }); let jumpLabel = '';
 
     if (result.jumpChain && result.jumpChain.length > 0) {
@@ -3488,7 +3496,7 @@ this.lastActivity = Date.now(); this.term.onData((data) => { if (this.ptyId && !
 
     async spawn() {
 
-        try { setTabStatus(tab, 'connecting'); logConnection(tab, 'Spawning local shell...'); setTabStatus(this, 'connecting'); logConnection(this, 'Spawning shell: ' + this.shell); const result = await PTYSpawn({ command: this.shell, args: [], env: {}, columns: this.term.cols, rows: this.term.rows }); this.ptyId = result.id; setTabStatus(this, 'connected'); logConnection(this, 'Shell started: ' + this.shell); const name = this.shell.split(/[/\\]/).pop().replace('.exe', ''); this.setTitle(name); showStatus(`Connected — ${name}`); }
+        try { setTabStatus(this, 'connecting'); logConnection(this, 'Spawning shell: ' + this.shell); const result = await PTYSpawn({ command: this.shell, args: [], env: {}, columns: this.term.cols, rows: this.term.rows }); this.ptyId = result.id; setTabStatus(this, 'connected'); logConnection(this, 'Shell started: ' + this.shell); const name = this.shell.split(/[/\\]/).pop().replace('.exe', ''); this.setTitle(name); showStatus(`Connected — ${name}`); }
 
         catch (err) { this.term.writeln(`\x1b[1;31mFailed to spawn shell: ${err}\x1b[0m`); showToast(`Shell spawn failed: ${err}`, 'error'); }
 
@@ -3564,7 +3572,12 @@ EventsOn('pty.exit', (params) => { (window.__ptyExitHandlers || []).forEach(h =>
 
 EventsOn('ssh.data', (params) => { (window.__ptyDataHandlers || []).forEach(h => h(params)); });
 
-EventsOn('ssh.exit', (params) => { (window.__ptyExitHandlers || []).forEach(h => h(params)); });EventsOn('menu:new-tab', () => newTab());
+EventsOn('ssh.exit', (params) => { (window.__ptyExitHandlers || []).forEach(h => h(params)); });
+EventsOn('serial.data', (params) => { (window.__serialDataHandlers || []).forEach(h => h(params)); });
+EventsOn('serial.exit', (params) => { (window.__serialExitHandlers || []).forEach(h => h(params)); });
+EventsOn('telnet.data', (params) => { (window.__telnetDataHandlers || []).forEach(h => h(params)); });
+EventsOn('telnet.exit', (params) => { (window.__telnetExitHandlers || []).forEach(h => h(params)); });
+EventsOn('menu:new-tab', () => newTab());
 EventsOn('menu:settings', () => openSettings());
 EventsOn('menu:copy', () => { const t = getActiveTab(); if (t && t.term) document.execCommand('copy'); });
 EventsOn('menu:paste', () => { const t = getActiveTab(); if (t && t.term) navigator.clipboard.readText().then(text => t.term.paste(text)); });
@@ -3803,7 +3816,7 @@ async function restoreSession() {
         tab.setTitle((saved.User || "root") + "@" + saved.Host + " [reconnecting...]");
         tab.term.writeln("\x1b[1;33m[Reconnecting to " + (saved.User || "root") + "@" + saved.Host + "...]\x1b[0m");
         try {
-          const result = setTabStatus(t, 'connecting'); logConnection(t, 'SSH connecting to ' + host + ':' + port); await setTabStatus(tab, 'connecting'); logConnection(tab, 'SSH connecting...'); SSHConnect({ host: saved.Host, port: saved.Port || 22, user: saved.User || "root", auth: { type: "agent" }, keepaliveInterval: 30, keepaliveCountMax: 3, readyTimeout: 15000 });
+          setTabStatus(t, 'connecting'); logConnection(t, 'SSH connecting to ' + host + ':' + port); const result = await SSHConnect({ host: saved.Host, port: saved.Port || 22, user: saved.User || "root", auth: { type: "agent" }, keepaliveInterval: 30, keepaliveCountMax: 3, readyTimeout: 15000 }); setTabStatus(t, 'connected'); logConnection(t, 'SSH connected');
           tab.sshConnectionId = result.connectionId;
           tab.sshHost = saved.Host; tab.sshPort = saved.Port || 22; tab.sshUser = saved.User || "root"; tab.isSSH = true;
           const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: "xterm-256color" });
