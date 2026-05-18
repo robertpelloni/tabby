@@ -3863,6 +3863,10 @@ function bindGlobalKeys() {
         if (ctrl && e.key === 'Tab' && shift) { e.preventDefault(); prevTab(); return; }
 
         if (e.altKey && e.key >= '1' && e.key <= '9') { e.preventDefault(); switchToTab(parseInt(e.key) - 1); return; }
+  if (ctrl && shift && e.key === 'L') { e.preventDefault(); showConnectionLog(); }
+    if (ctrl && shift && e.key === 'O') { e.preventDefault(); openSettingsPanel(); }
+  if (ctrl && shift && e.key === 'E') { e.preventDefault(); exportProfiles(); }
+  if (ctrl && shift && e.key === 'B') { e.preventDefault(); const tab = getActiveTab(); if (tab) setTabBadge(tab, Math.floor(Math.random()*10)); }
 
         if (ctrl && !shift && e.key === '\\') { e.preventDefault(); splitVertically(); return; }
 
