@@ -80,7 +80,7 @@ setInterval(() => {
   if (timeout <= 0) return;
   tabs.forEach(tab => {
     if (tab.lastActivity && Date.now() - tab.lastActivity > timeout * 60000) {
-      if (tab.status === 'connected' && (tab.isSSH || tab.telnetConnectionId)) {
+      if (tab.status === 'connected' && (tab.isSSH || tab.isSerial || tab.isTelnet)) {
         showToast('Idle timeout: ' + tab.title, 'info');
         tab.close();
       }
@@ -1528,9 +1528,10 @@ function handlePaletteKey(e) {
 
   var items = document.querySelectorAll('.palette-item');
 
-  if (e.key === 'Escape') { e.preventDefault(); toggleCommandPalette(); }
-
-  else if (e.key === 'ArrowDown') { e.preventDefault(); paletteSelectedIdx = Math.min(paletteSelectedIdx + 1, items.length - 1); items.forEach(function(el, i) { el.classList.toggle('selected', i === paletteSelectedIdx); }); }
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    toggleCommandPalette();
+  } else if (e.key === 'ArrowDown') { e.preventDefault(); paletteSelectedIdx = Math.min(paletteSelectedIdx + 1, items.length - 1); items.forEach(function(el, i) { el.classList.toggle('selected', i === paletteSelectedIdx); }); }
 
   else if (e.key === 'ArrowUp') { e.preventDefault(); paletteSelectedIdx = Math.max(paletteSelectedIdx - 1, 0); items.forEach(function(el, i) { el.classList.toggle('selected', i === paletteSelectedIdx); }); }
 
@@ -3059,7 +3060,7 @@ function applyFontSize(size) {
 
     fontSize = size;
 
-    tabs.forEach(t => { if (t.term) { t.term.options.fontSize = size; t.fitAddon.fit(); if (t.ptyId) PTYResize(t.ptyId, t.term.cols, t.term.rows); } });
+    tabs.forEach(t => { if (t.term) { t.term.options.fontSize = size; t.fitAddon.fit(); if (t.ptyId) PTYResize(t.ptyId, t.term.cols, t.term.rows); if (t.isSSH && t.sshConnectionId && t.sshSessionId) SSHResize({ connectionId: t.sshConnectionId, sessionId: t.sshSessionId, columns: t.term.cols, rows: t.term.rows }); } });
 
 }
 
@@ -3513,7 +3514,7 @@ this.lastActivity = Date.now(); this.term.onData((data) => { if (this.ptyId && !
 
 
 
-        this.dataHandler = (params) => { const pid = params.ptyId ?? params.PTYID; const sid = params.sessionId ?? params.SessionID; const serid = params.serialId ?? params.SerialID; const cid = params.connectionId ?? params.ConnectionID; if (pid && pid === this.ptyId) this.term.write(atob(params.data)); else if (this.isSSH && sid && sid === this.sshSessionId) this.term.write(atob(params.data)); else if (this.isSerial && serid && serid === this.serialId) this.term.write(atob(params.data)); else if (this.isTelnet && cid && cid === this.telnetConnectionId) this.term.write(atob(params.data)); };
+        this.dataHandler = (params) => { const pid = params.ptyId ?? params.PTYID; const sid = params.sessionId ?? params.SessionID; const serid = params.serialId ?? params.SerialID; const cid = params.connectionId ?? params.ConnectionID; if (pid && pid === this.ptyId) { this.term.write(atob(params.data)); this.lastActivity = Date.now(); } else if (this.isSSH && sid && sid === this.sshSessionId) { this.term.write(atob(params.data)); this.lastActivity = Date.now(); } else if (this.isSerial && serid && serid === this.serialId) { this.term.write(atob(params.data)); this.lastActivity = Date.now(); } else if (this.isTelnet && cid && cid === this.telnetConnectionId) { this.term.write(atob(params.data)); this.lastActivity = Date.now(); } };
 
         this.exitHandler = (params) => { const pid = params.ptyId ?? params.PTYID; const sid = params.sessionId ?? params.SessionID; const cid = params.connectionId ?? params.ConnectionID; let matched = false; if (pid && pid === this.ptyId) matched = true; else if (this.isSSH && sid && sid === this.sshSessionId) matched = true; else if (this.isSSH && cid && cid === this.sshConnectionId) matched = true; if (matched) { this.exited = true; setTabStatus(this, 'disconnected'); const code = params.exitCode ?? 0; this.term.writeln(`\r\n\x1b[1;33m[Process exited — code ${code}]\x1b[0m`); this.setTitle(`Exit (${code})`); this.tabEl.querySelector('.tab-icon').textContent = '✕'; this.tabEl.querySelector('.tab-icon').style.color = '#f44747'; } };
 
@@ -3561,7 +3562,7 @@ this.lastActivity = Date.now(); this.term.onData((data) => { if (this.ptyId && !
 
         window.__ptyExitHandlers = (window.__ptyExitHandlers || []).filter(h => h !== this.exitHandler);
 
-        if (this.ptyId) PTYKill(this.ptyId, '').catch(() => {}); if (this.isSSH && this.sshConnectionId) SSHClose({ connectionId: this.sshConnectionId }).catch(() => {});
+        if (this.ptyId) PTYKill(this.ptyId, '').catch(() => {}); if (this.isSSH && this.sshConnectionId) SSHClose({ connectionId: this.sshConnectionId, sessionId: this.sshSessionId }).catch(() => {});
 
     if (this.isSerial && this.serialId) { SerialClose(this.serialId).catch(() => {}); window.__serialDataHandlers = (window.__serialDataHandlers || []).filter(h => h !== this.serialDataHandler);
       window.__serialExitHandlers = (window.__serialExitHandlers || []).filter(h => h !== this.serialExitHandler); }
@@ -3676,7 +3677,7 @@ class SplitPane {
 
         const onMove = (e) => { if (!dragging) return; e.preventDefault(); const pos = this.orientation === 'vertical' ? e.clientY : e.clientX; const rect = this.element.getBoundingClientRect(); const total = this.orientation === 'vertical' ? rect.height : rect.width; const pct = ((pos - startPos) / total) * 100; const f0 = Math.max(20, Math.min(80, sf0 + pct)); this.panes[0].flex = f0; this.panes[1].flex = 100 - f0; this.panes[0].element.style.flex = `${f0} 1 0%`; this.panes[1].element.style.flex = `${100 - f0} 1 0%`; };
 
-        const onEnd = () => { if (!dragging) return; dragging = false; d.classList.remove('dragging'); this.panes.forEach(p => { p.tab.fitAddon.fit(); if (p.tab.ptyId) PTYResize(p.tab.ptyId, p.tab.term.cols, p.tab.term.rows); }); };
+        const onEnd = () => { if (!dragging) return; dragging = false; d.classList.remove('dragging'); this.panes.forEach(p => { p.tab.fitAddon.fit(); if (p.tab.ptyId) PTYResize(p.tab.ptyId, p.tab.term.cols, p.tab.term.rows); if (p.tab.isSSH && p.tab.sshConnectionId && p.tab.sshSessionId) SSHResize({ connectionId: p.tab.sshConnectionId, sessionId: p.tab.sshSessionId, columns: p.tab.term.cols, rows: p.tab.term.rows }); }); };
 
         d.addEventListener('mousedown', onStart); document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onEnd); }
 
@@ -3955,7 +3956,6 @@ function bindGlobalKeys() {
 
         if (ctrl && shift && e.key === 'P') { e.preventDefault(); toggleCommandPalette(); return; }
 
-    if (ctrl && shift && e.key === 'P') { e.preventDefault(); toggleCommandPalette(); return; }
 
     if (ctrl && shift && e.key === 'F') { e.preventDefault(); toggleTabSearch(); return; }
       if (ctrl && shift && e.key === 'S') { e.preventDefault(); openSerialDialog(); return; }
@@ -4006,7 +4006,7 @@ function bindGlobalKeys() {
 
 window.addEventListener('resize', () => {
 
-    const tab = getActiveTab(); if (tab) { tab.fitAddon.fit(); if (tab.ptyId && !tab.exited) PTYResize(tab.ptyId, tab.term.cols, tab.term.rows); }
+    const tab = getActiveTab(); if (tab) { tab.fitAddon.fit(); if (tab.ptyId && !tab.exited) PTYResize(tab.ptyId, tab.term.cols, tab.term.rows); if (tab.isSSH && tab.sshConnectionId && tab.sshSessionId) SSHResize({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, columns: tab.term.cols, rows: tab.term.rows }); }
 
     if (activeSplitPane) activeSplitPane.panes.forEach(p => { p.tab.fitAddon.fit(); if (p.tab.ptyId && !p.tab.exited) PTYResize(p.tab.ptyId, p.tab.term.cols, p.tab.term.rows); });
 
