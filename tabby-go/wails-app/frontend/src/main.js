@@ -315,17 +315,20 @@ async function doSerialConnect() {
 
   try {
 
-    setTabStatus(tab, 'connecting'); logConnection(tab, 'Opening serial port...'); const result = await SerialOpen({ port, baudRate: baud, dataBits, stopBits, parity });
-
-    setTabStatus(tab, 'connected'); logConnection(tab, 'Serial port opened: ' + port); showToast('Serial connected: ' + port, 'success');
-
     const tab = new Tab(defaultShell);
-
-    tabs.push(tab);
-
-    tab.activate();
-
-    tab.ptyId = null;
+ tabs.push(tab);
+ tab.activate();
+ tab.ptyId = null;
+ setTabStatus(tab, 'connecting'); logConnection(tab, 'Opening serial port...');
+ const result = await SerialOpen({ port, baudRate: baud, dataBits, stopBits, parity });
+ setTabStatus(tab, 'connected'); logConnection(tab, 'Serial port opened: ' + port); showToast('Serial connected: ' + port, 'success');
+ tab.serialId = result.ID || result.id;
+ tab.isSerial = true;
+ tab.serialPort = port;
+ tab.sessionData = JSON.stringify({ type: 'serial', port, baudRate: baud });
+ tab.setTitle(port.split('/').pop().split('\\').pop());
+ tab.tabEl.querySelector('.tab-icon').textContent = '📡';
+ tab.ptyId = null;
 
     tab.serialId = result.ID || result.id;
 
@@ -342,7 +345,8 @@ async function doSerialConnect() {
     };
 
     window.__serialDataHandlers.push(tab.serialDataHandler);
-      tab.serialExitHandler = (params) => { if ((params.serialId || params.SerialID) === tab.serialId) { setTabStatus(tab, 'disconnected'); } };
+      tab.serialExitHandler = (params) => { if ((params.serialId || params.SerialID) === tab.serialId) { tab.exited = true; setTabStatus(tab, 'disconnected'); tab.term.writeln(`
+[1;33m[Serial port closed][0m`); tab.setTitle(tab.title + ' [disconnected]'); tab.tabEl.querySelector('.tab-icon').textContent = '✕'; tab.tabEl.querySelector('.tab-icon').style.color = '#f44747'; } };
       window.__serialExitHandlers.push(tab.serialExitHandler);
 
     tab.term.onData((data) => {
@@ -350,6 +354,8 @@ async function doSerialConnect() {
       if (tab.serialId) SerialWrite(tab.serialId, btoa(data));
 
     });
+
+    setupInputProcessing(tab.term, tab);
 
     showStatus('Serial - ' + port + ' @ ' + baud);
 
@@ -439,7 +445,8 @@ async function doTelnetConnect() {
     };
 
     window.__telnetDataHandlers.push(tab.telnetDataHandler);
-      tab.telnetExitHandler = (params) => { const cid = params.ConnectionID || params.connectionId; if (cid === tab.telnetConnectionId) { setTabStatus(tab, 'disconnected'); } };
+      tab.telnetExitHandler = (params) => { const cid = params.ConnectionID || params.connectionId; if (cid === tab.telnetConnectionId) { tab.exited = true; setTabStatus(tab, 'disconnected'); tab.term.writeln(`
+[1;33m[Telnet connection closed][0m`); tab.setTitle(tab.title + ' [disconnected]'); tab.tabEl.querySelector('.tab-icon').textContent = '✕'; tab.tabEl.querySelector('.tab-icon').style.color = '#f44747'; } };
       window.__telnetExitHandlers.push(tab.telnetExitHandler);
 
     tab.term.onData((data) => {
@@ -447,6 +454,8 @@ async function doTelnetConnect() {
       if (tab.telnetConnectionId) TelnetWrite(tab.telnetConnectionId, btoa(data));
 
     });
+
+    setupInputProcessing(tab.term, tab);
 
     showStatus('Telnet - ' + host + ':' + port);
 
@@ -3580,7 +3589,7 @@ this.lastActivity = Date.now(); this.term.onData((data) => { if (this.ptyId && !
 
     copySelection() { const sel = this.term.getSelection(); if (sel) navigator.clipboard.writeText(sel).then(() => showToast('Copied', 'success')); }
 
-    async pasteFromClipboard() { try { const text = await navigator.clipboard.readText(); if (text) { if (this.isSSH && this.sshConnectionId && this.sshSessionId) SSHWrite({ connectionId: this.sshConnectionId, sessionId: this.sshSessionId, data: btoa(text) }); else if (this.ptyId && !this.exited) PTYWrite(this.ptyId, btoa(text)); } } catch (_) { showToast('Clipboard access denied', 'error'); } }
+    async pasteFromClipboard() { try { const text = await navigator.clipboard.readText(); if (text) { if (this.isSSH && this.sshConnectionId && this.sshSessionId) SSHWrite({ connectionId: this.sshConnectionId, sessionId: this.sshSessionId, data: btoa(text) }); else if (this.isSerial && this.serialId) SerialWrite(this.serialId, btoa(text)); else if (this.isTelnet && this.telnetConnectionId) TelnetWrite(this.telnetConnectionId, btoa(text)); else if (this.ptyId && !this.exited) PTYWrite(this.ptyId, btoa(text)); } } catch (_) { showToast('Clipboard access denied', 'error'); } }
 
 }
 
