@@ -10,6 +10,10 @@ export function ClearSessionState() {
   return window['go']['main']['App']['ClearSessionState']();
 }
 
+export function DeleteCredential(arg1) {
+  return window['go']['main']['App']['DeleteCredential'](arg1);
+}
+
 export function GetAvailableShells() {
   return window['go']['main']['App']['GetAvailableShells']();
 }
@@ -24,6 +28,10 @@ export function GetColorSchemeNames() {
 
 export function GetColorSchemes() {
   return window['go']['main']['App']['GetColorSchemes']();
+}
+
+export function GetCredential(arg1) {
+  return window['go']['main']['App']['GetCredential'](arg1);
 }
 
 export function GetDefaultShell() {
@@ -68,6 +76,10 @@ export function GetUsername() {
 
 export function ImportSSHConfig() {
   return window['go']['main']['App']['ImportSSHConfig']();
+}
+
+export function IsOSKeyringAvailable() {
+  return window['go']['main']['App']['IsOSKeyringAvailable']();
 }
 
 export function LoadSessionState() {
@@ -228,6 +240,10 @@ export function SerialWrite(arg1, arg2) {
 
 export function SetWindowTitle(arg1) {
   return window['go']['main']['App']['SetWindowTitle'](arg1);
+}
+
+export function StoreCredential(arg1, arg2) {
+  return window['go']['main']['App']['StoreCredential'](arg1, arg2);
 }
 
 export function TelnetClose(arg1) {

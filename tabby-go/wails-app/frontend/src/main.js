@@ -32,7 +32,7 @@ SFTPChmod, SFTPReadlink, SFTPSymlink,
 
 ImportSSHConfig,
 
-GetUsername, GetHomeDir, GetPlatform, GetNotifications, GetUnreadNotifications, MarkNotificationRead, ClearNotifications, SelectDirectory,
+GetUsername, GetHomeDir, GetPlatform, GetNotifications, GetUnreadNotifications, MarkNotificationRead, ClearNotifications, SelectDirectory, StoreCredential, GetCredential, DeleteCredential, IsOSKeyringAvailable,
 
 } from '../wailsjs/go/main/App';
 
@@ -168,7 +168,7 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
 
     }
 
-    tab.setTitle(user + '@' + host + jumpLabel); tab.tabEl.querySelector('.tab-icon').textContent = '\U0001f510'; const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: 'xterm-256color' }); tab.sshSessionId = shellResult.sessionId; tab.isSSH = true; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.term.onData((data) => { if (data.includes('\n') && data.trim().split('\n').length > 1) { if (settings.PasteWarning !== false && !confirm('Paste multi-line content? (' + data.trim().split('\n').length + ' lines)')) return; } if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) }); });
+    tab.setTitle(user + '@' + host + jumpLabel); tab.tabEl.querySelector('.tab-icon').textContent = '🔐'; const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: 'xterm-256color' }); tab.sshSessionId = shellResult.sessionId; tab.isSSH = true; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.term.onData((data) => { if (data.includes('\n') && data.trim().split('\n').length > 1) { if (settings.PasteWarning !== false && !confirm('Paste multi-line content? (' + data.trim().split('\n').length + ' lines)')) return; } if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) }); });
     setupInputProcessing(tab.term, tab);
     const loginScriptEl = document.getElementById('ssh-login-script');
     if (loginScriptEl && loginScriptEl.value.trim()) runLoginScript(tab, loginScriptEl.value);
@@ -1354,6 +1354,8 @@ const PALETTE_COMMANDS = [
   { id: 'connection-log', label: 'Show Connection Log', icon: 'L', action: function() { showConnectionLog(); } },
   { id: 'notifications', label: 'Show Notifications', icon: '!', action: function() { showNotificationCenter(); } },
   { id: 'custom-css', label: 'Edit Custom CSS', icon: 'C', action: function() { editCustomCSS(); } },
+  { id: 'save-credential', label: 'Save Credential to Keychain', icon: 'K', action: function() { saveCredentialDialog(); } },
+  { id: 'get-credential', label: 'Get Credential from Keychain', icon: 'K', action: function() { getCredentialDialog(); } },
 
 ];
 
@@ -1770,7 +1772,7 @@ function renderProfileGroups() {
       html += '<div class="profile-group-header">' + groupName + '</div>';
     }
     groups[groupName].forEach(p => {
-      const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : p.type === 'telnet' ? '\U0001f310' : '\u2318';
+      const icon = p.type === 'ssh' ? '🔐' : p.type === 'serial' ? '📡' : p.type === 'telnet' ? '🌐' : '⌘';
       html += '<div class="profile-item" data-profile-id="' + p.id + '" title="' + p.name + '"><span class="profile-icon">' + icon + '</span><span class="profile-name">' + p.name + '</span></div>';
     });
   });
@@ -1849,9 +1851,32 @@ function showConnectionLog() {
   alert('Connection Log - ' + tab.title + '\n' + logText);
 }
 
+
+// ===== KEYCHAIN =====
+async function saveCredentialDialog() {
+  const key = prompt('Enter credential key (e.g. ssh:host:user):');
+  if (!key) return;
+  const value = prompt('Enter credential value:');
+  if (!value) return;
+  try {
+    await StoreCredential(key, value);
+    showToast('Credential saved to keychain', 'success');
+  } catch (err) { showToast('Failed to save: ' + err, 'error'); }
+}
+
+async function getCredentialDialog() {
+  const key = prompt('Enter credential key to retrieve:');
+  if (!key) return;
+  try {
+    const value = await GetCredential(key);
+    if (value) showToast('Credential: ' + key + ' = ' + value.substring(0, 20) + '...', 'success');
+    else showToast('Credential not found', 'error');
+  } catch (err) { showToast('Failed to retrieve: ' + err, 'error'); }
+}
+
 // ===== PROFILES =====
 
-function renderProfiles() { const section = document.getElementById('profiles-section'); const list = document.getElementById('profiles-list'); const editor = document.getElementById('profiles-editor-list'); if (!savedProfiles || savedProfiles.length === 0) { if (section) section.style.display = 'none'; if (editor) editor.innerHTML = '<div style="color:#666;font-size:12px;">No saved profiles yet.</div>'; return; } if (section) section.style.display = 'block'; if (list) {  } if (editor) { editor.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '\U0001f510' : p.type === 'serial' ? '\U0001f4e1' : p.type === 'telnet' ? '\U0001f310' : '\u2318'; return `<div class="profile-editor-item"><span>${icon} ${p.name}</span><button class="btn-icon profile-edit" data-id="${p.id}" title="Edit">\u270e</button><button class="btn-icon profile-delete" data-id="${p.id}" title="Delete">\u00d7</button></div>`; }).join(''); editor.querySelectorAll('.profile-edit').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; const profile = savedProfiles.find(p => p.id === id); if (profile) editProfile(profile); }; }); editor.querySelectorAll('.profile-delete').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; savedProfiles = savedProfiles.filter(p => p.id !== id); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); }; }); } }
+function renderProfiles() { const section = document.getElementById('profiles-section'); const list = document.getElementById('profiles-list'); const editor = document.getElementById('profiles-editor-list'); if (!savedProfiles || savedProfiles.length === 0) { if (section) section.style.display = 'none'; if (editor) editor.innerHTML = '<div style="color:#666;font-size:12px;">No saved profiles yet.</div>'; return; } if (section) section.style.display = 'block'; if (list) {  } if (editor) { editor.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '🔐' : p.type === 'serial' ? '📡' : p.type === 'telnet' ? '🌐' : '⌘'; return `<div class="profile-editor-item"><span>${icon} ${p.name}</span><button class="btn-icon profile-edit" data-id="${p.id}" title="Edit">\u270e</button><button class="btn-icon profile-delete" data-id="${p.id}" title="Delete">\u00d7</button></div>`; }).join(''); editor.querySelectorAll('.profile-edit').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; const profile = savedProfiles.find(p => p.id === id); if (profile) editProfile(profile); }; }); editor.querySelectorAll('.profile-delete').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; savedProfiles = savedProfiles.filter(p => p.id !== id); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); }; }); } }
 
 async function connectProfile(profile) { if (profile.type === 'ssh') { const opts = profile.options; openSSHDialog(); document.getElementById('ssh-host').value = opts.host || ''; document.getElementById('ssh-port').value = opts.port || 22; document.getElementById('ssh-user').value = opts.user || ''; document.getElementById('ssh-auth').value = opts.auth || 'agent'; document.getElementById('ssh-auth').dispatchEvent(new Event('change')); if (opts.auth === 'password') document.getElementById('ssh-password').value = opts.password || ''; if (opts.auth === 'publicKey' && opts.privateKeys && opts.privateKeys.length) document.getElementById('ssh-key-path').value = opts.privateKeys[0]; } else if (profile.type === 'serial') {
 
@@ -1932,38 +1957,23 @@ function buildUI() {
     <div id="main-content">
 
         <div id="welcome">
-
-            <div class="title"><span>Tabby</span> Go</div>
-
-            <div class="shortcuts">
-
-                <div class="shortcut"><kbd>Ctrl+Shift+T</kbd> New Tab</div>
-
-                <div class="shortcut"><kbd>Ctrl+W</kbd> Close Tab</div>
-
-                <div class="shortcut"><kbd>Ctrl+Tab</kbd> Next Tab</div>
-
-                <div class="shortcut"><kbd>Ctrl+Shift+Tab</kbd> Prev Tab</div>
-
-                <div class="shortcut"><kbd>Ctrl+\\</kbd> Split Vertical</div>
-
-                <div class="shortcut"><kbd>Ctrl+Shift+\\</kbd> Split Horizontal</div>
-
-                <div class="shortcut"><kbd>Ctrl+Shift+F</kbd> Find</div>
-
-                <div class="shortcut"><kbd>Alt+1-9</kbd> Switch Tab</div>
-
-                <div class="shortcut"><kbd>Ctrl+Shift+C</kbd> Copy</div>
-
-                <div class="shortcut"><kbd>Ctrl+Shift+V</kbd> Paste</div>
-
-                <div class="shortcut"><kbd>Ctrl+,</kbd> Settings</div>
-
-                <div class="shortcut"><kbd>Ctrl++/-</kbd> Font Size</div>
-
-            </div>
-
-        </div>
+ <div class="title"><span>Tabby</span> Go</div>
+ <div class="quick-connect-grid">
+   <div class="quick-connect-btn" onclick="newTab()"><span class="qc-icon">⌘</span> Local Shell</div>
+   <div class="quick-connect-btn" onclick="openSSHDialog()"><span class="qc-icon">🔐</span> SSH Connect</div>
+   <div class="quick-connect-btn" onclick="openSerialDialog()"><span class="qc-icon">📡</span> Serial Port</div>
+   <div class="quick-connect-btn" onclick="openTelnetDialog()"><span class="qc-icon">🌐</span> Telnet</div>
+ </div>
+ <div class="shortcuts" style="margin-top:32px;">
+   <div class="shortcut"><kbd>Ctrl+Shift+T</kbd> New Tab</div>
+   <div class="shortcut"><kbd>Ctrl+W</kbd> Close Tab</div>
+   <div class="shortcut"><kbd>Ctrl+Tab</kbd> Next Tab</div>
+   <div class="shortcut"><kbd>Ctrl+Shift+P</kbd> Command Palette</div>
+   <div class="shortcut"><kbd>Ctrl+Shift+F</kbd> Find</div>
+   <div class="shortcut"><kbd>Ctrl+\</kbd> Split Vertical</div>
+   <div class="shortcut"><kbd>Ctrl+,</kbd> Settings</div>
+ </div>
+</div>
 
     </div>
 
@@ -3123,7 +3133,14 @@ EventsOn('pty.exit', (params) => { (window.__ptyExitHandlers || []).forEach(h =>
 
 EventsOn('ssh.data', (params) => { (window.__ptyDataHandlers || []).forEach(h => h(params)); });
 
-EventsOn('ssh.exit', (params) => { (window.__ptyExitHandlers || []).forEach(h => h(params)); });
+EventsOn('ssh.exit', (params) => { (window.__ptyExitHandlers || []).forEach(h => h(params)); });EventsOn('menu:new-tab', () => newTab());
+EventsOn('menu:settings', () => openSettings());
+EventsOn('menu:copy', () => { const t = getActiveTab(); if (t && t.term) document.execCommand('copy'); });
+EventsOn('menu:paste', () => { const t = getActiveTab(); if (t && t.term) navigator.clipboard.readText().then(text => t.term.paste(text)); });
+EventsOn('menu:select-all', () => { const t = getActiveTab(); if (t && t.term) t.term.selectAll(); });
+EventsOn('menu:command-palette', () => toggleCommandPalette());
+EventsOn('menu:about', () => showAboutDialog());
+
 
 
 

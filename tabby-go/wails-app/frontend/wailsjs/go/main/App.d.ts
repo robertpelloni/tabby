@@ -12,6 +12,8 @@ export function ClearNotifications():Promise<void>;
 
 export function ClearSessionState():Promise<void>;
 
+export function DeleteCredential(arg1:string):Promise<void>;
+
 export function GetAvailableShells():Promise<Array<string>>;
 
 export function GetColorScheme(arg1:string):Promise<colorscheme.ColorScheme>;
@@ -19,6 +21,8 @@ export function GetColorScheme(arg1:string):Promise<colorscheme.ColorScheme>;
 export function GetColorSchemeNames():Promise<Array<string>>;
 
 export function GetColorSchemes():Promise<Array<colorscheme.ColorScheme>>;
+
+export function GetCredential(arg1:string):Promise<string>;
 
 export function GetDefaultShell():Promise<string>;
 
@@ -41,6 +45,8 @@ export function GetUnreadNotifications():Promise<Array<notification.Notification
 export function GetUsername():Promise<string>;
 
 export function ImportSSHConfig():Promise<Array<profile.ConnectionProfile>>;
+
+export function IsOSKeyringAvailable():Promise<boolean>;
 
 export function LoadSessionState():Promise<session.SessionState>;
 
@@ -121,6 +127,8 @@ export function SerialOpen(arg1:api.SerialOpenParams):Promise<api.SerialOpenResu
 export function SerialWrite(arg1:string,arg2:string):Promise<void>;
 
 export function SetWindowTitle(arg1:string):Promise<void>;
+
+export function StoreCredential(arg1:string,arg2:string):Promise<void>;
 
 export function TelnetClose(arg1:string):Promise<void>;
 

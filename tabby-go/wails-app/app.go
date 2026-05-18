@@ -17,6 +17,8 @@ import (
 	"github.com/robertpelloni/tabby/tabby-go/pkg/sftp"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/settings"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/telnet"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/keychain"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/vault"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/notification"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -30,6 +32,7 @@ type App struct {
 	serialMgr *serial.Manager
 	telnetMgr  *telnet.Manager
 	notifMgr  *notification.Manager
+	keychain  *keychain.Keychain
 }
 
 // NewApp creates a new App application struct with all managers initialized.
@@ -41,6 +44,7 @@ func NewApp() *App {
 	a.serialMgr = serial.NewManager(a.emit)
 	a.telnetMgr = telnet.NewManager(a.emit)
 	a.notifMgr = notification.NewManager()
+	a.keychain = keychain.NewKeychain(vault.NewManager())
 	return a
 }
 
@@ -451,6 +455,33 @@ func (a *App) MarkNotificationRead(id string) {
 // ClearNotifications removes all notifications.
 func (a *App) ClearNotifications() {
 	a.notifMgr.Clear()
+}
+
+// onBeforeClose is called when the window is about to close.
+// It can prevent the window from closing by returning true.
+func (a *App) onBeforeClose(ctx context.Context) bool {
+	return false
+}
+
+// ==== Keychain Methods ====
+// StoreCredential stores a credential in the OS keychain.
+func (a *App) StoreCredential(key, value string) error {
+	return a.keychain.Store(key, value)
+}
+
+// GetCredential retrieves a credential from the OS keychain.
+func (a *App) GetCredential(key string) (string, error) {
+	return a.keychain.Get(key)
+}
+
+// DeleteCredential removes a credential from the OS keychain.
+func (a *App) DeleteCredential(key string) error {
+	return a.keychain.Delete(key)
+}
+
+// IsOSKeyringAvailable returns whether OS keyring is available.
+func (a *App) IsOSKeyringAvailable() bool {
+	return a.keychain.IsOSKeyringAvailable()
 }
 
 // ==== Internal ====
