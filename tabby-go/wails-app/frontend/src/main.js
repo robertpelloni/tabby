@@ -417,15 +417,17 @@ async function doTelnetConnect() {
 
     const result = await TelnetConnect(host, port);
 
-    setTabStatus(tab, 'connected'); logConnection(tab, 'Telnet connected to ' + host + ':' + port); showToast('Telnet connected: ' + host, 'success');
-
     const tab = new Tab(defaultShell);
-
-    tabs.push(tab);
-
-    tab.activate();
-
-    tab.ptyId = null;
+ tabs.push(tab);
+ tab.activate();
+ tab.ptyId = null;
+ setTabStatus(tab, 'connected'); logConnection(tab, 'Telnet connected to ' + host + ':' + port); showToast('Telnet connected: ' + host, 'success');
+ tab.telnetConnectionId = result.ConnectionID || result.connectionId;
+ tab.sessionData = JSON.stringify({ type: 'telnet', host, port });
+ tab.isTelnet = true;
+ tab.telnetHost = host;
+ tab.telnetPort = port;
+ tab.ptyId = null;
 
     setTabStatus(tab, 'connected'); logConnection(tab, 'Telnet connected to ' + host + ':' + port); tab.telnetConnectionId = result.ConnectionID || result.connectionId;
     tab.sessionData = JSON.stringify({ type: 'telnet', host, port });
