@@ -1390,6 +1390,7 @@ const PALETTE_COMMANDS = [
   { id: 'export-profiles', label: 'Export Profiles...', icon: '↑', action: function() { exportProfiles(); } },
   { id: 'import-profiles', label: 'Import Profiles...', icon: '↓', action: function() { importProfiles(); } },
     { id: 'open-settings', label: 'Open Settings', icon: '⚙', action: function() { openSettingsPanel(); } },
+  { id: 'connection-log', label: 'View Connection Log', icon: '📋', action: function() { showConnectionLog(); } },
 { id: 'about', label: 'About Tabby Go', icon: 'i', action: function() { showAboutDialog(); } },
   { id: 'run-snippet', label: 'Run Snippet...', icon: '>', action: function() { runSnippet(); } },
   { id: 'save-snippet', label: 'Save Snippet...', icon: 'S', action: function() { saveSnippet(); } },
@@ -1398,7 +1399,6 @@ const PALETTE_COMMANDS = [
   { id: 'close-all-tabs', label: 'Close All Tabs', icon: 'X', action: function() { closeAllTabs(); } },
   { id: 'close-other-tabs', label: 'Close Other Tabs', icon: 'X', action: function() { closeOtherTabs(); } },
   { id: 'duplicate-profile', label: 'Duplicate Active Profile', icon: 'D', action: function() { duplicateActiveProfile(); } },
-  { id: 'connection-log', label: 'Show Connection Log', icon: 'L', action: function() { showConnectionLog(); } },
   { id: 'notifications', label: 'Show Notifications', icon: '!', action: function() { showNotificationCenter(); } },
   { id: 'custom-css', label: 'Edit Custom CSS', icon: 'C', action: function() { editCustomCSS(); } },
   { id: 'save-credential', label: 'Save Credential to Keychain', icon: 'K', action: function() { saveCredentialDialog(); } },
@@ -1942,6 +1942,8 @@ function duplicateActiveProfile() {
   }
 }
 
+// ===== CONNECTION LOG VIEWER =====
+
 // ===== CONNECTION LOG =====
 function logConnection(tab, message) {
   if (!tab) return;
@@ -1950,13 +1952,45 @@ function logConnection(tab, message) {
 }
 
 function showConnectionLog() {
-  const tab = getActiveTab();
-  if (!tab || !tab.connectionLog || tab.connectionLog.length === 0) {
-    showToast('No connection log for active tab', 'info');
-    return;
+  let panel = document.getElementById('conn-log-panel');
+  if (panel) { panel.remove(); return; }
+  panel = document.createElement('div');
+  panel.id = 'conn-log-panel'; panel.className = 'modal-overlay';
+  const dlg = document.createElement('div');
+  dlg.className = 'modal-dialog';
+  dlg.style.cssText = 'max-width:700px;max-height:80vh;';
+  const hdr = document.createElement('div');
+  hdr.className = 'modal-header';
+  hdr.innerHTML = '<h3>Connection Log</h3>';
+  const body = document.createElement('div');
+  body.className = 'modal-body';
+  body.style.cssText = 'max-height:60vh;overflow-y:auto;';
+  const allLogs = [];
+  tabs.forEach(t => { if (t.connectionLog) allLogs.push(...t.connectionLog); });
+  if (allLogs.length === 0) {
+    body.innerHTML = '<p style="color:var(--text-secondary);text-align:center;">No connection events</p>';
+  } else {
+    let logHtml = '<div class="connection-log-entries">';
+    allLogs.sort((a, b) => b.time - a.time).forEach(entry => {
+      const time = new Date(entry.time).toLocaleTimeString();
+      const typeClass = entry.type === 'error' ? 'log-error' : entry.type === 'connect' ? 'log-connect' : 'log-info';
+      logHtml += '<div class="log-entry ' + typeClass + '"><span class="log-time">' + time + '</span><span class="log-msg">' + entry.message + '</span></div>';
+    });
+    logHtml += '</div>';
+    body.innerHTML = logHtml;
   }
-  const logText = tab.connectionLog.map(e => '[' + new Date(e.time).toLocaleTimeString() + '] ' + e.message).join('\x1b[2J');
-  alert('Connection Log - ' + tab.title + '\n' + logText);
+  const ftr = document.createElement('div');
+  ftr.className = 'modal-footer';
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'btn btn-secondary'; closeBtn.textContent = 'Close';
+  const clearBtn = document.createElement('button');
+  clearBtn.className = 'btn btn-danger'; clearBtn.textContent = 'Clear Log'; clearBtn.style.marginRight = 'auto';
+  ftr.appendChild(clearBtn); ftr.appendChild(closeBtn);
+  dlg.appendChild(hdr); dlg.appendChild(body); dlg.appendChild(ftr);
+  panel.appendChild(dlg); document.body.appendChild(panel);
+  closeBtn.onclick = () => panel.remove();
+  panel.onclick = (e) => { if (e.target === panel) panel.remove(); };
+  clearBtn.onclick = () => { tabs.forEach(t => { if (t.connectionLog) t.connectionLog = []; }); body.innerHTML = '<p style="color:var(--text-secondary);text-align:center;">Log cleared</p>'; };
 }
 
 
@@ -3542,6 +3576,15 @@ function reorderTab(draggedId, targetId) {
 }
 
 
+
+// ===== TERMINAL RESIZE =====
+function resizeAllTerminals() {
+  tabs.forEach(tab => {
+    if (tab.term && !tab.exited) {
+      setTimeout(() => tab.term.fitAddon.fit(), 50);
+    }
+  });
+}
 
 // ===== SPLIT PANE =====
 

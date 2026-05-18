@@ -1396,3 +1396,15 @@ body.light-theme .quick-connect-btn:hover { background: #eee; border-color: #ccc
 .connecting-spinner {
   pointer-events: none;
 }
+
+/* Connection Log Viewer */
+.connection-log-entries { font-family: monospace; font-size: 12px; }
+.log-entry { display: flex; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+.log-entry:hover { background: var(--bg-tertiary); }
+.log-time { color: var(--text-secondary); min-width: 80px; margin-right: 12px; }
+.log-msg { flex: 1; }
+.log-error .log-msg { color: #f44747; }
+.log-connect .log-msg { color: #4caf50; }
+.log-info .log-msg { color: var(--text-secondary); }
+.btn-danger { background: #f44747; color: #fff; border: none; }
+.btn-danger:hover { background: #d32f2f; }
