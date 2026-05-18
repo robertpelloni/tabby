@@ -850,3 +850,110 @@ export namespace telnet {
 
 }
 
+export namespace updater {
+	
+	export class Asset {
+	    name: string;
+	    browser_download_url: string;
+	    size: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Asset(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.browser_download_url = source["browser_download_url"];
+	        this.size = source["size"];
+	    }
+	}
+	export class ReleaseInfo {
+	    tag_name: string;
+	    name: string;
+	    body: string;
+	    html_url: string;
+	    // Go type: time
+	    published_at: any;
+	    prerelease: boolean;
+	    draft: boolean;
+	    assets: Asset[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ReleaseInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.tag_name = source["tag_name"];
+	        this.name = source["name"];
+	        this.body = source["body"];
+	        this.html_url = source["html_url"];
+	        this.published_at = this.convertValues(source["published_at"], null);
+	        this.prerelease = source["prerelease"];
+	        this.draft = source["draft"];
+	        this.assets = this.convertValues(source["assets"], Asset);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class UpdateStatus {
+	    currentVersion: string;
+	    latestVersion: string;
+	    updateAvailable: boolean;
+	    releaseInfo?: ReleaseInfo;
+	    error?: string;
+	    // Go type: time
+	    checkedAt: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.currentVersion = source["currentVersion"];
+	        this.latestVersion = source["latestVersion"];
+	        this.updateAvailable = source["updateAvailable"];
+	        this.releaseInfo = this.convertValues(source["releaseInfo"], ReleaseInfo);
+	        this.error = source["error"];
+	        this.checkedAt = this.convertValues(source["checkedAt"], null);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+

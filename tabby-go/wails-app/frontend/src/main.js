@@ -32,7 +32,7 @@ SFTPChmod, SFTPReadlink, SFTPSymlink,
 
 ImportSSHConfig,
 
-GetUsername, GetHomeDir, GetPlatform, GetNotifications, GetUnreadNotifications, MarkNotificationRead, ClearNotifications, SelectDirectory, StoreCredential, GetCredential, DeleteCredential, IsOSKeyringAvailable,
+GetUsername, GetHomeDir, GetPlatform, GetNotifications, GetUnreadNotifications, MarkNotificationRead, ClearNotifications, SelectDirectory, StoreCredential, GetCredential, DeleteCredential, IsOSKeyringAvailable, CheckForUpdates, GetUpdateStatus, GetAuditLogPath,
 
 } from '../wailsjs/go/main/App';
 
@@ -1348,6 +1348,8 @@ const PALETTE_COMMANDS = [
   { id: 'reload-colors', label: 'Reload Color Schemes', icon: 'R', action: function() { reloadColorSchemes(); } },
   { id: 'tab-search', label: 'Search Tabs...', icon: 'T', action: function() { toggleTabSearch(); } },
   { id: 'about', label: 'About Tabby Go', icon: 'i', action: function() { showAboutDialog(); } },
+  { id: 'check-updates', label: 'Check for Updates', icon: '↑', action: function() { checkForUpdates(); } },
+  { id: 'audit-log', label: 'Open Audit Log', icon: 'A', action: function() { openAuditLog(); } },
   { id: 'close-all-tabs', label: 'Close All Tabs', icon: 'X', action: function() { closeAllTabs(); } },
   { id: 'close-other-tabs', label: 'Close Other Tabs', icon: 'X', action: function() { closeOtherTabs(); } },
   { id: 'duplicate-profile', label: 'Duplicate Active Profile', icon: 'D', action: function() { duplicateActiveProfile(); } },
@@ -1851,6 +1853,44 @@ function showConnectionLog() {
   alert('Connection Log - ' + tab.title + '\n' + logText);
 }
 
+
+
+// ===== UPDATER =====
+async function checkForUpdates() {
+  try {
+    const status = await CheckForUpdates();
+    if (status && status.updateAvailable) {
+      showToast('Update available: v' + status.latestVersion, 'success');
+    } else if (status && !status.updateAvailable) {
+      showToast('You are on the latest version (v' + status.currentVersion + ')', 'info');
+    } else if (status && status.error) {
+      showToast('Update check failed: ' + status.error, 'error');
+    }
+  } catch (err) { showToast('Update check failed: ' + err, 'error'); }
+}
+
+async function openAuditLog() {
+  try {
+    const path = await GetAuditLogPath();
+    if (path) {
+      showToast('Audit log: ' + path, 'info');
+    } else {
+      showToast('Audit logging not available', 'error');
+    }
+  } catch (err) { showToast('Failed: ' + err, 'error'); }
+}
+
+// ===== TAB COLOR LABELS =====
+function setTabColor(tab, color) {
+  if (!tab || !tab.tabEl) return;
+  if (color) {
+    tab.tabEl.style.borderLeft = '3px solid ' + color;
+    tab.colorLabel = color;
+  } else {
+    tab.tabEl.style.borderLeft = '';
+    tab.colorLabel = '';
+  }
+}
 
 // ===== KEYCHAIN =====
 async function saveCredentialDialog() {
@@ -3038,7 +3078,32 @@ class Tab {
 
 
 
-        this.term.onData((data) => { if (this.ptyId && !this.exited) PTYWrite(this.ptyId, btoa(data)); });
+        this.term.element.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  const sel = this.term.getSelection();
+  const m = document.createElement('div');
+  m.className = 'context-menu';
+  m.style.cssText = 'position:fixed;left:' + e.clientX + 'px;top:' + e.clientY + 'px;z-index:999;';
+  if (sel) m.innerHTML += '<div class="context-menu-item" data-action="copy">Copy Selection</div>';
+  m.innerHTML += '<div class="context-menu-item" data-action="paste">Paste</div>';
+  if (sel) m.innerHTML += '<div class="context-menu-item" data-action="search">Search Web</div>';
+  m.innerHTML += '<div class="context-menu-item" data-action="clear">Clear Terminal</div>';
+  document.body.appendChild(m);
+  const rm = () => m.remove();
+  m.querySelectorAll('.context-menu-item').forEach(it => {
+    it.onclick = () => {
+      const a = it.dataset.action;
+      if (a === 'copy' && sel) navigator.clipboard.writeText(sel);
+      if (a === 'paste') navigator.clipboard.readText().then(t => this.term.paste(t)).catch(() => {});
+      if (a === 'search' && sel) OpenInBrowser('https://www.google.com/search?q=' + encodeURIComponent(sel));
+      if (a === 'clear') this.term.clear();
+      rm();
+    };
+  });
+  setTimeout(() => document.addEventListener('click', rm, { once: true }), 10);
+});
+
+this.term.onData((data) => { if (this.ptyId && !this.exited) PTYWrite(this.ptyId, btoa(data)); });
   setupInputProcessing(this.term, this);
 
         this.term.onTitleChange((title) => { if (title) this.setTitle(title); });
@@ -3218,7 +3283,7 @@ function showTabContextMenu(e, tab) {
 
     const menu = document.createElement('div'); menu.className = 'context-menu';
 
-    menu.innerHTML = `<div class="context-menu-item" data-action="rename">✏️ Rename</div><div class="context-menu-item" data-action="duplicate">📋 Duplicate</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="reconnect">↻ Reconnect</div><div class="context-menu-item" data-action="duplicate">⎄ Duplicate Tab</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="close-others">✕ Close Others</div><div class="context-menu-item" data-action="close-all">✕ Close All</div><div class="context-menu-item" data-action="sftp" style="display:none;">SFTP</div><div class="context-menu-item" data-action="forward" style="display:none;">Port Forward</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="reconnect">↻ Reconnect</div><div class="context-menu-item" data-action="sftp" style="display:none;">SFTP</div><div class="context-menu-item" data-action="forward" style="display:none;">Port Forward</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="close-others">✕ Close Others</div><div class="context-menu-item" data-action="close-right">✕ Close to Right</div><div class="context-menu-item" data-action="close">✕ Close</div>`;
+    menu.innerHTML = `<div class="context-menu-item" data-action="rename">✏️ Rename</div><div class="context-menu-item" data-action="duplicate">📋 Duplicate</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="reconnect">↻ Reconnect</div><div class="context-menu-item" data-action="duplicate">⎄ Duplicate Tab</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="close-others">✕ Close Others</div><div class="context-menu-item" data-action="close-all">✕ Close All</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="color-red">🔴 Red</div><div class="context-menu-item" data-action="color-green">🟢 Green</div><div class="context-menu-item" data-action="color-blue">🔵 Blue</div><div class="context-menu-item" data-action="color-yellow">🟡 Yellow</div><div class="context-menu-item" data-action="color-reset">⚙ Reset Color</div>✕ Close All</div><div class="context-menu-item" data-action="sftp" style="display:none;">SFTP</div><div class="context-menu-item" data-action="forward" style="display:none;">Port Forward</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="reconnect">↻ Reconnect</div><div class="context-menu-item" data-action="sftp" style="display:none;">SFTP</div><div class="context-menu-item" data-action="forward" style="display:none;">Port Forward</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="close-others">✕ Close Others</div><div class="context-menu-item" data-action="close-right">✕ Close to Right</div><div class="context-menu-item" data-action="close">✕ Close</div>`;
 
     document.body.appendChild(menu);
 
@@ -3246,6 +3311,11 @@ function showTabContextMenu(e, tab) {
  case 'duplicate': duplicateTab(tab); break;
  case 'close-others': closeOtherTabs(tab); break;
  case 'close-all': closeAllTabs(); break;
+ case 'color-red': setTabColor(tab, '#f44747'); break;
+ case 'color-green': setTabColor(tab, '#4caf50'); break;
+ case 'color-blue': setTabColor(tab, '#4ca8e8'); break;
+ case 'color-yellow': setTabColor(tab, '#e8a84c'); break;
+ case 'color-reset': setTabColor(tab, ''); break;
  case 'close': tab.close(); break;
 
         }

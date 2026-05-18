@@ -19,7 +19,9 @@ import (
 	"github.com/robertpelloni/tabby/tabby-go/pkg/telnet"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/keychain"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/vault"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/audit"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/notification"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/updater"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -33,6 +35,8 @@ type App struct {
 	telnetMgr  *telnet.Manager
 	notifMgr  *notification.Manager
 	keychain  *keychain.Keychain
+	updater   *updater.Checker
+	auditLog  *audit.Logger
 }
 
 // NewApp creates a new App application struct with all managers initialized.
@@ -45,6 +49,7 @@ func NewApp() *App {
 	a.telnetMgr = telnet.NewManager(a.emit)
 	a.notifMgr = notification.NewManager()
 	a.keychain = keychain.NewKeychain(vault.NewManager())
+	a.updater = updater.NewChecker("1.0.0")
 	return a
 }
 
@@ -482,6 +487,26 @@ func (a *App) DeleteCredential(key string) error {
 // IsOSKeyringAvailable returns whether OS keyring is available.
 func (a *App) IsOSKeyringAvailable() bool {
 	return a.keychain.IsOSKeyringAvailable()
+}
+
+// ==== Updater Methods ====
+// CheckForUpdates checks GitHub for a newer release.
+func (a *App) CheckForUpdates() (*updater.UpdateStatus, error) {
+	return a.updater.CheckForUpdates(a.ctx)
+}
+
+// GetUpdateStatus returns the last update check result.
+func (a *App) GetUpdateStatus() *updater.UpdateStatus {
+	return a.updater.GetLastStatus()
+}
+
+// ==== Audit Methods ====
+// GetAuditLogPath returns the path to the audit log file.
+func (a *App) GetAuditLogPath() string {
+	if a.auditLog != nil {
+		return a.auditLog.GetPath()
+	}
+	return ""
 }
 
 // ==== Internal ====
