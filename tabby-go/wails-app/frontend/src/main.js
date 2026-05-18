@@ -3214,6 +3214,7 @@ async function toggleAlwaysOnTop() {
   }
 }
 
+
 // ===== TOAST =====
 
 function showToast(message, type = 'info') { const existing = document.querySelector('.toast'); if (existing) existing.remove(); const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.textContent = message; document.body.appendChild(toast); requestAnimationFrame(() => toast.classList.add('visible')); setTimeout(() => { toast.classList.remove('visible'); setTimeout(() => toast.remove(), 300); }, 2500); }
@@ -3435,6 +3436,8 @@ class Tab {
   m.innerHTML += '<div class="context-menu-item" data-action="clear">Clear Terminal</div>';
   m.innerHTML += '<div class="context-menu-item" data-action="select-all">Select All</div>';
   m.innerHTML += '<div class="context-menu-item" data-action="reset">Reset Terminal</div>';
+  m.innerHTML += '<div class="context-menu-item" data-action="select-all">Select All</div>';
+  m.innerHTML += '<div class="context-menu-item" data-action="reset">Reset Terminal</div>';
   document.body.appendChild(m);
   const rm = () => m.remove();
   m.querySelectorAll('.context-menu-item').forEach(it => {
@@ -3444,6 +3447,8 @@ class Tab {
       if (a === 'paste') navigator.clipboard.readText().then(t => this.term.paste(t)).catch(() => {});
       if (a === 'search' && sel) OpenInBrowser('https://www.google.com/search?q=' + encodeURIComponent(sel));
       if (a === 'clear') this.term.clear();
+      if (a === 'select-all') this.term.selectAll();
+      if (a === 'reset') this.term.reset();
       if (a === 'select-all') this.term.selectAll();
       if (a === 'reset') this.term.reset();
       rm();
