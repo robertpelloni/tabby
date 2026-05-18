@@ -148,7 +148,7 @@ function openSSHDialog() { document.getElementById('ssh-dialog').classList.add('
 
 function closeSSHDialog() { document.getElementById('ssh-dialog').classList.remove('active'); const t = getActiveTab(); if (t) t.term.focus(); }
 
-async function doSSHConnect() { const host = document.getElementById('ssh-host').value.trim(); const port = parseInt(document.getElementById('ssh-port').value) || 22; const user = document.getElementById('ssh-user').value.trim(); const auth = document.getElementById('ssh-auth').value; if (!host) { showToast('Host is required', 'error'); return; } closeSSHDialog(); showStatus('Connecting to ' + host + '...'); const authParams = { type: auth }; if (auth === 'password') authParams.password = document.getElementById('ssh-password').value; if (auth === 'publicKey') authParams.privateKeyPaths = [document.getElementById('ssh-key-path').value || '~/.ssh/id_ed25519']; try { const jumpHostInput = document.getElementById('ssh-jump-host').value.trim();
+async function doSSHConnect() { const host = document.getElementById('ssh-host').value.trim(); const port = parseInt(document.getElementById('ssh-port').value) || 22; const user = document.getElementById('ssh-user').value.trim(); const auth = document.getElementById('ssh-auth').value; if (!host) { showToast('Host is required', 'error'); return; } closeSSHDialog(); showStatus('Connecting to ' + host + '...'); const authParams = { type: auth }; if (auth === 'password') authParams.password = document.getElementById('ssh-password').value; if (auth === 'keyboardInteractive') { authParams.authType = 'keyboardInteractive'; } else if (auth === 'publicKey') { authParams.privateKeyPaths = [document.getElementById('ssh-key-path').value || '~/.ssh/id_ed25519']; const pp = document.getElementById('ssh-key-passphrase'); if (pp && pp.value) authParams.passphrase = pp.value; } try { const jumpHostInput = document.getElementById('ssh-jump-host').value.trim();
 
     const sshParams = { host, port, user, auth: authParams, keepaliveInterval: 30, keepaliveCountMax: 3, readyTimeout: 15000 };
 
@@ -160,7 +160,7 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
 
     }
 
-    const result = await SSHConnect(sshParams); showToast('Connected to ' + host, 'success'); const tab = new Tab(defaultShell, 'ssh://' + user + '@' + host); tabs.push(tab); tab.activate(); tab.ptyId = null; tab.sshConnectionId = result.connectionId; let jumpLabel = '';
+    const result = await SSHConnect(sshParams); setTabStatus(tab, 'connected'); logConnection(tab, 'SSH connected to ' + host); showToast('Connected to ' + host, 'success'); const tab = new Tab(defaultShell, 'ssh://' + user + '@' + host); tab.connectionType = 'ssh'; tabs.push(tab); tab.activate(); tab.ptyId = null; tab.sshConnectionId = result.connectionId; let jumpLabel = '';
 
     if (result.jumpChain && result.jumpChain.length > 0) {
 
@@ -168,7 +168,7 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
 
     }
 
-    tab.setTitle(user + '@' + host + jumpLabel); tab.tabEl.querySelector('.tab-icon').textContent = '\U0001f510'; const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: 'xterm-256color' }); tab.sshSessionId = shellResult.sessionId; tab.isSSH = true; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.term.onData((data) => { if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) }); });
+    tab.setTitle(user + '@' + host + jumpLabel); tab.tabEl.querySelector('.tab-icon').textContent = '\U0001f510'; const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: 'xterm-256color' }); tab.sshSessionId = shellResult.sessionId; tab.isSSH = true; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.term.onData((data) => { if (data.includes('\n') && data.trim().split('\n').length > 1) { if (settings.PasteWarning !== false && !confirm('Paste multi-line content? (' + data.trim().split('\n').length + ' lines)')) return; } if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) }); });
     setupInputProcessing(tab.term, tab);
     const loginScriptEl = document.getElementById('ssh-login-script');
     if (loginScriptEl && loginScriptEl.value.trim()) runLoginScript(tab, loginScriptEl.value);
@@ -268,9 +268,9 @@ async function doSerialConnect() {
 
   try {
 
-    const result = await SerialOpen({ port, baudRate: baud, dataBits, stopBits, parity });
+    setTabStatus(tab, 'connecting'); logConnection(tab, 'Opening serial port...'); const result = await SerialOpen({ port, baudRate: baud, dataBits, stopBits, parity });
 
-    showToast('Serial connected: ' + port, 'success');
+    setTabStatus(tab, 'connected'); logConnection(tab, 'Serial port opened: ' + port); showToast('Serial connected: ' + port, 'success');
 
     const tab = new Tab(defaultShell);
 
@@ -362,7 +362,7 @@ async function doTelnetConnect() {
 
     const result = await TelnetConnect(host, port);
 
-    showToast('Telnet connected: ' + host, 'success');
+    setTabStatus(tab, 'connected'); logConnection(tab, 'Telnet connected to ' + host + ':' + port); showToast('Telnet connected: ' + host, 'success');
 
     const tab = new Tab(defaultShell);
 
@@ -372,7 +372,7 @@ async function doTelnetConnect() {
 
     tab.ptyId = null;
 
-    tab.telnetConnectionId = result.ConnectionID || result.connectionId;
+    setTabStatus(tab, 'connected'); logConnection(tab, 'Telnet connected to ' + host + ':' + port); tab.telnetConnectionId = result.ConnectionID || result.connectionId;
 
     tab.isTelnet = true; tab.telnetHost = host; tab.telnetPort = port; tab.telnetHost = host; tab.telnetPort = port;
 
@@ -1348,6 +1348,10 @@ const PALETTE_COMMANDS = [
   { id: 'reload-colors', label: 'Reload Color Schemes', icon: 'R', action: function() { reloadColorSchemes(); } },
   { id: 'tab-search', label: 'Search Tabs...', icon: 'T', action: function() { toggleTabSearch(); } },
   { id: 'about', label: 'About Tabby Go', icon: 'i', action: function() { showAboutDialog(); } },
+  { id: 'close-all-tabs', label: 'Close All Tabs', icon: 'X', action: function() { closeAllTabs(); } },
+  { id: 'close-other-tabs', label: 'Close Other Tabs', icon: 'X', action: function() { closeOtherTabs(); } },
+  { id: 'duplicate-profile', label: 'Duplicate Active Profile', icon: 'D', action: function() { duplicateActiveProfile(); } },
+  { id: 'connection-log', label: 'Show Connection Log', icon: 'L', action: function() { showConnectionLog(); } },
   { id: 'notifications', label: 'Show Notifications', icon: '!', action: function() { showNotificationCenter(); } },
   { id: 'custom-css', label: 'Edit Custom CSS', icon: 'C', action: function() { editCustomCSS(); } },
 
@@ -1558,6 +1562,7 @@ function editProfile(profile) {
   if (!modal) return;
   modal.classList.add('active');
   document.getElementById('edit-profile-id').value = profile.id;
+  document.getElementById('edit-profile-type').value = profile.type || 'ssh';
   document.getElementById('edit-profile-name').value = profile.name || '';
   document.getElementById('edit-profile-group').value = profile.group || '';
   const opts = profile.options || {};
@@ -1579,6 +1584,7 @@ function saveProfileEdit() {
   if (!profile) return;
   profile.name = document.getElementById('edit-profile-name').value.trim();
   profile.group = document.getElementById('edit-profile-group').value.trim();
+  if (document.getElementById('edit-profile-type')) profile.type = document.getElementById('edit-profile-type').value;
   if (!profile.options) profile.options = {};
   profile.options.host = document.getElementById('edit-profile-host').value.trim();
   profile.options.port = parseInt(document.getElementById('edit-profile-port').value) || 22;
@@ -1772,6 +1778,75 @@ function renderProfileGroups() {
   list.querySelectorAll('.profile-item').forEach(el => {
     el.onclick = () => { const profile = savedProfiles.find(p => p.id === el.dataset.profileId); if (profile) connectProfile(profile); };
   });
+}
+
+
+// ===== TAB STATUS =====
+function setTabStatus(tab, status) {
+  if (!tab) return;
+  tab.status = status;
+  const dot = tab.el ? tab.el.querySelector('.tab-status-dot') : null;
+  if (dot) {
+    dot.title = status.charAt(0).toUpperCase() + status.slice(1);
+    dot.className = 'tab-status-dot status-' + status;
+  }
+}
+
+// ===== TAB BULK CLOSE =====
+function closeAllTabs() {
+  const tabs = [...document.querySelectorAll('.tab')];
+  tabs.forEach(t => { const tab = openTabs.find(ot => ot.el === t); if (tab) closeTab(tab); });
+}
+
+function closeOtherTabs(keepTab) {
+  const tabs = [...openTabs];
+  tabs.forEach(t => { if (t !== keepTab) closeTab(t); });
+}
+
+function duplicateTab(tab) {
+  if (!tab) return;
+  const newT = newTab(tab.title);
+  if (newT && tab.connectionType) {
+    newT.connectionType = tab.connectionType;
+  }
+}
+
+// ===== DUPLICATE PROFILE =====
+function duplicateActiveProfile() {
+  const activeTab = getActiveTab();
+  if (!activeTab) { showToast('No active tab', 'error'); return; }
+  const matchingProfile = savedProfiles.find(p => p.name === activeTab.title);
+  if (matchingProfile) {
+    const id = 'profile-' + Date.now();
+    const dup = JSON.parse(JSON.stringify(matchingProfile));
+    dup.id = id;
+    dup.name = matchingProfile.name + ' (copy)';
+    dup.createdAt = new Date().toISOString();
+    dup.updatedAt = new Date().toISOString();
+    savedProfiles.push(dup);
+    SaveProfiles(savedProfiles).catch(() => {});
+    renderProfiles();
+    showToast('Duplicated: ' + dup.name, 'success');
+  } else {
+    showToast('No matching profile found', 'error');
+  }
+}
+
+// ===== CONNECTION LOG =====
+function logConnection(tab, message) {
+  if (!tab) return;
+  tab.connectionLog.push({ time: new Date().toISOString(), message });
+  if (tab.connectionLog.length > 500) tab.connectionLog.shift();
+}
+
+function showConnectionLog() {
+  const tab = getActiveTab();
+  if (!tab || !tab.connectionLog || tab.connectionLog.length === 0) {
+    showToast('No connection log for active tab', 'info');
+    return;
+  }
+  const logText = tab.connectionLog.map(e => '[' + new Date(e.time).toLocaleTimeString() + '] ' + e.message).join('\x1b[2J');
+  alert('Connection Log - ' + tab.title + '\n' + logText);
 }
 
 // ===== PROFILES =====
@@ -2340,7 +2415,7 @@ function buildUI() {
 
     // SSH auth toggle
 
-    document.getElementById('ssh-auth').onchange = (e) => { document.getElementById('ssh-password-group').style.display = e.target.value === 'password' ? 'block' : 'none'; document.getElementById('ssh-key-group').style.display = e.target.value === 'publicKey' ? 'block' : 'none'; };
+    document.getElementById('ssh-auth').onchange = (e) => { document.getElementById('ssh-password-group').style.display = e.target.value === 'password' ? 'block' : 'none'; document.getElementById('ssh-key-group').style.display = e.target.value === 'publicKey' ? 'block' : 'none'; document.getElementById('ssh-passphrase-group').style.display = e.target.value === 'publicKey' ? 'block' : 'none'; };
 
 
 
@@ -2853,7 +2928,7 @@ class Tab {
 
         this.id = `tab-${Date.now()}-${tabCounter++}`;
 
-        this.ptyId = null; this.title = 'Shell'; this.shell = shell || defaultShell; this.exited = false; this.isSSH = false; this.sshConnectionId = null; this.sshSessionId = null;
+        this.ptyId = null; this.title = 'Shell'; this.shell = shell || defaultShell; this.exited = false; this.status = "disconnected"; this.connectionType = "local"; this.connectionLog = []; this.isSSH = false; this.sshConnectionId = null; this.sshSessionId = null;
 
         const fontFamily = settings.FontFamily || '"Cascadia Code","Fira Code",Consolas,"Courier New",monospace';
 
@@ -2929,7 +3004,7 @@ class Tab {
 
         this.tabEl = document.createElement('div'); this.tabEl.className = 'tab-item'; this.tabEl.draggable = true; this.tabEl.dataset.tabId = this.id;
 
-        this.tabEl.innerHTML = `<span class="tab-icon">⌘</span><span class="tab-title">${this.title}</span><button class="tab-close">×</button>`;
+        this.tabEl.innerHTML = `<span class="tab-status-dot status-disconnected" title="Disconnected"></span><span class="tab-icon">⌘</span><span class="tab-title">${this.title}</span><button class="tab-close">×</button>`;
 
         document.getElementById('tab-list').appendChild(this.tabEl);
 
@@ -2962,7 +3037,7 @@ class Tab {
 
         this.dataHandler = (params) => { if ((params.ptyId ?? params.PTYID) === this.ptyId) this.term.write(atob(params.data)); if (this.isSSH && (params.sessionId ?? params.SessionID) === this.sshSessionId) this.term.write(atob(params.data)); };
 
-        this.exitHandler = (params) => { if ((params.ptyId ?? params.PTYID) === this.ptyId) { this.exited = true; const code = params.exitCode ?? 0; this.term.writeln(`\r\n\x1b[1;33m[Process exited — code ${code}]\x1b[0m`); this.setTitle(`Exit (${code})`); this.tabEl.querySelector('.tab-icon').textContent = '✕'; this.tabEl.querySelector('.tab-icon').style.color = '#f44747'; } };
+        this.exitHandler = (params) => { if ((params.ptyId ?? params.PTYID) === this.ptyId) { this.exited = true; setTabStatus(this, 'disconnected'); const code = params.exitCode ?? 0; this.term.writeln(`\r\n\x1b[1;33m[Process exited — code ${code}]\x1b[0m`); this.setTitle(`Exit (${code})`); this.tabEl.querySelector('.tab-icon').textContent = '✕'; this.tabEl.querySelector('.tab-icon').style.color = '#f44747'; } };
 
         window.__ptyDataHandlers = window.__ptyDataHandlers || []; window.__ptyExitHandlers = window.__ptyExitHandlers || [];
 
@@ -2974,7 +3049,7 @@ class Tab {
 
     async spawn() {
 
-        try { const result = await PTYSpawn({ command: this.shell, args: [], env: {}, columns: this.term.cols, rows: this.term.rows }); this.ptyId = result.id; const name = this.shell.split(/[/\\]/).pop().replace('.exe', ''); this.setTitle(name); showStatus(`Connected — ${name}`); }
+        try { setTabStatus(tab, 'connecting'); logConnection(tab, 'Spawning local shell...'); setTabStatus(this, 'connecting'); logConnection(this, 'Spawning shell: ' + this.shell); const result = await PTYSpawn({ command: this.shell, args: [], env: {}, columns: this.term.cols, rows: this.term.rows }); this.ptyId = result.id; setTabStatus(this, 'connected'); logConnection(this, 'Shell started: ' + this.shell); const name = this.shell.split(/[/\\]/).pop().replace('.exe', ''); this.setTitle(name); showStatus(`Connected — ${name}`); }
 
         catch (err) { this.term.writeln(`\x1b[1;31mFailed to spawn shell: ${err}\x1b[0m`); showToast(`Shell spawn failed: ${err}`, 'error'); }
 
@@ -3126,7 +3201,7 @@ function showTabContextMenu(e, tab) {
 
     const menu = document.createElement('div'); menu.className = 'context-menu';
 
-    menu.innerHTML = `<div class="context-menu-item" data-action="rename">✏️ Rename</div><div class="context-menu-item" data-action="duplicate">📋 Duplicate</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="reconnect">↻ Reconnect</div><div class="context-menu-item" data-action="sftp" style="display:none;">SFTP</div><div class="context-menu-item" data-action="forward" style="display:none;">Port Forward</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="reconnect">↻ Reconnect</div><div class="context-menu-item" data-action="sftp" style="display:none;">SFTP</div><div class="context-menu-item" data-action="forward" style="display:none;">Port Forward</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="close-others">✕ Close Others</div><div class="context-menu-item" data-action="close-right">✕ Close to Right</div><div class="context-menu-item" data-action="close">✕ Close</div>`;
+    menu.innerHTML = `<div class="context-menu-item" data-action="rename">✏️ Rename</div><div class="context-menu-item" data-action="duplicate">📋 Duplicate</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="reconnect">↻ Reconnect</div><div class="context-menu-item" data-action="duplicate">⎄ Duplicate Tab</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="close-others">✕ Close Others</div><div class="context-menu-item" data-action="close-all">✕ Close All</div><div class="context-menu-item" data-action="sftp" style="display:none;">SFTP</div><div class="context-menu-item" data-action="forward" style="display:none;">Port Forward</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="reconnect">↻ Reconnect</div><div class="context-menu-item" data-action="sftp" style="display:none;">SFTP</div><div class="context-menu-item" data-action="forward" style="display:none;">Port Forward</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="close-others">✕ Close Others</div><div class="context-menu-item" data-action="close-right">✕ Close to Right</div><div class="context-menu-item" data-action="close">✕ Close</div>`;
 
     document.body.appendChild(menu);
 
@@ -3151,8 +3226,10 @@ function showTabContextMenu(e, tab) {
       case 'sftp': if (tab.isSSH && tab.sshConnectionId) openSFTPBrowser(tab.sshConnectionId); break;
 
       case 'reconnect': reconnectTab(tab); break;
-      case 'reconnect': reconnectTab(tab); break;
-      case 'close': tab.close(); break;
+ case 'duplicate': duplicateTab(tab); break;
+ case 'close-others': closeOtherTabs(tab); break;
+ case 'close-all': closeAllTabs(); break;
+ case 'close': tab.close(); break;
 
         }
 
@@ -3223,7 +3300,7 @@ async function restoreSession() {
         tab.setTitle((saved.User || "root") + "@" + saved.Host + " [reconnecting...]");
         tab.term.writeln("\x1b[1;33m[Reconnecting to " + (saved.User || "root") + "@" + saved.Host + "...]\x1b[0m");
         try {
-          const result = await SSHConnect({ host: saved.Host, port: saved.Port || 22, user: saved.User || "root", auth: { type: "agent" }, keepaliveInterval: 30, keepaliveCountMax: 3, readyTimeout: 15000 });
+          const result = setTabStatus(t, 'connecting'); logConnection(t, 'SSH connecting to ' + host + ':' + port); await setTabStatus(tab, 'connecting'); logConnection(tab, 'SSH connecting...'); SSHConnect({ host: saved.Host, port: saved.Port || 22, user: saved.User || "root", auth: { type: "agent" }, keepaliveInterval: 30, keepaliveCountMax: 3, readyTimeout: 15000 });
           tab.sshConnectionId = result.connectionId;
           tab.sshHost = saved.Host; tab.sshPort = saved.Port || 22; tab.sshUser = saved.User || "root"; tab.isSSH = true;
           const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: "xterm-256color" });

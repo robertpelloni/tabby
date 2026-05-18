@@ -1246,3 +1246,41 @@ body.light-theme .profile-group-header {
 /* ===== NOTIFICATION BELL ===== */
 #btn-notifications { font-size: 14px; line-height: 1; }
 body.light-theme #btn-notifications { color: #555; }
+
+/* ===== TAB STATUS DOT ===== */
+.tab-status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+    transition: background-color 0.3s;
+}
+.tab-status-dot.status-disconnected { background-color: #555; }
+.tab-status-dot.status-connecting { background-color: #e8a84c; animation: pulse-dot 1s infinite; }
+.tab-status-dot.status-connected { background-color: #4caf50; }
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* ===== TAB TYPE COLORS ===== */
+.tab-item.tab-type-ssh .tab-icon { color: #4caf50; }
+.tab-item.tab-type-serial .tab-icon { color: #ff9800; }
+.tab-item.tab-type-telnet .tab-icon { color: #2196f3; }
+.tab-item.tab-type-local .tab-icon { color: #999; }
+
+/* ===== CONTEXT MENU SEPARATOR ===== */
+.context-menu-separator {
+    height: 1px;
+    background: #3a3a3a;
+    margin: 4px 0;
+}
+
+/* ===== LIGHT THEME ===== */
+body.light-theme .tab-status-dot.status-disconnected { background-color: #ccc; }
+body.light-theme .tab-status-dot.status-connecting { background-color: #ff9800; }
+body.light-theme .tab-status-dot.status-connected { background-color: #4caf50; }
+body.light-theme .context-menu-separator { background: #ddd; }
