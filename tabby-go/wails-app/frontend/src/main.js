@@ -84,6 +84,8 @@ async function init() {
 
     if (settings.FontSize) fontSize = settings.FontSize;
   const savedCSS = localStorage.getItem('tabby-custom-css');
+  // Check for updates silently on startup
+  setTimeout(() => CheckForUpdates().catch(() => {}), 5000);
   if (savedCSS) applyCustomCSS(savedCSS);
 
 
@@ -150,7 +152,7 @@ function closeSSHDialog() { document.getElementById('ssh-dialog').classList.remo
 
 async function doSSHConnect() { const host = document.getElementById('ssh-host').value.trim(); const port = parseInt(document.getElementById('ssh-port').value) || 22; const user = document.getElementById('ssh-user').value.trim(); const auth = document.getElementById('ssh-auth').value; if (!host) { showToast('Host is required', 'error'); return; } closeSSHDialog(); showStatus('Connecting to ' + host + '...'); const authParams = { type: auth }; if (auth === 'password') authParams.password = document.getElementById('ssh-password').value; if (auth === 'keyboardInteractive') { authParams.authType = 'keyboardInteractive'; } else if (auth === 'publicKey') { authParams.privateKeyPaths = [document.getElementById('ssh-key-path').value || '~/.ssh/id_ed25519']; const pp = document.getElementById('ssh-key-passphrase'); if (pp && pp.value) authParams.passphrase = pp.value; } try { const jumpHostInput = document.getElementById('ssh-jump-host').value.trim();
 
-    const sshParams = { host, port, user, auth: authParams, keepaliveInterval: 30, keepaliveCountMax: 3, readyTimeout: 15000 };
+    const sshParams = { host, port, user, auth: authParams, keepaliveInterval: parseInt(document.getElementById('ssh-keepalive')?.value) || 30, keepaliveCountMax: 3, readyTimeout: parseInt(document.getElementById('ssh-timeout')?.value) * 1000 || 15000 };
 
     if (jumpHostInput) {
 
@@ -1916,7 +1918,25 @@ async function getCredentialDialog() {
 
 // ===== PROFILES =====
 
-function renderProfiles() { const section = document.getElementById('profiles-section'); const list = document.getElementById('profiles-list'); const editor = document.getElementById('profiles-editor-list'); if (!savedProfiles || savedProfiles.length === 0) { if (section) section.style.display = 'none'; if (editor) editor.innerHTML = '<div style="color:#666;font-size:12px;">No saved profiles yet.</div>'; return; } if (section) section.style.display = 'block'; if (list) {  } if (editor) { editor.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '🔐' : p.type === 'serial' ? '📡' : p.type === 'telnet' ? '🌐' : '⌘'; return `<div class="profile-editor-item"><span>${icon} ${p.name}</span><button class="btn-icon profile-edit" data-id="${p.id}" title="Edit">\u270e</button><button class="btn-icon profile-delete" data-id="${p.id}" title="Delete">\u00d7</button></div>`; }).join(''); editor.querySelectorAll('.profile-edit').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; const profile = savedProfiles.find(p => p.id === id); if (profile) editProfile(profile); }; }); editor.querySelectorAll('.profile-delete').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; savedProfiles = savedProfiles.filter(p => p.id !== id); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); }; }); } }
+function renderProfiles() { const section = document.getElementById('profiles-section'); const list = document.getElementById('profiles-list'); const editor = document.getElementById('profiles-editor-list'); if (!savedProfiles || savedProfiles.length === 0) { if (section) section.style.display = 'none'; if (editor) editor.innerHTML = '<div style="color:#666;font-size:12px;">No saved profiles yet.</div>'; return; } if (section) section.style.display = 'block'; if (list) {  } if (editor) { editor.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '🔐' : p.type === 'serial' ? '📡' : p.type === 'telnet' ? '🌐' : '⌘'; return `<div class="profile-editor-item"><span>${icon} ${p.name}</span><button class="btn-icon profile-edit" data-id="${p.id}" title="Edit">✎</button><button class="btn-icon profile-duplicate" data-id="${p.id}" title="Duplicate">➕</button>\u270e</button><button class="btn-icon profile-delete" data-id="${p.id}" title="Delete">\u00d7</button></div>`; }).join(''); editor.querySelectorAll('.profile-edit').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; const profile = savedProfiles.find(p => p.id === id); if (profile) editProfile(profile); }; }); editor.querySelectorAll('.profile-duplicate').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const profile = savedProfiles.find(p => p.id === id);
+      if (profile) {
+        const dup = JSON.parse(JSON.stringify(profile));
+        dup.id = 'profile-' + Date.now();
+        dup.name = profile.name + ' (copy)';
+        dup.createdAt = new Date().toISOString();
+        dup.updatedAt = new Date().toISOString();
+        savedProfiles.push(dup);
+        SaveProfiles(savedProfiles).catch(() => {});
+        renderProfiles();
+        showToast('Duplicated: ' + dup.name, 'success');
+      }
+    };
+  });
+  editor.querySelectorAll('.profile-delete').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; savedProfiles = savedProfiles.filter(p => p.id !== id); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); }; }); } }
 
 async function connectProfile(profile) { if (profile.type === 'ssh') { const opts = profile.options; openSSHDialog(); document.getElementById('ssh-host').value = opts.host || ''; document.getElementById('ssh-port').value = opts.port || 22; document.getElementById('ssh-user').value = opts.user || ''; document.getElementById('ssh-auth').value = opts.auth || 'agent'; document.getElementById('ssh-auth').dispatchEvent(new Event('change')); if (opts.auth === 'password') document.getElementById('ssh-password').value = opts.password || ''; if (opts.auth === 'publicKey' && opts.privateKeys && opts.privateKeys.length) document.getElementById('ssh-key-path').value = opts.privateKeys[0]; } else if (profile.type === 'serial') {
 
