@@ -427,14 +427,7 @@ async function doTelnetConnect() {
  tab.isTelnet = true;
  tab.telnetHost = host;
  tab.telnetPort = port;
- tab.ptyId = null;
-
-    setTabStatus(tab, 'connected'); logConnection(tab, 'Telnet connected to ' + host + ':' + port); tab.telnetConnectionId = result.ConnectionID || result.connectionId;
-    tab.sessionData = JSON.stringify({ type: 'telnet', host, port });
-
-    tab.isTelnet = true; tab.telnetHost = host; tab.telnetPort = port; tab.telnetHost = host; tab.telnetPort = port;
-
-    tab.setTitle(host + ':' + port);
+ tab.setTitle(host + ':' + port);
 
     tab.tabEl.querySelector('.tab-icon').textContent = '\ud83c\udf10';
 
