@@ -97,7 +97,22 @@ async function init() {
     try { settings = await GetSettings(); } catch (_) { settings = {}; }
 
     if (settings.FontSize) fontSize = settings.FontSize;
-  const savedCSS = localStorage.getItem('tabby-custom-css');
+  // Tab bar drag-and-drop reordering
+  const tabBar = document.getElementById('tab-bar');
+  if (tabBar) {
+    tabBar.addEventListener('dragover', (e) => { e.preventDefault(); const dragging = tabBar.querySelector('.dragging'); if (dragging) { const afterEl = getDragAfterElement(tabBar, e.clientX); if (afterEl) tabBar.insertBefore(dragging, afterEl); else tabBar.appendChild(dragging); } });
+  }
+  function getDragAfterElement(container, x) {
+    const elements = [...container.querySelectorAll('.tab-item:not(.dragging)')];
+    return elements.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = x - box.left - box.width / 2;
+      if (offset < 0 && offset > closest.offset) return { offset, element: child };
+      return closest;
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+const savedCSS = localStorage.getItem('tabby-custom-css');
   // Check for updates silently on startup
   setTimeout(() => CheckForUpdates().catch(() => {}), 5000);
   if (savedCSS) applyCustomCSS(savedCSS);
@@ -164,7 +179,13 @@ function openSSHDialog() { document.getElementById('ssh-dialog').classList.add('
 
 function closeSSHDialog() { document.getElementById('ssh-dialog').classList.remove('active'); const t = getActiveTab(); if (t) t.term.focus(); }
 
-async function doSSHConnect() { const host = document.getElementById('ssh-host').value.trim(); const port = parseInt(document.getElementById('ssh-port').value) || 22; const user = document.getElementById('ssh-user').value.trim(); const auth = document.getElementById('ssh-auth').value; if (!host) { showToast('Host is required', 'error'); return; } closeSSHDialog(); showStatus('Connecting to ' + host + '...'); const authParams = { type: auth }; if (auth === 'password') authParams.password = document.getElementById('ssh-password').value; if (auth === 'keyboardInteractive') { authParams.authType = 'keyboardInteractive'; const pwd = await showPasswordDialog('SSH Authentication', 'Enter password for ' + user + '@' + host + ':'); if (pwd) authParams.password = pwd; else return; } else if (auth === 'publicKey') { authParams.privateKeyPaths = [document.getElementById('ssh-key-path').value || '~/.ssh/id_ed25519']; const pp = document.getElementById('ssh-key-passphrase'); if (pp && pp.value) authParams.passphrase = pp.value; } try { const jumpHostInput = document.getElementById('ssh-jump-host').value.trim();
+async function doSSHConnect() { const host = document.getElementById('ssh-host').value.trim(); const port = parseInt(document.getElementById('ssh-port').value) || 22; const user = document.getElementById('ssh-user').value.trim(); const auth = document.getElementById('ssh-auth').value; if (!host) { showToast('Host is required', 'error'); return; } closeSSHDialog(); showStatus('Connecting to ' + host + '...');
+  const spinner = document.createElement('div');
+  spinner.className = 'connecting-spinner';
+  spinner.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border:3px solid var(--border);border-top:3px solid var(--accent);border-radius:50%;animation:spin 1s linear infinite;z-index:15;';
+  const tab = tabs[tabs.length - 1];
+  if (tab && tab.wrapper) { tab.wrapper.appendChild(spinner); }
+ const authParams = { type: auth }; if (auth === 'password') authParams.password = document.getElementById('ssh-password').value; if (auth === 'keyboardInteractive') { authParams.authType = 'keyboardInteractive'; const pwd = await showPasswordDialog('SSH Authentication', 'Enter password for ' + user + '@' + host + ':'); if (pwd) authParams.password = pwd; else return; } else if (auth === 'publicKey') { authParams.privateKeyPaths = [document.getElementById('ssh-key-path').value || '~/.ssh/id_ed25519']; const pp = document.getElementById('ssh-key-passphrase'); if (pp && pp.value) authParams.passphrase = pp.value; } try { const jumpHostInput = document.getElementById('ssh-jump-host').value.trim();
 
     const sshParams = { host, port, user, auth: authParams, agentForward: document.getElementById('ssh-agent-forward')?.checked || false, keepaliveInterval: parseInt(document.getElementById('ssh-keepalive')?.value) || 30, keepaliveCountMax: 3, readyTimeout: parseInt(document.getElementById('ssh-timeout')?.value) * 1000 || 15000 };
 
@@ -176,7 +197,8 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
 
     }
 
-    const result = await SSHConnect(sshParams); setTabStatus(tab, 'connected'); logConnection(tab, 'SSH connected to ' + host); showToast('Connected to ' + host, 'success'); const tab = new Tab(defaultShell, 'ssh://' + user + '@' + host); tab.connectionType = 'ssh'; tabs.push(tab); tab.activate(); tab.ptyId = null; tab.sshConnectionId = result.connectionId;
+    const result = await SSHConnect(sshParams); setTabStatus(tab, 'connected'); logConnection(tab, 'SSH connected to ' + host);
+  const sp = tab.wrapper.querySelector('.connecting-spinner'); if (sp) sp.remove(); showToast('Connected to ' + host, 'success'); const tab = new Tab(defaultShell, 'ssh://' + user + '@' + host); tab.connectionType = 'ssh'; tabs.push(tab); tab.activate(); tab.ptyId = null; tab.sshConnectionId = result.connectionId;
     tab.sessionData = JSON.stringify({ type: 'ssh', host, port, user, auth: authParams }); let jumpLabel = '';
 
     if (result.jumpChain && result.jumpChain.length > 0) {
@@ -1367,7 +1389,8 @@ const PALETTE_COMMANDS = [
   { id: 'tab-search', label: 'Search Tabs...', icon: 'T', action: function() { toggleTabSearch(); } },
   { id: 'export-profiles', label: 'Export Profiles...', icon: '↑', action: function() { exportProfiles(); } },
   { id: 'import-profiles', label: 'Import Profiles...', icon: '↓', action: function() { importProfiles(); } },
-  { id: 'about', label: 'About Tabby Go', icon: 'i', action: function() { showAboutDialog(); } },
+    { id: 'open-settings', label: 'Open Settings', icon: '⚙', action: function() { openSettingsPanel(); } },
+{ id: 'about', label: 'About Tabby Go', icon: 'i', action: function() { showAboutDialog(); } },
   { id: 'run-snippet', label: 'Run Snippet...', icon: '>', action: function() { runSnippet(); } },
   { id: 'save-snippet', label: 'Save Snippet...', icon: 'S', action: function() { saveSnippet(); } },
   { id: 'check-updates', label: 'Check for Updates', icon: '↑', action: function() { checkForUpdates(); } },
@@ -1752,6 +1775,64 @@ async function showNotificationCenter() {
   }
 }
 
+// ===== SETTINGS PANEL =====
+function openSettingsPanel() {
+  let panel = document.getElementById('settings-panel');
+  if (panel) { panel.remove(); return; }
+  panel = document.createElement('div');
+  panel.id = 'settings-panel';
+  panel.className = 'modal-overlay';
+  const dlg = document.createElement('div');
+  dlg.className = 'modal-dialog';
+  dlg.style.maxWidth = '600px';
+  dlg.style.maxHeight = '80vh';
+  dlg.style.overflowY = 'auto';
+  const hdr = document.createElement('div');
+  hdr.className = 'modal-header';
+  hdr.innerHTML = '<h3>Settings</h3>';
+  const body = document.createElement('div');
+  body.className = 'modal-body';
+  body.innerHTML = `
+    <div class="setting-group"><label>Terminal Font</label><input type="text" id="settings-font" class="text-input" value="${settings.Font || 'Cascadia Mono, Consolas, monospace'}"></div>
+    <div class="setting-group"><label>Font Size (px)</label><input type="number" id="settings-font-size" class="text-input" value="${settings.FontSize || 14}" min="8" max="32"></div>
+    <div class="setting-group"><label>Scrollback Lines</label><input type="number" id="settings-scrollback" class="text-input" value="${settings.Scrollback || 25000}" min="100" max="100000"></div>
+    <div class="setting-group"><label>Cursor Style</label><select id="settings-cursor" class="text-input"><option value="block" ${settings.CursorStyle==='block'?'selected':''}>Block</option><option value="underline" ${settings.CursorStyle==='underline'?'selected':''}>Underline</option><option value="bar" ${settings.CursorStyle==='bar'?'selected':''}>Bar</option></select></div>
+    <div class="setting-group"><label>Cursor Blink</label><input type="checkbox" id="settings-cursor-blink" ${settings.CursorBlink!==false?'checked':''}></div>
+    <div class="setting-group"><label>Idle Timeout (minutes, 0=off)</label><input type="number" id="settings-idle-timeout" class="text-input" value="${settings.IdleTimeout || 0}" min="0" max="1440"></div>
+    <div class="setting-group"><label>Color Scheme</label><select id="settings-color-scheme" class="text-input">${Object.keys(colorSchemes).map(s => '<option value="'+s+'" '+(settings.ColorScheme===s?'selected':'')+'>'+s+'</option>').join('')}</select></div>
+    <div class="setting-group"><label>Shell (Windows)</label><input type="text" id="settings-shell" class="text-input" value="${settings.DefaultShell || ''}" placeholder="Auto-detect"></div>
+  `;
+  const ftr = document.createElement('div');
+  ftr.className = 'modal-footer';
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn btn-primary'; saveBtn.textContent = 'Save';
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-secondary'; cancelBtn.textContent = 'Cancel';
+  ftr.appendChild(saveBtn);
+  ftr.appendChild(cancelBtn);
+  dlg.appendChild(hdr);
+  dlg.appendChild(body);
+  dlg.appendChild(ftr);
+  panel.appendChild(dlg);
+  document.body.appendChild(panel);
+  cancelBtn.onclick = () => panel.remove();
+  panel.onclick = (e) => { if (e.target === panel) panel.remove(); };
+  saveBtn.onclick = () => {
+    settings.Font = document.getElementById('settings-font').value;
+    settings.FontSize = parseInt(document.getElementById('settings-font-size').value) || 14;
+    settings.Scrollback = parseInt(document.getElementById('settings-scrollback').value) || 25000;
+    settings.CursorStyle = document.getElementById('settings-cursor').value;
+    settings.CursorBlink = document.getElementById('settings-cursor-blink').checked;
+    settings.IdleTimeout = parseInt(document.getElementById('settings-idle-timeout').value) || 0;
+    settings.ColorScheme = document.getElementById('settings-color-scheme').value;
+    settings.DefaultShell = document.getElementById('settings-shell').value;
+    applySettings(settings);
+    SaveSettings(settings).catch(() => {});
+    showToast('Settings saved', 'success');
+    panel.remove();
+  };
+}
+
 // ===== CUSTOM CSS =====
 function editCustomCSS() {
   const css = prompt('Enter custom CSS (applied on top of color scheme):', localStorage.getItem('tabby-custom-css') || '');
@@ -1793,61 +1874,38 @@ function renderProfileGroups() {
   let html = '';
   Object.keys(groups).sort().forEach(groupName => {
     if (groupName !== 'Ungrouped' || Object.keys(groups).length > 1) {
-      html += '<div class="profile-group-header">' + groupName + '</div>';
+      const collapsed = localStorage.getItem('tabby-group-collapsed-' + groupName) === 'true';
+      const arrow = collapsed ? '▸' : '▾';
+      html += '<div class="profile-group-header" data-group="' + groupName + '">' + arrow + ' ' + groupName + ' <span class="group-count">(' + groups[groupName].length + ')</span></div>';
+      if (collapsed) html += '<div class="profile-group-items" style="display:none">';
+      else html += '<div class="profile-group-items">';
+    } else {
+      html += '<div class="profile-group-items">';
     }
     groups[groupName].forEach(p => {
       const icon = p.type === 'ssh' ? '🔐' : p.type === 'serial' ? '📡' : p.type === 'telnet' ? '🌐' : '⌘';
       html += '<div class="profile-item" data-profile-id="' + p.id + '" title="' + p.name + '"><span class="profile-icon">' + icon + '</span><span class="profile-name">' + p.name + '</span></div>';
     });
+    html += '</div>';
   });
   list.innerHTML = html;
-  list.querySelectorAll('.profile-item').forEach(el => {
-    el.onclick = () => { const profile = savedProfiles.find(p => p.id === el.dataset.profileId); if (profile) connectProfile(profile); };
+  list.querySelectorAll('.profile-group-header').forEach(h => {
+    h.onclick = (e) => {
+      const items = h.nextElementSibling;
+      if (items) {
+        const collapsed = items.style.display === 'none';
+        items.style.display = collapsed ? '' : 'none';
+        localStorage.setItem('tabby-group-collapsed-' + h.dataset.group, collapsed ? 'false' : 'true');
+        renderProfileGroups();
+      }
+    };
   });
-}
-
-
-// ===== TAB STATUS =====
-function setTabStatus(tab, status) {
- if (!tab) return;
- tab.status = status;
- const dot = tab.el ? tab.el.querySelector('.tab-status-dot') : null;
- if (dot) {
- dot.title = status.charAt(0).toUpperCase() + status.slice(1);
- dot.className = 'tab-status-dot status-' + status;
- }
- if (status === 'disconnected' && tab.paneEl) {
- let overlay = tab.paneEl.querySelector('.reconnect-overlay');
- if (!overlay && (tab.isSSH || tab.telnetConnectionId || tab.serialPort)) {
- overlay = document.createElement('div');
- overlay.className = 'reconnect-overlay';
- overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;';
- const msg = document.createElement('div');
- msg.style.cssText = 'color:#fff;font-size:16px;margin-bottom:16px;';
- msg.textContent = 'Connection lost';
- const rBtn = document.createElement('button');
- rBtn.className = 'btn btn-primary';
- rBtn.textContent = 'Reconnect';
- rBtn.style.margin = '4px';
- const cBtn = document.createElement('button');
- cBtn.className = 'btn btn-secondary';
- cBtn.textContent = 'Close';
- cBtn.style.margin = '4px';
- overlay.appendChild(msg);
- overlay.appendChild(rBtn);
- overlay.appendChild(cBtn);
- tab.paneEl.style.position = 'relative';
- tab.paneEl.appendChild(overlay);
- rBtn.onclick = () => { overlay.remove(); reconnectTab(tab); };
- cBtn.onclick = () => { overlay.remove(); tab.close(); };
- }
- }
- }
-
-// ===== TAB BULK CLOSE =====
-function closeAllTabs() {
-  const tabs = [...document.querySelectorAll('.tab')];
-  tabs.forEach(t => { const tab = openTabs.find(ot => ot.el === t); if (tab) closeTab(tab); });
+  list.querySelectorAll('.profile-item').forEach(el => {
+    el.onclick = () => {
+      const profile = savedProfiles.find(p => p.id === el.dataset.profileId);
+      if (profile) connectProfile(profile);
+    };
+  });
 }
 
 function closeOtherTabs(keepTab) {
@@ -3160,6 +3218,48 @@ function addScrollToBottom(term, container) {
   return btn;
 }
 
+// ===== ZMODEM =====
+let zmodemActive = false;
+function setupZmodem(term, tab) {
+  if (!term.zmodemAttach) return;
+  try {
+    term.zmodemAttach({
+      sendTerminal: (data) => {
+        if (tab.ptyId && !tab.exited) PTYWrite(tab.ptyId, btoa(data));
+        else if (tab.isSSH && tab.sshConnectionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) });
+      },
+      senderAction: (xfer) => {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.onchange = () => {
+          const file = fileInput.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const bytes = new Uint8Array(reader.result);
+              xfer.send(bytes);
+              showToast('Sent: ' + file.name, 'success');
+            };
+            reader.readAsArrayBuffer(file);
+          }
+        };
+        fileInput.click();
+      },
+      receiverAction: (xfer) => {
+        const offered = xfer.files.map(f => f.name).join(', ');
+        if (confirm('Accept Zmodem file(s): ' + offered + '?')) {
+          xfer.accept();
+          xfer.on('complete', () => {
+            showToast('Zmodem transfer complete', 'success');
+          });
+        } else {
+          xfer.skip();
+        }
+      }
+    });
+  } catch (e) { /* zmodem not available */ }
+}
+
 // ===== TAB CLASS =====
 
 class Tab {
@@ -3243,7 +3343,14 @@ class Tab {
 
 
 
-        this.tabEl = document.createElement('div'); this.tabEl.className = 'tab-item'; this.tabEl.draggable = true; this.tabEl.dataset.tabId = this.id;
+        this.tabEl = document.createElement('div'); this.tabEl.className = 'tab-item'; this.tabEl.draggable = true;
+    this.tabEl.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', this.id);
+      this.tabEl.classList.add('dragging');
+    });
+    this.tabEl.addEventListener('dragend', () => {
+      this.tabEl.classList.remove('dragging');
+    }); this.tabEl.dataset.tabId = this.id;
 
         this.tabEl.innerHTML = `<span class="tab-status-dot status-disconnected" title="Disconnected"></span><span class="tab-icon">⌘</span><span class="tab-title">${this.title}</span><button class="tab-close">×</button>`;
 
@@ -3524,6 +3631,24 @@ function showTabContextMenu(e, tab) {
 }
 
 
+
+// ===== TAB BADGES =====
+function setTabBadge(tab, count) {
+  if (!tab || !tab.tabEl) return;
+  let badge = tab.tabEl.querySelector('.tab-badge');
+  if (count > 0) {
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'tab-badge';
+      badge.style.cssText = 'position:absolute;top:-4px;right:16px;min-width:16px;height:16px;border-radius:8px;background:#f44747;color:#fff;font-size:10px;line-height:16px;text-align:center;padding:0 4px;z-index:5;';
+      tab.tabEl.style.position = 'relative';
+      tab.tabEl.appendChild(badge);
+    }
+    badge.textContent = count > 99 ? '99+' : count;
+  } else if (badge) {
+    badge.remove();
+  }
+}
 
 // ===== FIND BAR =====
 
