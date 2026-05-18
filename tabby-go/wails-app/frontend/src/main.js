@@ -36,7 +36,7 @@ GetUsername, GetHomeDir, GetPlatform, GetNotifications, GetUnreadNotifications, 
 
 } from '../wailsjs/go/main/App';
 
-import { EventsOn } from '../wailsjs/runtime/runtime';
+import { EventsOn, WindowSetAlwaysOnTop } from '../wailsjs/runtime/runtime';
 
 
 
@@ -1391,6 +1391,7 @@ const PALETTE_COMMANDS = [
   { id: 'import-profiles', label: 'Import Profiles...', icon: '↓', action: function() { importProfiles(); } },
     { id: 'open-settings', label: 'Open Settings', icon: '⚙', action: function() { openSettingsPanel(); } },
   { id: 'connection-log', label: 'View Connection Log', icon: '📋', action: function() { showConnectionLog(); } },
+  { id: 'always-on-top', label: 'Toggle Always on Top', icon: '📌', action: function() { toggleAlwaysOnTop(); } },
 { id: 'about', label: 'About Tabby Go', icon: 'i', action: function() { showAboutDialog(); } },
   { id: 'run-snippet', label: 'Run Snippet...', icon: '>', action: function() { runSnippet(); } },
   { id: 'save-snippet', label: 'Save Snippet...', icon: 'S', action: function() { saveSnippet(); } },
@@ -3201,6 +3202,18 @@ function hideSettings() { document.getElementById('settings-panel').classList.re
 
 
 
+// ===== WINDOW CONTROLS =====
+let alwaysOnTop = false;
+async function toggleAlwaysOnTop() {
+  alwaysOnTop = !alwaysOnTop;
+  try {
+    await WindowSetAlwaysOnTop(alwaysOnTop);
+    showToast(alwaysOnTop ? 'Always on top: ON' : 'Always on top: OFF', 'info');
+  } catch (e) {
+    showToast('Window control not available', 'error');
+  }
+}
+
 // ===== TOAST =====
 
 function showToast(message, type = 'info') { const existing = document.querySelector('.toast'); if (existing) existing.remove(); const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.textContent = message; document.body.appendChild(toast); requestAnimationFrame(() => toast.classList.add('visible')); setTimeout(() => { toast.classList.remove('visible'); setTimeout(() => toast.remove(), 300); }, 2500); }
@@ -3420,6 +3433,8 @@ class Tab {
   m.innerHTML += '<div class="context-menu-item" data-action="paste">Paste</div>';
   if (sel) m.innerHTML += '<div class="context-menu-item" data-action="search">Search Web</div>';
   m.innerHTML += '<div class="context-menu-item" data-action="clear">Clear Terminal</div>';
+  m.innerHTML += '<div class="context-menu-item" data-action="select-all">Select All</div>';
+  m.innerHTML += '<div class="context-menu-item" data-action="reset">Reset Terminal</div>';
   document.body.appendChild(m);
   const rm = () => m.remove();
   m.querySelectorAll('.context-menu-item').forEach(it => {
@@ -3429,6 +3444,8 @@ class Tab {
       if (a === 'paste') navigator.clipboard.readText().then(t => this.term.paste(t)).catch(() => {});
       if (a === 'search' && sel) OpenInBrowser('https://www.google.com/search?q=' + encodeURIComponent(sel));
       if (a === 'clear') this.term.clear();
+      if (a === 'select-all') this.term.selectAll();
+      if (a === 'reset') this.term.reset();
       rm();
     };
   });
