@@ -164,7 +164,7 @@ function openSSHDialog() { document.getElementById('ssh-dialog').classList.add('
 
 function closeSSHDialog() { document.getElementById('ssh-dialog').classList.remove('active'); const t = getActiveTab(); if (t) t.term.focus(); }
 
-async function doSSHConnect() { const host = document.getElementById('ssh-host').value.trim(); const port = parseInt(document.getElementById('ssh-port').value) || 22; const user = document.getElementById('ssh-user').value.trim(); const auth = document.getElementById('ssh-auth').value; if (!host) { showToast('Host is required', 'error'); return; } closeSSHDialog(); showStatus('Connecting to ' + host + '...'); const authParams = { type: auth }; if (auth === 'password') authParams.password = document.getElementById('ssh-password').value; if (auth === 'keyboardInteractive') { authParams.authType = 'keyboardInteractive'; } else if (auth === 'publicKey') { authParams.privateKeyPaths = [document.getElementById('ssh-key-path').value || '~/.ssh/id_ed25519']; const pp = document.getElementById('ssh-key-passphrase'); if (pp && pp.value) authParams.passphrase = pp.value; } try { const jumpHostInput = document.getElementById('ssh-jump-host').value.trim();
+async function doSSHConnect() { const host = document.getElementById('ssh-host').value.trim(); const port = parseInt(document.getElementById('ssh-port').value) || 22; const user = document.getElementById('ssh-user').value.trim(); const auth = document.getElementById('ssh-auth').value; if (!host) { showToast('Host is required', 'error'); return; } closeSSHDialog(); showStatus('Connecting to ' + host + '...'); const authParams = { type: auth }; if (auth === 'password') authParams.password = document.getElementById('ssh-password').value; if (auth === 'keyboardInteractive') { authParams.authType = 'keyboardInteractive'; const pwd = await showPasswordDialog('SSH Authentication', 'Enter password for ' + user + '@' + host + ':'); if (pwd) authParams.password = pwd; else return; } else if (auth === 'publicKey') { authParams.privateKeyPaths = [document.getElementById('ssh-key-path').value || '~/.ssh/id_ed25519']; const pp = document.getElementById('ssh-key-passphrase'); if (pp && pp.value) authParams.passphrase = pp.value; } try { const jumpHostInput = document.getElementById('ssh-jump-host').value.trim();
 
     const sshParams = { host, port, user, auth: authParams, agentForward: document.getElementById('ssh-agent-forward')?.checked || false, keepaliveInterval: parseInt(document.getElementById('ssh-keepalive')?.value) || 30, keepaliveCountMax: 3, readyTimeout: parseInt(document.getElementById('ssh-timeout')?.value) * 1000 || 15000 };
 
@@ -176,7 +176,8 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
 
     }
 
-    const result = await SSHConnect(sshParams); setTabStatus(tab, 'connected'); logConnection(tab, 'SSH connected to ' + host); showToast('Connected to ' + host, 'success'); const tab = new Tab(defaultShell, 'ssh://' + user + '@' + host); tab.connectionType = 'ssh'; tabs.push(tab); tab.activate(); tab.ptyId = null; tab.sshConnectionId = result.connectionId; let jumpLabel = '';
+    const result = await SSHConnect(sshParams); setTabStatus(tab, 'connected'); logConnection(tab, 'SSH connected to ' + host); showToast('Connected to ' + host, 'success'); const tab = new Tab(defaultShell, 'ssh://' + user + '@' + host); tab.connectionType = 'ssh'; tabs.push(tab); tab.activate(); tab.ptyId = null; tab.sshConnectionId = result.connectionId;
+    tab.sessionData = JSON.stringify({ type: 'ssh', host, port, user, auth: authParams }); let jumpLabel = '';
 
     if (result.jumpChain && result.jumpChain.length > 0) {
 
@@ -298,7 +299,7 @@ async function doSerialConnect() {
 
     tab.serialId = result.ID || result.id;
 
-    tab.isSerial = true;
+    tab.isSerial = true; tab.serialPort = port; tab.sessionData = JSON.stringify({ type: 'serial', port, baudRate: baud });
 
     tab.setTitle(port.split('/').pop().split('\\').pop());
 
@@ -389,6 +390,7 @@ async function doTelnetConnect() {
     tab.ptyId = null;
 
     setTabStatus(tab, 'connected'); logConnection(tab, 'Telnet connected to ' + host + ':' + port); tab.telnetConnectionId = result.ConnectionID || result.connectionId;
+    tab.sessionData = JSON.stringify({ type: 'telnet', host, port });
 
     tab.isTelnet = true; tab.telnetHost = host; tab.telnetPort = port; tab.telnetHost = host; tab.telnetPort = port;
 
@@ -1363,6 +1365,8 @@ const PALETTE_COMMANDS = [
 
   { id: 'reload-colors', label: 'Reload Color Schemes', icon: 'R', action: function() { reloadColorSchemes(); } },
   { id: 'tab-search', label: 'Search Tabs...', icon: 'T', action: function() { toggleTabSearch(); } },
+  { id: 'export-profiles', label: 'Export Profiles...', icon: '↑', action: function() { exportProfiles(); } },
+  { id: 'import-profiles', label: 'Import Profiles...', icon: '↓', action: function() { importProfiles(); } },
   { id: 'about', label: 'About Tabby Go', icon: 'i', action: function() { showAboutDialog(); } },
   { id: 'run-snippet', label: 'Run Snippet...', icon: '>', action: function() { runSnippet(); } },
   { id: 'save-snippet', label: 'Save Snippet...', icon: 'S', action: function() { saveSnippet(); } },
@@ -1805,14 +1809,40 @@ function renderProfileGroups() {
 
 // ===== TAB STATUS =====
 function setTabStatus(tab, status) {
-  if (!tab) return;
-  tab.status = status;
-  const dot = tab.el ? tab.el.querySelector('.tab-status-dot') : null;
-  if (dot) {
-    dot.title = status.charAt(0).toUpperCase() + status.slice(1);
-    dot.className = 'tab-status-dot status-' + status;
-  }
-}
+ if (!tab) return;
+ tab.status = status;
+ const dot = tab.el ? tab.el.querySelector('.tab-status-dot') : null;
+ if (dot) {
+ dot.title = status.charAt(0).toUpperCase() + status.slice(1);
+ dot.className = 'tab-status-dot status-' + status;
+ }
+ if (status === 'disconnected' && tab.paneEl) {
+ let overlay = tab.paneEl.querySelector('.reconnect-overlay');
+ if (!overlay && (tab.isSSH || tab.telnetConnectionId || tab.serialPort)) {
+ overlay = document.createElement('div');
+ overlay.className = 'reconnect-overlay';
+ overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;';
+ const msg = document.createElement('div');
+ msg.style.cssText = 'color:#fff;font-size:16px;margin-bottom:16px;';
+ msg.textContent = 'Connection lost';
+ const rBtn = document.createElement('button');
+ rBtn.className = 'btn btn-primary';
+ rBtn.textContent = 'Reconnect';
+ rBtn.style.margin = '4px';
+ const cBtn = document.createElement('button');
+ cBtn.className = 'btn btn-secondary';
+ cBtn.textContent = 'Close';
+ cBtn.style.margin = '4px';
+ overlay.appendChild(msg);
+ overlay.appendChild(rBtn);
+ overlay.appendChild(cBtn);
+ tab.paneEl.style.position = 'relative';
+ tab.paneEl.appendChild(overlay);
+ rBtn.onclick = () => { overlay.remove(); reconnectTab(tab); };
+ cBtn.onclick = () => { overlay.remove(); tab.close(); };
+ }
+ }
+ }
 
 // ===== TAB BULK CLOSE =====
 function closeAllTabs() {
@@ -1996,6 +2026,47 @@ async function getCredentialDialog() {
     if (value) showToast('Credential: ' + key + ' = ' + value.substring(0, 20) + '...', 'success');
     else showToast('Credential not found', 'error');
   } catch (err) { showToast('Failed to retrieve: ' + err, 'error'); }
+}
+
+// ===== PROFILE EXPORT/IMPORT =====
+function exportProfiles() {
+  const d = JSON.stringify(savedProfiles, null, 2);
+  const blob = new Blob([d], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'tabby-profiles-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Profiles exported', 'success');
+}
+function importProfiles() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const imported = JSON.parse(ev.target.result);
+        if (!Array.isArray(imported)) throw new Error('Invalid format');
+        let count = 0;
+        imported.forEach(p => {
+          if (!savedProfiles.find(sp => sp.id === p.id)) {
+            savedProfiles.push(p);
+            count++;
+          }
+        });
+        SaveProfiles(savedProfiles).catch(() => {});
+        renderProfiles();
+        showToast('Imported ' + count + ' profiles', 'success');
+      } catch (err) { showToast('Import failed: ' + err.message, 'error'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 }
 
 // ===== PROFILES =====
@@ -3153,7 +3224,7 @@ class Tab {
 
 
 
-        this.wrapper = document.createElement('div'); this.wrapper.className = 'terminal-wrapper';
+        this.wrapper = document.createElement('div'); this.wrapper.style.position = 'relative'; this.wrapper.className = 'terminal-wrapper';
 
     this.wrapper.onmouseenter = () => showToolbarForTab(this);
 
@@ -3168,6 +3239,7 @@ class Tab {
     this.pinToolbar = false; this.wrapper.id = this.id;
 
         document.getElementById('main-content').appendChild(this.wrapper); this.term.open(this.wrapper);
+    addScrollToBottom(this.term, this.wrapper);
 
 
 
@@ -3480,6 +3552,29 @@ function toggleFind() {
 }
 
 
+
+// ===== RECONNECT =====
+async function reconnectTab(tab) {
+  if (tab.sessionData) {
+    try {
+      const session = JSON.parse(tab.sessionData);
+      if (session.type === 'ssh') {
+        connectSSH(session.host, session.port, session.user, session.auth);
+        showToast('Reconnecting to ' + session.host + '...', 'info');
+      } else if (session.type === 'telnet') {
+        connectTelnet(session.host, session.port);
+        showToast('Reconnecting to ' + session.host + '...', 'info');
+      } else {
+        spawnLocalShell();
+        showToast('Reconnecting local shell...', 'info');
+      }
+      tab.close();
+    } catch (e) { showToast('Reconnect failed: ' + e.message, 'error'); }
+  } else {
+    spawnLocalShell();
+    tab.close();
+  }
+}
 
 // ===== SESSION PERSISTENCE =====
 
