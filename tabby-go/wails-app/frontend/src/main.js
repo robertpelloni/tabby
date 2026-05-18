@@ -74,6 +74,20 @@ let savedProfiles = [];
 
 // ===== INIT =====
 
+// Idle connection monitor
+setInterval(() => {
+  const timeout = settings.IdleTimeout || 0;
+  if (timeout <= 0) return;
+  tabs.forEach(tab => {
+    if (tab.lastActivity && Date.now() - tab.lastActivity > timeout * 60000) {
+      if (tab.status === 'connected' && (tab.isSSH || tab.telnetConnectionId)) {
+        showToast('Idle timeout: ' + tab.title, 'info');
+        tab.close();
+      }
+    }
+  });
+}, 60000);
+
 async function init() {
 
     defaultShell = await GetDefaultShell();
@@ -152,7 +166,7 @@ function closeSSHDialog() { document.getElementById('ssh-dialog').classList.remo
 
 async function doSSHConnect() { const host = document.getElementById('ssh-host').value.trim(); const port = parseInt(document.getElementById('ssh-port').value) || 22; const user = document.getElementById('ssh-user').value.trim(); const auth = document.getElementById('ssh-auth').value; if (!host) { showToast('Host is required', 'error'); return; } closeSSHDialog(); showStatus('Connecting to ' + host + '...'); const authParams = { type: auth }; if (auth === 'password') authParams.password = document.getElementById('ssh-password').value; if (auth === 'keyboardInteractive') { authParams.authType = 'keyboardInteractive'; } else if (auth === 'publicKey') { authParams.privateKeyPaths = [document.getElementById('ssh-key-path').value || '~/.ssh/id_ed25519']; const pp = document.getElementById('ssh-key-passphrase'); if (pp && pp.value) authParams.passphrase = pp.value; } try { const jumpHostInput = document.getElementById('ssh-jump-host').value.trim();
 
-    const sshParams = { host, port, user, auth: authParams, keepaliveInterval: parseInt(document.getElementById('ssh-keepalive')?.value) || 30, keepaliveCountMax: 3, readyTimeout: parseInt(document.getElementById('ssh-timeout')?.value) * 1000 || 15000 };
+    const sshParams = { host, port, user, auth: authParams, agentForward: document.getElementById('ssh-agent-forward')?.checked || false, keepaliveInterval: parseInt(document.getElementById('ssh-keepalive')?.value) || 30, keepaliveCountMax: 3, readyTimeout: parseInt(document.getElementById('ssh-timeout')?.value) * 1000 || 15000 };
 
     if (jumpHostInput) {
 
@@ -1350,6 +1364,8 @@ const PALETTE_COMMANDS = [
   { id: 'reload-colors', label: 'Reload Color Schemes', icon: 'R', action: function() { reloadColorSchemes(); } },
   { id: 'tab-search', label: 'Search Tabs...', icon: 'T', action: function() { toggleTabSearch(); } },
   { id: 'about', label: 'About Tabby Go', icon: 'i', action: function() { showAboutDialog(); } },
+  { id: 'run-snippet', label: 'Run Snippet...', icon: '>', action: function() { runSnippet(); } },
+  { id: 'save-snippet', label: 'Save Snippet...', icon: 'S', action: function() { saveSnippet(); } },
   { id: 'check-updates', label: 'Check for Updates', icon: '↑', action: function() { checkForUpdates(); } },
   { id: 'audit-log', label: 'Open Audit Log', icon: 'A', action: function() { openAuditLog(); } },
   { id: 'close-all-tabs', label: 'Close All Tabs', icon: 'X', action: function() { closeAllTabs(); } },
@@ -1891,6 +1907,36 @@ function setTabColor(tab, color) {
   } else {
     tab.tabEl.style.borderLeft = '';
     tab.colorLabel = '';
+  }
+}
+
+
+// ===== SNIPPETS =====
+const savedSnippets = JSON.parse(localStorage.getItem('tabby-snippets') || '[]');
+function saveSnippet() {
+  const name = prompt('Snippet name:');
+  if (!name) return;
+  const cmd = prompt('Snippet command:');
+  if (!cmd) return;
+  savedSnippets.push({ id: 'snippet-' + Date.now(), name, command: cmd });
+  localStorage.setItem('tabby-snippets', JSON.stringify(savedSnippets));
+  showToast('Snippet saved: ' + name, 'success');
+}
+function runSnippet() {
+  if (savedSnippets.length === 0) { showToast('No saved snippets', 'info'); return; }
+  const names = savedSnippets.map((s, i) => (i+1) + '. ' + s.name + ': ' + s.command).join('\n');
+  const choice = prompt('Choose snippet:\n' + names);
+  if (!choice) return;
+  const idx = parseInt(choice) - 1;
+  if (idx >= 0 && idx < savedSnippets.length) {
+    const snippet = savedSnippets[idx];
+    const tab = getActiveTab();
+    if (tab) {
+      tab.term.paste(snippet.command + '\r');
+      showToast('Running: ' + snippet.name, 'info');
+    } else {
+      showToast('No active tab', 'error');
+    }
   }
 }
 
@@ -3123,7 +3169,13 @@ class Tab {
   setTimeout(() => document.addEventListener('click', rm, { once: true }), 10);
 });
 
-this.term.onData((data) => { if (this.ptyId && !this.exited) PTYWrite(this.ptyId, btoa(data)); });
+this.term.onTitleChange((title) => {
+  if (title && title.trim()) {
+    this.setTitle(title.trim());
+    SetWindowTitle(title.trim());
+  }
+});
+this.lastActivity = Date.now(); this.term.onData((data) => { if (this.ptyId && !this.exited) PTYWrite(this.ptyId, btoa(data)); });
   setupInputProcessing(this.term, this);
 
         this.term.onTitleChange((title) => { if (title) this.setTitle(title); });
@@ -3531,5 +3583,19 @@ window.addEventListener('resize', () => {
 });
 
 
+
+// Idle connection monitor
+setInterval(() => {
+  const timeout = settings.IdleTimeout || 0;
+  if (timeout <= 0) return;
+  tabs.forEach(tab => {
+    if (tab.lastActivity && Date.now() - tab.lastActivity > timeout * 60000) {
+      if (tab.status === 'connected' && (tab.isSSH || tab.telnetConnectionId)) {
+        showToast('Idle timeout: ' + tab.title, 'info');
+        tab.close();
+      }
+    }
+  });
+}, 60000);
 
 init();
