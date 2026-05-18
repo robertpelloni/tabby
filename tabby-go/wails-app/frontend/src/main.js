@@ -445,9 +445,8 @@ async function doTelnetConnect() {
       window.__telnetExitHandlers.push(tab.telnetExitHandler);
 
     tab.term.onData((data) => {
-
+      if (data.includes(String.fromCharCode(10)) && data.trim().split(String.fromCharCode(10)).length > 1) { if (settings.PasteWarning !== false && !confirm('Paste multi-line content? (' + data.trim().split(String.fromCharCode(10)).length + ' lines)')) return; }
       if (tab.telnetConnectionId) TelnetWrite(tab.telnetConnectionId, btoa(data));
-
     });
 
     setupInputProcessing(tab.term, tab);
