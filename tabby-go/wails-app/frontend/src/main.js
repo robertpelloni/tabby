@@ -2003,7 +2003,45 @@ function logConnection(tab, message) {
   if (!tab) return;
   tab.connectionLog.push({ time: new Date().toISOString(), message });
   if (tab.connectionLog.length > 500) tab.connectionLog.shift();
+}
+
+function closeTab(tab) { tab.close(); }
+
+function closeAllTabs(keepTab) {
+  if (!keepTab) {
+    [...tabs].forEach(t => t.close());
+  } else {
+    tabs.forEach(t => { if (t !== keepTab) t.close(); });
+  }
 }
+
+function getProfileGroups() {
+  const groups = {};
+  savedProfiles.forEach(p => {
+    const group = p.group || 'Ungrouped';
+    if (!groups[group]) groups[group] = [];
+    groups[group].push(p);
+  });
+  return groups;
+}
+
+function applySettings() {
+  if (!settings) return;
+  tabs.forEach(t => {
+    if (t.term) {
+      if (settings.FontFamily) t.term.options.fontFamily = settings.FontFamily;
+      if (settings.FontSize) t.term.options.fontSize = settings.FontSize;
+      if (settings.LineHeight) t.term.options.lineHeight = parseFloat(settings.LineHeight);
+      if (settings.CursorStyle) t.term.options.cursorStyle = settings.CursorStyle;
+      if (settings.CursorBlink !== undefined) t.term.options.cursorBlink = settings.CursorBlink;
+      if (settings.Scrollback) t.term.options.scrollback = settings.Scrollback;
+      t.fitAddon.fit();
+      if (t.ptyId && !t.exited) PTYResize(t.ptyId, t.term.cols, t.term.rows);
+      if (t.isSSH && t.sshConnectionId && t.sshSessionId) SSHResize({ connectionId: t.sshConnectionId, sessionId: t.sshSessionId, columns: t.term.cols, rows: t.term.rows });
+    }
+  });
+}
+
 
 function showConnectionLog() {
   let panel = document.getElementById('conn-log-panel');
