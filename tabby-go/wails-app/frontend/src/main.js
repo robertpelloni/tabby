@@ -707,7 +707,41 @@ async function handleHostKeyPrompt(params) {
 }
 
 
+// ===== SSH BANNER AND SERVICE MESSAGE HANDLERS =====
+function handleSSHBanner(params) {
+  const connID = params.connectionId || params.ConnectionID;
+  const message = params.message || params.Message || '';
+  if (message) {
+    const tab = tabs.find(t => t.isSSH && t.sshConnectionId === connID);
+    if (tab && tab.term) {
+      tab.term.writeln(String.fromCharCode(13,10) + String.fromCharCode(27) + '[1;36m[SSH Banner]' + String.fromCharCode(27) + '[0m ' + message);
+      logConnection(tab, 'SSH Banner: ' + message.substring(0, 50));
+    }
+  }
+}
+function handleSSHServiceMessage(params) {
+  const connID = params.connectionId || params.ConnectionID;
+  const message = params.message || params.Message || '';
+  if (message) {
+    const tab = tabs.find(t => t.isSSH && t.sshConnectionId === connID);
+    if (tab && tab.term) {
+      tab.term.writeln(String.fromCharCode(13,10) + String.fromCharCode(27) + '[1;33m[SSH]' + String.fromCharCode(27) + '[0m ' + message);
+    }
+  }
+}
+function handleTelnetServiceMessage(params) {
+  const connID = params.connectionId || params.ConnectionID;
+  const message = params.message || params.Message || '';
+  if (message) {
+    const tab = tabs.find(t => t.isTelnet && t.telnetConnectionId === connID);
+    if (tab && tab.term) {
+      tab.term.writeln(String.fromCharCode(13,10) + String.fromCharCode(27) + '[1;33m[Telnet]' + String.fromCharCode(27) + '[0m ' + message);
+    }
+  }
+}
+
 // ===== HOST KEY VERIFICATION =====
+
 
 let hostKeyResolve = null;
 
@@ -3407,7 +3441,7 @@ class Tab {
 
         this.id = `tab-${Date.now()}-${tabCounter++}`;
 
-        this.ptyId = null; this.title = 'Shell'; this.shell = shell || defaultShell; this.exited = false; this.status = "disconnected"; this.connectionType = "local"; this.connectionLog = []; this.isSSH = false; this.sshConnectionId = null; this.sshSessionId = null;
+        this.ptyId = null; this.title = 'Shell'; this.shell = shell || defaultShell; this.exited = false; this.status = "disconnected"; this.connectionType = "local"; this.connectionLog = []; this.lastActivity = Date.now(); this.isSSH = false; this.sshConnectionId = null; this.sshSessionId = null; this.sshHost = ''; this.sshPort = 22; this.sshUser = ''; this.isSerial = false; this.serialId = null; this.serialPort = ''; this.serialDataHandler = null; this.serialExitHandler = null; this.isTelnet = false; this.telnetConnectionId = null; this.telnetHost = ''; this.telnetPort = 23; this.telnetDataHandler = null; this.telnetExitHandler = null;
 
         const fontFamily = settings.FontFamily || '"Cascadia Code","Fira Code",Consolas,"Courier New",monospace';
 
@@ -3656,6 +3690,9 @@ EventsOn('telnet.data', (params) => { (window.__telnetDataHandlers || []).forEac
 EventsOn('telnet.exit', (params) => { (window.__telnetExitHandlers || []).forEach(h => h(params)); });
 EventsOn('ssh.keyboardInteractive', (params) => { handleKeyboardInteractive(params); });
 EventsOn('ssh.hostKeyPrompt', (params) => { handleHostKeyPrompt(params); });
+EventsOn('ssh.banner', (params) => { handleSSHBanner(params); });
+EventsOn('ssh.serviceMessage', (params) => { handleSSHServiceMessage(params); });
+EventsOn('telnet.serviceMessage', (params) => { handleTelnetServiceMessage(params); });
 EventsOn('menu:new-tab', () => newTab());
 EventsOn('menu:settings', () => openSettingsPanel());
 EventsOn('menu:copy', () => { const t = getActiveTab(); if (t && t.term) document.execCommand('copy'); });
