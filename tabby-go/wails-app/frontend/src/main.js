@@ -3780,7 +3780,7 @@ function showTabContextMenu(e, tab) {
 
     const menu = document.createElement('div'); menu.className = 'context-menu';
 
-    menu.innerHTML = `<div class="context-menu-item" data-action="rename">✏️ Rename</div><div class="context-menu-item" data-action="duplicate">📋 Duplicate</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="reconnect">↻ Reconnect</div><div class="context-menu-item" data-action="duplicate">⎄ Duplicate Tab</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="close-others">✕ Close Others</div><div class="context-menu-item" data-action="close-all">✕ Close All</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="color-red">🔴 Red</div><div class="context-menu-item" data-action="color-green">🟢 Green</div><div class="context-menu-item" data-action="color-blue">🔵 Blue</div><div class="context-menu-item" data-action="color-yellow">🟡 Yellow</div><div class="context-menu-item" data-action="color-reset">⚙ Reset Color</div>✕ Close All</div><div class="context-menu-item" data-action="sftp" style="display:none;">SFTP</div><div class="context-menu-item" data-action="forward" style="display:none;">Port Forward</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="reconnect">↻ Reconnect</div><div class="context-menu-item" data-action="sftp" style="display:none;">SFTP</div><div class="context-menu-item" data-action="forward" style="display:none;">Port Forward</div><div class="context-menu-separator"></div><div class="context-menu-item" data-action="close-others">✕ Close Others</div><div class="context-menu-item" data-action="close-right">✕ Close to Right</div><div class="context-menu-item" data-action="close">✕ Close</div>`;
+    menu.innerHTML = '<div class="context-menu-item" data-action="rename">Rename</div>'+ '<div class="context-menu-item" data-action="duplicate">Duplicate</div>'+ '<div class="context-menu-separator"></div>'+ '<div class="context-menu-item" data-action="reconnect">Reconnect</div>'+ '<div class="context-menu-separator"></div>'+ '<div class="context-menu-item" data-action="sftp" style="display:none;">SFTP</div>'+ '<div class="context-menu-item" data-action="forward" style="display:none;">Port Forward</div>'+ '<div class="context-menu-separator"></div>'+ '<div class="context-menu-item" data-action="color-red">Red</div>'+ '<div class="context-menu-item" data-action="color-green">Green</div>'+ '<div class="context-menu-item" data-action="color-blue">Blue</div>'+ '<div class="context-menu-item" data-action="color-yellow">Yellow</div>'+ '<div class="context-menu-item" data-action="color-reset">Reset Color</div>'+ '<div class="context-menu-separator"></div>'+ '<div class="context-menu-item" data-action="close-others">Close Others</div>'+ '<div class="context-menu-item" data-action="close-right">Close to Right</div>'+ '<div class="context-menu-item" data-action="close-all">Close All</div>'+ '<div class="context-menu-item" data-action="close">Close</div>';
 
     document.body.appendChild(menu);
 
@@ -3805,8 +3805,8 @@ function showTabContextMenu(e, tab) {
       case 'sftp': if (tab.isSSH && tab.sshConnectionId) openSFTPBrowser(tab.sshConnectionId); break;
 
       case 'reconnect': reconnectTab(tab); break;
- case 'duplicate': duplicateTab(tab); break;
- case 'close-others': closeOtherTabs(tab); break;
+ 
+ 
  case 'close-all': closeAllTabs(); break;
  case 'color-red': setTabColor(tab, '#f44747'); break;
  case 'color-green': setTabColor(tab, '#4caf50'); break;
