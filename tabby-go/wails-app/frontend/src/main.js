@@ -180,28 +180,16 @@ function openSSHDialog() { document.getElementById('ssh-dialog').classList.add('
 function closeSSHDialog() { document.getElementById('ssh-dialog').classList.remove('active'); const t = getActiveTab(); if (t) t.term.focus(); }
 
 async function doSSHConnect() { const host = document.getElementById('ssh-host').value.trim(); const port = parseInt(document.getElementById('ssh-port').value) || 22; const user = document.getElementById('ssh-user').value.trim(); const auth = document.getElementById('ssh-auth').value; if (!host) { showToast('Host is required', 'error'); return; } closeSSHDialog(); showStatus('Connecting to ' + host + '...');
-  const spinner = document.createElement('div');
-  spinner.className = 'connecting-spinner';
-  spinner.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border:3px solid var(--border);border-top:3px solid var(--accent);border-radius:50%;animation:spin 1s linear infinite;z-index:15;';
-  const tab = tabs[tabs.length - 1];
-  if (tab && tab.wrapper) { tab.wrapper.appendChild(spinner); }
- const authParams = { type: auth }; if (auth === 'password') authParams.password = document.getElementById('ssh-password').value; if (auth === 'keyboardInteractive') { authParams.authType = 'keyboardInteractive'; const pwd = await showPasswordDialog('SSH Authentication', 'Enter password for ' + user + '@' + host + ':'); if (pwd) authParams.password = pwd; else return; } else if (auth === 'publicKey') { authParams.privateKeyPaths = [document.getElementById('ssh-key-path').value || '~/.ssh/id_ed25519']; const pp = document.getElementById('ssh-key-passphrase'); if (pp && pp.value) authParams.passphrase = pp.value; } try { const jumpHostInput = document.getElementById('ssh-jump-host').value.trim();
-
-    const sshParams = { host, port, user, auth: authParams, agentForward: document.getElementById('ssh-agent-forward')?.checked || false, keepaliveInterval: parseInt(document.getElementById('ssh-keepalive')?.value) || 30, keepaliveCountMax: 3, readyTimeout: parseInt(document.getElementById('ssh-timeout')?.value) * 1000 || 15000 };
-
-    if (jumpHostInput) {
-
-        const [jh, jp] = jumpHostInput.includes(':') ? jumpHostInput.split(':') : [jumpHostInput, '22'];
-
-        sshParams.jumpHost = { host: jh, port: parseInt(jp) || 22, user: user, auth: authParams };
-
-    }
-
-    const tab = new Tab(defaultShell, 'ssh://' + user + '@' + host);
+  const tab = new Tab(defaultShell, 'ssh://' + user + '@' + host);
  tab.connectionType = 'ssh';
  tabs.push(tab);
  tab.activate();
  tab.ptyId = null;
+ const spinner = document.createElement('div');
+ spinner.className = 'connecting-spinner';
+ spinner.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border:3px solid var(--border);border-top:3px solid var(--accent);border-radius:50%;animation:spin 1s linear infinite;z-index:15;';
+ tab.wrapper.appendChild(spinner);
+ try {
  const result = await SSHConnect(sshParams);
  setTabStatus(tab, 'connected'); logConnection(tab, 'SSH connected to ' + host);
  const sp = tab.wrapper.querySelector('.connecting-spinner'); if (sp) sp.remove();
@@ -227,7 +215,7 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
 
     }
 
-    showStatus(statusText); if (document.getElementById('ssh-save-profile') && document.getElementById('ssh-save-profile').checked) { savedProfiles.push({ id: 'ssh-' + Date.now(), type: 'ssh', name: user + '@' + host, options: { host, port, user, auth, privateKeys: authParams.privateKeyPaths || [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); } } catch (err) { showToast('SSH failed: ' + err, 'error'); showStatus('SSH failed - ' + host); } }
+    showStatus(statusText); if (document.getElementById('ssh-save-profile') && document.getElementById('ssh-save-profile').checked) { savedProfiles.push({ id: 'ssh-' + Date.now(), type: 'ssh', name: user + '@' + host, options: { host, port, user, auth, privateKeys: authParams.privateKeyPaths || [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); } } catch (err) { const sp = tab.wrapper.querySelector('.connecting-spinner'); if (sp) sp.remove(); showToast('SSH failed: ' + err, 'error'); showStatus('SSH failed - ' + host); } }
 
 
 
