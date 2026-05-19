@@ -3657,7 +3657,7 @@ EventsOn('telnet.exit', (params) => { (window.__telnetExitHandlers || []).forEac
 EventsOn('ssh.keyboardInteractive', (params) => { handleKeyboardInteractive(params); });
 EventsOn('ssh.hostKeyPrompt', (params) => { handleHostKeyPrompt(params); });
 EventsOn('menu:new-tab', () => newTab());
-EventsOn('menu:settings', () => openSettings());
+EventsOn('menu:settings', () => openSettingsPanel());
 EventsOn('menu:copy', () => { const t = getActiveTab(); if (t && t.term) document.execCommand('copy'); });
 EventsOn('menu:paste', () => { const t = getActiveTab(); if (t && t.term) navigator.clipboard.readText().then(text => t.term.paste(text)); });
 EventsOn('menu:select-all', () => { const t = getActiveTab(); if (t && t.term) t.term.selectAll(); });
@@ -3731,6 +3731,11 @@ class SplitPane {
 }
 
 
+
+function splitPane(orientation) {
+  if (orientation === 'horizontal') splitHorizontally();
+  else splitVertically();
+}
 
 function splitVertically() { const tab = getActiveTab(); if (!tab) return; const mc = document.getElementById('main-content'); const w = document.getElementById('welcome'); if (w) w.style.display = 'none'; const idx = tabs.indexOf(tab); if (idx > -1) tabs.splice(idx, 1); tab.wrapper.remove(); tab.tabEl.remove(); const sp = new SplitPane('vertical'); sp.addPane(tab, 50); const t2 = new Tab(tab.shell); tabs.push(t2); sp.addPane(t2, 50); mc.appendChild(sp.element); activeSplitPane = sp; t2.spawn(); tab.activate(); showToast('Split vertically', 'info'); }
 
