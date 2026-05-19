@@ -1986,6 +1986,19 @@ function duplicateActiveProfile() {
 // ===== CONNECTION LOG VIEWER =====
 
 // ===== CONNECTION LOG =====
+function setTabStatus(tab, status) {
+  if (!tab) return;
+  tab.status = status;
+  const dot = tab.tabEl ? tab.tabEl.querySelector('.tab-status-dot') : null;
+  if (dot) {
+    dot.className = 'tab-status-dot';
+    if (status === 'connected') dot.classList.add('status-connected');
+    else if (status === 'connecting') dot.classList.add('status-connecting');
+    else dot.classList.add('status-disconnected');
+    dot.title = status.charAt(0).toUpperCase() + status.slice(1);
+  }
+}
+
 function logConnection(tab, message) {
   if (!tab) return;
   tab.connectionLog.push({ time: new Date().toISOString(), message });
