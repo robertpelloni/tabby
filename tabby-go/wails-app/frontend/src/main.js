@@ -190,6 +190,22 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
  spinner.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border:3px solid var(--border);border-top:3px solid var(--accent);border-radius:50%;animation:spin 1s linear infinite;z-index:15;';
  tab.wrapper.appendChild(spinner);
  try {
+ const authParams = { type: auth };
+ if (auth === 'password') {
+ authParams.password = document.getElementById('ssh-password').value;
+ } else if (auth === 'publicKey') {
+ const keyPath = document.getElementById('ssh-key-path').value;
+ authParams.privateKeyPaths = keyPath ? [keyPath] : [];
+ }
+ const sshParams = {
+ host: host,
+ port: port,
+ user: user,
+ auth: authParams,
+ keepaliveInterval: 30,
+ keepaliveCountMax: 3,
+ readyTimeout: 15000
+ };
  const result = await SSHConnect(sshParams);
  setTabStatus(tab, 'connected'); logConnection(tab, 'SSH connected to ' + host);
  const sp = tab.wrapper.querySelector('.connecting-spinner'); if (sp) sp.remove();
@@ -3872,62 +3888,133 @@ function toggleFind() {
 
 
 // ===== RECONNECT =====
-async function reconnectTab(tab) {
-  if (tab.sessionData) {
-    try {
-      const session = JSON.parse(tab.sessionData);
-      if (session.type === 'ssh') {
-        showToast('Reconnecting to ' + session.host + '...', 'info');
-        setTabStatus(tab, 'connecting');
-        const result = await SSHConnect({ host: session.host, port: session.port || 22, user: session.user, auth: session.auth, keepaliveInterval: 30, keepaliveCountMax: 3, readyTimeout: 15000 });
-        tab.sshConnectionId = result.connectionId;
-        tab.isSSH = true; tab.sshHost = session.host; tab.sshPort = session.port || 22; tab.sshUser = session.user;
-        const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: 'xterm-256color' });
-        tab.sshSessionId = shellResult.sessionId;
-        setTabStatus(tab, 'connected');
-        tab.setTitle(session.user + '@' + session.host);
-        tab.tabEl.querySelector('.tab-icon').textContent = '🔐';
-        tab.term.onData((data) => {
-          if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) });
-        });
-        showToast('Reconnected to ' + session.host, 'success');
-      } else if (session.type === 'telnet') {
-        showToast('Reconnecting to ' + session.host + '...', 'info');
-        setTabStatus(tab, 'connecting');
-        const result = await TelnetConnect(session.host, session.port || 23);
-        tab.telnetConnectionId = result.ConnectionID || result.connectionId;
-        tab.isTelnet = true; tab.telnetHost = session.host; tab.telnetPort = session.port || 23;
-        setTabStatus(tab, 'connected');
-        tab.setTitle(session.host + ':' + (session.port || 23));
-        tab.tabEl.querySelector('.tab-icon').textContent = '🌐';
-        tab.term.onData((data) => {
-          if (tab.telnetConnectionId) TelnetWrite(tab.telnetConnectionId, btoa(data));
-        });
-        showToast('Reconnected to ' + session.host, 'success');
-      } else if (session.type === 'serial') {
-        showToast('Reconnecting to ' + session.port + '...', 'info');
-        setTabStatus(tab, 'connecting');
-        const result = await SerialOpen({ port: session.port, baudRate: session.baudRate || 115200, dataBits: 8, stopBits: 1, parity: 'none' });
-        tab.serialId = result.ID || result.id;
-        tab.isSerial = true; tab.serialPort = session.port;
-        setTabStatus(tab, 'connected');
-        tab.setTitle(session.port.split('/').pop().split('\\').pop());
-        tab.tabEl.querySelector('.tab-icon').textContent = '📡';
-        tab.term.onData((data) => {
-          if (tab.serialId) SerialWrite(tab.serialId, btoa(data));
-        });
-        showToast('Reconnected to ' + session.port, 'success');
-      } else {
-        tab.spawn();
-        showToast('Reconnecting local shell...', 'info');
-      }
-    } catch (e) {
-      showToast('Reconnect failed: ' + e.message, 'error');
-      setTabStatus(tab, 'disconnected');
-    }
-  } else {
-    tab.spawn();
-  }
+async function reconnectTab(tab) {
+ tab.exited = false;
+ tab.tabEl.querySelector('.tab-icon').textContent = '...';
+ tab.tabEl.querySelector('.tab-icon').style.color = '';
+ if (tab.sessionData) {
+ try {
+ const session = JSON.parse(tab.sessionData);
+ if (session.type === 'ssh') {
+ showToast('Reconnecting to ' + session.host + '...', 'info');
+ setTabStatus(tab, 'connecting');
+ const result = await SSHConnect({
+ host: session.host,
+ port: session.port || 22,
+ user: session.user,
+ auth: session.auth,
+ keepaliveInterval: 30,
+ keepaliveCountMax: 3,
+ readyTimeout: 15000
+ });
+ tab.sshConnectionId = result.connectionId;
+ tab.isSSH = true;
+ tab.sshHost = session.host;
+ tab.sshPort = session.port || 22;
+ tab.sshUser = session.user;
+ const shellResult = await SSHStartShell({
+ connectionId: result.connectionId,
+ columns: tab.term.cols,
+ rows: tab.term.rows,
+ terminal: 'xterm-256color'
+ });
+ tab.sshSessionId = shellResult.sessionId;
+ setTabStatus(tab, 'connected');
+ let jumpLabel = '';
+ if (result.jumpChain && result.jumpChain.length > 0) jumpLabel = ' (via ' + result.jumpChain.join(' -> ') + ')';
+ tab.setTitle(session.user + '@' + session.host + jumpLabel);
+ tab.tabEl.querySelector('.tab-icon').textContent = '\U0001f510';
+ tab.term.onData((data) => {
+ if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) });
+ });
+ setupInputProcessing(tab.term, tab);
+ showStatus('SSH - ' + session.user + '@' + session.host);
+ showToast('Reconnected to ' + session.host, 'success');
+ } else if (session.type === 'telnet') {
+ showToast('Reconnecting to ' + session.host + '...', 'info');
+ setTabStatus(tab, 'connecting');
+ const result = await TelnetConnect(session.host, session.port || 23);
+ tab.telnetConnectionId = result.ConnectionID || result.connectionId;
+ tab.isTelnet = true;
+ tab.telnetHost = session.host;
+ tab.telnetPort = session.port || 23;
+ setTabStatus(tab, 'connected');
+ tab.setTitle(session.host + ':' + (session.port || 23));
+ tab.tabEl.querySelector('.tab-icon').textContent = '\U0001f310';
+ tab.telnetDataHandler = (params) => {
+ const cid = params.ConnectionID || params.connectionId;
+ if (cid === tab.telnetConnectionId) tab.term.write(atob(params.Data || params.data));
+ };
+ window.__telnetDataHandlers = window.__telnetDataHandlers || [];
+ window.__telnetDataHandlers.push(tab.telnetDataHandler);
+ tab.telnetExitHandler = (params) => {
+ const cid = params.ConnectionID || params.connectionId;
+ if (cid === tab.telnetConnectionId) {
+ tab.exited = true;
+ setTabStatus(tab, 'disconnected');
+ tab.term.writeln('\x1b[1;33m[Telnet connection closed]\x1b[0m');
+ tab.setTitle(tab.title + ' [disconnected]');
+ tab.tabEl.querySelector('.tab-icon').textContent = '\u2715';
+ tab.tabEl.querySelector('.tab-icon').style.color = '#f44747';
+ }
+ };
+ window.__telnetExitHandlers = window.__telnetExitHandlers || [];
+ window.__telnetExitHandlers.push(tab.telnetExitHandler);
+ tab.term.onData((data) => {
+ if (tab.telnetConnectionId) TelnetWrite(tab.telnetConnectionId, btoa(data));
+ });
+ setupInputProcessing(tab.term, tab);
+ showStatus('Telnet - ' + session.host + ':' + (session.port || 23));
+ showToast('Reconnected to ' + session.host, 'success');
+ } else if (session.type === 'serial') {
+ showToast('Reconnecting to ' + session.port + '...', 'info');
+ setTabStatus(tab, 'connecting');
+ const result = await SerialOpen({ port: session.port, baudRate: session.baudRate || 115200, dataBits: 8, stopBits: 1, parity: 'none' });
+ tab.serialId = result.ID || result.id;
+ tab.isSerial = true;
+ tab.serialPort = session.port;
+ tab.serialBaud = session.baudRate || 115200;
+ setTabStatus(tab, 'connected');
+ tab.setTitle(session.port.split('/').pop().split('\\').pop() + ' @ ' + (session.baudRate || 115200) + ' baud');
+ tab.tabEl.querySelector('.tab-icon').textContent = '\U0001f4e1';
+ tab.serialDataHandler = (params) => {
+ if ((params.serialId || params.SerialID) === tab.serialId) tab.term.write(atob(params.data || params.Data));
+ };
+ window.__serialDataHandlers = window.__serialDataHandlers || [];
+ window.__serialDataHandlers.push(tab.serialDataHandler);
+ tab.serialExitHandler = (params) => {
+ if ((params.serialId || params.SerialID) === tab.serialId) {
+ tab.exited = true;
+ setTabStatus(tab, 'disconnected');
+ tab.term.writeln('\x1b[1;33m[Serial port closed]\x1b[0m');
+ tab.setTitle(tab.title + ' [disconnected]');
+ tab.tabEl.querySelector('.tab-icon').textContent = '\u2715';
+ tab.tabEl.querySelector('.tab-icon').style.color = '#f44747';
+ }
+ };
+ window.__serialExitHandlers = window.__serialExitHandlers || [];
+ window.__serialExitHandlers.push(tab.serialExitHandler);
+ tab.term.onData((data) => {
+ if (tab.serialId) SerialWrite(tab.serialId, btoa(data));
+ });
+ setupInputProcessing(tab.term, tab);
+ showStatus('Serial - ' + session.port + ' @ ' + (session.baudRate || 115200));
+ showToast('Reconnected to ' + session.port, 'success');
+ } else {
+ tab.spawn();
+ showToast('Reconnecting local shell...', 'info');
+ }
+ } catch (e) {
+ showToast('Reconnect failed: ' + e.message, 'error');
+ setTabStatus(tab, 'disconnected');
+ tab.exited = true;
+ tab.tabEl.querySelector('.tab-icon').textContent = '\u2715';
+ tab.tabEl.querySelector('.tab-icon').style.color = '#f44747';
+ }
+ } else {
+ tab.spawn();
+ }
+ saveSession();
 }
 
 // ===== SESSION PERSISTENCE =====
