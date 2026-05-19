@@ -4093,9 +4093,12 @@ function bindGlobalKeys() {
 
 window.addEventListener('resize', () => {
 
-    const tab = getActiveTab(); if (tab) { tab.fitAddon.fit(); if (tab.ptyId && !tab.exited) PTYResize(tab.ptyId, tab.term.cols, tab.term.rows); if (tab.isSSH && tab.sshConnectionId && tab.sshSessionId) SSHResize({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, columns: tab.term.cols, rows: tab.term.rows }); }
+    const tab = getActiveTab(); if (tab) { tab.fitAddon.fit(); if (tab.ptyId && !tab.exited) PTYResize(tab.ptyId, tab.term.cols, tab.term.rows); if (tab.isSSH && tab.sshConnectionId && tab.sshSessionId) SSHResize({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, columns: tab.term.cols, rows: tab.term.rows });
+    if (tab.isTelnet && tab.telnetConnectionId) TelnetResize(tab.telnetConnectionId, tab.term.cols, tab.term.rows); }
 
-    if (activeSplitPane) activeSplitPane.panes.forEach(p => { p.tab.fitAddon.fit(); if (p.tab.ptyId && !p.tab.exited) PTYResize(p.tab.ptyId, p.tab.term.cols, p.tab.term.rows); });
+    if (activeSplitPane) activeSplitPane.panes.forEach(p => { p.tab.fitAddon.fit(); if (p.tab.ptyId && !p.tab.exited) PTYResize(p.tab.ptyId, p.tab.term.cols, p.tab.term.rows);
+    if (p.tab.isSSH && p.tab.sshConnectionId && p.tab.sshSessionId) SSHResize({ connectionId: p.tab.sshConnectionId, sessionId: p.tab.sshSessionId, columns: p.tab.term.cols, rows: p.tab.term.rows });
+    if (p.tab.isTelnet && p.tab.telnetConnectionId) TelnetResize(p.tab.telnetConnectionId, p.tab.term.cols, p.tab.term.rows); });
 
 });
 
