@@ -196,15 +196,23 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
  } else if (auth === 'publicKey') {
  const keyPath = document.getElementById('ssh-key-path').value;
  authParams.privateKeyPaths = keyPath ? [keyPath] : [];
+ const passphrase = document.getElementById('ssh-key-passphrase').value;
+ if (passphrase) authParams.passphrase = passphrase;
  }
+ const jumpHost = document.getElementById('ssh-jump-host').value.trim();
+ if (jumpHost) authParams.jumpHost = jumpHost;
+ const keepalive = parseInt(document.getElementById('ssh-keepalive').value) || 30;
+ const timeout = parseInt(document.getElementById('ssh-timeout').value) || 15;
+ const agentForward = document.getElementById('ssh-agent-forward').checked;
  const sshParams = {
  host: host,
  port: port,
  user: user,
  auth: authParams,
- keepaliveInterval: 30,
+ keepaliveInterval: keepalive,
  keepaliveCountMax: 3,
- readyTimeout: 15000
+ readyTimeout: timeout * 1000,
+ agentForward: agentForward
  };
  const result = await SSHConnect(sshParams);
  setTabStatus(tab, 'connected'); logConnection(tab, 'SSH connected to ' + host);
