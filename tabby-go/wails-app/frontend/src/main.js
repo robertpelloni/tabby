@@ -339,10 +339,10 @@ async function doSerialConnect() {
 
     };
 
-    window.__serialDataHandlers.push(tab.serialDataHandler);
+    window.__serialDataHandlers = window.__serialDataHandlers || []; window.__serialDataHandlers.push(tab.serialDataHandler);
       tab.serialExitHandler = (params) => { if ((params.serialId || params.SerialID) === tab.serialId) { tab.exited = true; setTabStatus(tab, 'disconnected'); tab.term.writeln(`
 [1;33m[Serial port closed][0m`); tab.setTitle(tab.title + ' [disconnected]'); tab.tabEl.querySelector('.tab-icon').textContent = '✕'; tab.tabEl.querySelector('.tab-icon').style.color = '#f44747'; } };
-      window.__serialExitHandlers.push(tab.serialExitHandler);
+      window.__serialExitHandlers = window.__serialExitHandlers || []; window.__serialExitHandlers.push(tab.serialExitHandler);
 
     tab.term.onData((data) => {
 
@@ -434,10 +434,10 @@ async function doTelnetConnect() {
 
     };
 
-    window.__telnetDataHandlers.push(tab.telnetDataHandler);
+    window.__telnetDataHandlers = window.__telnetDataHandlers || []; window.__telnetDataHandlers = window.__telnetDataHandlers || []; window.__telnetDataHandlers.push(tab.telnetDataHandler);
       tab.telnetExitHandler = (params) => { const cid = params.ConnectionID || params.connectionId; if (cid === tab.telnetConnectionId) { tab.exited = true; setTabStatus(tab, 'disconnected'); tab.term.writeln(`
 [1;33m[Telnet connection closed][0m`); tab.setTitle(tab.title + ' [disconnected]'); tab.tabEl.querySelector('.tab-icon').textContent = '✕'; tab.tabEl.querySelector('.tab-icon').style.color = '#f44747'; } };
-      window.__telnetExitHandlers.push(tab.telnetExitHandler);
+      window.__telnetExitHandlers = window.__telnetExitHandlers || []; window.__telnetExitHandlers.push(tab.telnetExitHandler);
 
     tab.term.onData((data) => {
       if (data.includes(String.fromCharCode(10)) && data.trim().split(String.fromCharCode(10)).length > 1) { if (settings.PasteWarning !== false && !confirm('Paste multi-line content? (' + data.trim().split(String.fromCharCode(10)).length + ' lines)')) return; }
@@ -3603,7 +3603,7 @@ this.lastActivity = Date.now(); this.term.onData((data) => { if (this.ptyId && !
 
         window.__ptyDataHandlers = window.__ptyDataHandlers || []; window.__ptyExitHandlers = window.__ptyExitHandlers || [];
 
-        window.__ptyDataHandlers.push(this.dataHandler); window.__ptyExitHandlers.push(this.exitHandler);
+        window.__ptyDataHandlers = window.__ptyDataHandlers || []; window.__ptyDataHandlers.push(this.dataHandler); window.__ptyExitHandlers = window.__ptyExitHandlers || []; window.__ptyExitHandlers.push(this.exitHandler);
 
     }
 
