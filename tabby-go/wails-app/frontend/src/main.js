@@ -180,7 +180,7 @@ function openSSHDialog() { document.getElementById('ssh-dialog').classList.add('
 function closeSSHDialog() { document.getElementById('ssh-dialog').classList.remove('active'); const t = getActiveTab(); if (t) t.term.focus(); }
 
 async function doSSHConnect() { const host = document.getElementById('ssh-host').value.trim(); const port = parseInt(document.getElementById('ssh-port').value) || 22; const user = document.getElementById('ssh-user').value.trim(); const auth = document.getElementById('ssh-auth').value; if (!host) { showToast('Host is required', 'error'); return; } closeSSHDialog(); showStatus('Connecting to ' + host + '...');
-  const tab = new Tab(defaultShell, 'ssh://' + user + '@' + host);
+  const tab = new Tab(defaultShell);
  tab.connectionType = 'ssh';
  tabs.push(tab);
  tab.activate();
