@@ -315,6 +315,11 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 		if err = reMarshal(req.Params, &p); err == nil {
 			result, err = s.aiMgr.ExplainError(p)
 		}
+	case "ai.chat":
+		var p ai.ChatParams
+		if err = reMarshal(req.Params, &p); err == nil {
+			result, err = s.aiMgr.Chat(p)
+		}
 
 	default:
 		s.sendError(req.ID, api.ErrorMethodNotFound, fmt.Sprintf("Method not found: %s", req.Method), nil)

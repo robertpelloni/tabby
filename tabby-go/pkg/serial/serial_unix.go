@@ -26,12 +26,12 @@ type NotifyFunc func(method string, params interface{})
 
 // SerialConnection represents an open serial port
 type SerialConnection struct {
-	ID       string
-	Port     string
-	BaudRate int
-	Port     serial.Port
-	Open     bool
-	done     chan struct{}
+	ID         string
+	PortName   string
+	BaudRate   int
+	SerialPort serial.Port
+	Open       bool
+	done       chan struct{}
 }
 
 // NewManager creates a new serial port manager

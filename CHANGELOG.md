@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.231-nightly.8] - 2026-05-19
+### Changed
+- Implemented Warp-style Agent Chat functionality. Added `ai:chat` IPC channel handling to the frontend, electron app bridge, and the Go backend logic.
+- Resolved AI Chat sidebar miswiring from reusing `ai:explainError`.
+
 ## [1.0.231-nightly.7] - 2026-05-11
 ### Changed
 - Extended `BlockFrontend` OSC rendering to support parsing and safely displaying inline image widgets and iframe/webview widgets, utilizing DOMPurify to prevent arbitrary XSS.
