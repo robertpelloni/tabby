@@ -196,11 +196,17 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
  } else if (auth === 'publicKey') {
  const keyPath = document.getElementById('ssh-key-path').value;
  authParams.privateKeyPaths = keyPath ? [keyPath] : [];
- const passphrase = document.getElementById('ssh-key-passphrase').value;
- if (passphrase) authParams.passphrase = passphrase;
  }
- const jumpHost = document.getElementById('ssh-jump-host').value.trim();
- if (jumpHost) authParams.jumpHost = jumpHost;
+ const jumpHostValue = document.getElementById('ssh-jump-host').value.trim();
+ let jumpHostParams = null;
+ if (jumpHostValue) {
+ const jhParts = jumpHostValue.split(':');
+ const jhHost = jhParts[0];
+ const jhPort = parseInt(jhParts[1]) || 22;
+ const jhUser = jhHost.includes('@') ? jhHost.split('@')[0] : user;
+ const jhCleanHost = jhHost.includes('@') ? jhHost.split('@')[1] : jhHost;
+ jumpHostParams = { host: jhCleanHost, port: jhPort, user: jhUser, auth: { type: 'agent' }, keepaliveInterval: 30, readyTimeout: 15000 };
+ }
  const keepalive = parseInt(document.getElementById('ssh-keepalive').value) || 30;
  const timeout = parseInt(document.getElementById('ssh-timeout').value) || 15;
  const agentForward = document.getElementById('ssh-agent-forward').checked;
@@ -212,7 +218,8 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
  keepaliveInterval: keepalive,
  keepaliveCountMax: 3,
  readyTimeout: timeout * 1000,
- agentForward: agentForward
+ agentForward: agentForward,
+ jumpHost: jumpHostParams
  };
  const result = await SSHConnect(sshParams);
  setTabStatus(tab, 'connected'); logConnection(tab, 'SSH connected to ' + host);
