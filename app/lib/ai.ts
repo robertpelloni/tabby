@@ -9,4 +9,8 @@ export function initAI () {
     ipcMain.handle('ai:explainError', async (_event, params) => {
         return await goBackend.request('ai.explainError', params)
     })
+
+    ipcMain.handle('ai:chat', async (_event, params) => {
+        return await goBackend.request('ai.chat', params)
+    })
 }

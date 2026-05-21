@@ -41,15 +41,15 @@ Completely overhaul the traditional continuous text stream (`xterm.js`) into an 
 4.  **Rich Widget Blocks (WaveTerm Parity)**: Allow the output block to detect special metadata tags (via ANSI OSC codes or JSON payloads from the `tabby-go` daemon) to render Markdown, images, webviews, and code editors directly in the terminal block flow.
 
 ## Phase 3: Agentic AI Integration (Warp Parity)
-**Priority: HIGH** | **Status: PLANNING**
+**Priority: HIGH** | **Status: PARTIAL**
 
 ### Goal
 Embed a first-class AI assistant directly into the workflow to diagnose errors, generate commands, and automate tasks.
 
 ### Key Milestones
-1.  **AI Command Search**: Natural language to shell command generation within the IDE input box.
-2.  **Explain Error Action**: A one-click button on failed blocks that reads the command, stderr, and environment to suggest a fix.
-3.  **Terminal Agent Chat**: A dedicated sidebar/panel for conversational interaction with an AI that can autonomously run diagnostic commands (with user permission).
+1.  **AI Command Search**: Natural language to shell command generation within the IDE input box. ✅
+2.  **Explain Error Action**: A one-click button on failed blocks that reads the command, stderr, and environment to suggest a fix. ✅
+3.  **Terminal Agent Chat**: A dedicated sidebar/panel for conversational interaction with an AI that can autonomously run diagnostic commands (with user permission). ✅
 4.  **Workflow Generation**: AI-assisted creation of parameterized, saved shell scripts.
 
 ## Phase 4: Workflows & Collaboration (Warp Drive Parity)

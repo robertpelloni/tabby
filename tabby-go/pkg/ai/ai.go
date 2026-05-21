@@ -113,3 +113,31 @@ I couldn't identify the exact cause of this error. Please review the output abov
 		Explanation: explanation,
 	}, nil
 }
+
+type ChatParams struct {
+	Message string `json:"message"`
+}
+
+type ChatResult struct {
+	Response string `json:"response"`
+}
+
+func (m *Manager) Chat(params ChatParams) (*ChatResult, error) {
+	msg := strings.ToLower(params.Message)
+	var response string
+
+	if strings.Contains(msg, "hello") || strings.Contains(msg, "hi") {
+		response = "Hello! I am Tabby AI. How can I help you manage your terminal session?"
+	} else if strings.Contains(msg, "help") {
+		response = "I can help you generate shell commands, explain errors, or manage your workflows. Just ask!"
+	} else if strings.Contains(msg, "clear") {
+		response = "If you want to clear your terminal screen, you can type `clear` or press `Ctrl+L`."
+	} else {
+		// Mock response for other inputs
+		response = fmt.Sprintf("You said: '%s'. I am currently a mock AI agent, but in the future I will be able to help you with that!", params.Message)
+	}
+
+	return &ChatResult{
+		Response: response,
+	}, nil
+}

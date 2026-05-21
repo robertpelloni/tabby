@@ -127,7 +127,7 @@
 ### Advanced Features
 - [ ] **Terminal multiplexing**: tmux-like session persistence
 - [ ] **Collaborative terminals**: Share terminal sessions
-- [ ] **AI command suggestions**: Based on history and context
+- [x] **AI command suggestions**: Based on history and context
 - [ ] **Docker integration**: Built-in Docker container management
 - [ ] **Kubernetes integration**: kubectl integration with context awareness
 - [ ] **Snippet library**: Reusable command snippets with variables
