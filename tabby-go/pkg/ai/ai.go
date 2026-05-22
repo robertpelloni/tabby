@@ -1,7 +1,12 @@
 package ai
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
 	"strings"
 )
 
@@ -19,7 +24,70 @@ type GenerateCommandResult struct {
 	Command string `json:"command"`
 }
 
+
+type openAIRequest struct {
+	Model    string        `json:"model"`
+	Messages []openAIMsg   `json:"messages"`
+}
+type openAIMsg struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+type openAIResponse struct {
+	Choices []struct {
+		Message openAIMsg `json:"message"`
+	} `json:"choices"`
+}
+
+func callOpenAI(systemPrompt, userPrompt string) (string, error) {
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if apiKey == "" {
+		return "", fmt.Errorf("no api key")
+	}
+
+	reqBody := openAIRequest{
+		Model: "gpt-3.5-turbo",
+		Messages: []openAIMsg{
+			{Role: "system", Content: systemPrompt},
+			{Role: "user", Content: userPrompt},
+		},
+	}
+
+	jsonData, _ := json.Marshal(reqBody)
+
+	req, _ := http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+
+	var res openAIResponse
+	if err := json.Unmarshal(body, &res); err != nil {
+		return "", err
+	}
+
+	if len(res.Choices) > 0 {
+		return res.Choices[0].Message.Content, nil
+	}
+	return "", fmt.Errorf("empty response")
+}
+
 func (m *Manager) GenerateCommand(params GenerateCommandParams) (*GenerateCommandResult, error) {
+	// Attempt OpenAI first
+	if os.Getenv("OPENAI_API_KEY") != "" {
+		sysPrompt := "You are a terminal assistant. Generate only the bash command requested. Do not include markdown formatting or explanations."
+		cmd, err := callOpenAI(sysPrompt, params.Prompt)
+		if err == nil {
+			return &GenerateCommandResult{Command: strings.TrimSpace(cmd)}, nil
+		}
+	}
 	prompt := strings.ToLower(params.Prompt)
 
 	var command string
@@ -53,6 +121,15 @@ type ExplainErrorResult struct {
 }
 
 func (m *Manager) ExplainError(params ExplainErrorParams) (*ExplainErrorResult, error) {
+	// Attempt OpenAI first
+	if os.Getenv("OPENAI_API_KEY") != "" {
+		sysPrompt := "You are a terminal assistant. The user ran a command that resulted in an error. Explain the error and provide possible solutions in Markdown."
+		userPrompt := fmt.Sprintf("Command: %s\nError Output: %s", params.Command, params.ErrorOutput)
+		explanation, err := callOpenAI(sysPrompt, userPrompt)
+		if err == nil {
+			return &ExplainErrorResult{Explanation: explanation}, nil
+		}
+	}
 	errOut := strings.ToLower(params.ErrorOutput)
 	var explanation string
 

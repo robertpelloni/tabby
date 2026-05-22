@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -252,4 +253,41 @@ func GetConfigPath() string {
 	}
 
 	return filepath.Join(home, ".tabby", "config.yaml")
+}
+
+// StartWatching polls the config file for modifications and reloads it
+func (m *Manager) StartWatching() {
+	go func() {
+		var lastMod time.Time
+		for {
+			m.mu.RLock()
+			path := m.filePath
+			m.mu.RUnlock()
+
+			if path != "" {
+				info, err := os.Stat(path)
+				if err == nil {
+					if lastMod.IsZero() {
+						lastMod = info.ModTime()
+					} else if info.ModTime().After(lastMod) {
+						lastMod = info.ModTime()
+						// File changed, reload it
+						err = m.Load(path)
+						if err != nil {
+							fmt.Fprintf(os.Stderr, "Error reloading config: %v\n", err)
+						} else {
+							// Notify watchers
+							m.mu.RLock()
+							store := m.store
+							m.mu.RUnlock()
+							for _, cb := range m.onChange {
+								cb(store)
+							}
+						}
+					}
+				}
+			}
+			time.Sleep(2 * time.Second)
+		}
+	}()
 }

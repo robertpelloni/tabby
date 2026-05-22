@@ -378,3 +378,13 @@ Version number is maintained in [VERSION.md](VERSION.md) and is the single sourc
 - **UI Framework**: Bootstrap 5 (via ng-bootstrap), FontAwesome 6
 - **State**: Angular services, RxJS observables
 - **Config**: YAML-based configuration with platform-specific defaults
+
+## v1.0.231-nightly.17
+* Create `tabby-go/pkg/sync` implementation representing the Warp Drive Cloud Sync backend stub.
+* Connect JSON-RPC `sync.push` and `sync.pull` commands to the `server.go` IPC handler to allow the frontend to serialize Workflows and Profiles.
+* Increment version tracking documents and prepare HANDOFF logic.
+
+## v1.0.231-nightly.18
+* Create `tabby-core/src/services/sync.service.ts` to act as the Cloud Sync frontend proxy.
+* Expose `SyncService` through `tabby-core` index API, wired up to call `sync.push` and `sync.pull` JSON-RPC commands in the Go backend.
+* Increment version tracking documents and prepare HANDOFF logic.

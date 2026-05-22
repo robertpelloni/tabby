@@ -15,7 +15,7 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
             <div class="list-group">
                 <button type="button" class="list-group-item list-group-item-action" *ngFor="let cmd of filteredCommands" (click)="selectCommand(cmd)">
                     <strong>{{ cmd.title }}</strong><br>
-                    <small class="text-muted" style="font-family: monospace;">{{ cmd.command }}</small>
+                    <small class="text-muted" style="font-family: monospace;" [innerHTML]="formatCommand(cmd.command)"></small>
                 </button>
             </div>
             <div *ngIf="filteredCommands.length === 0" class="text-center text-muted mt-3">
@@ -52,6 +52,23 @@ export class CommandCatalogModalComponent {
     }
 
     selectCommand(cmd: any) {
-        this.modal.close(cmd.command)
+        let finalCommand = cmd.command;
+        const matches = [...finalCommand.matchAll(/{{([^}]+)}}/g)];
+
+        for (const match of matches) {
+            const paramName = match[1];
+            const val = prompt(`Enter value for ${paramName}:`);
+            if (val === null) {
+                // User cancelled the prompt
+                return;
+            }
+            finalCommand = finalCommand.replace(match[0], val);
+        }
+
+        this.modal.close(finalCommand);
+    }
+
+    formatCommand(cmd: string): string {
+        return cmd.replace(/{{([^}]+)}}/g, '<span style="color: #ffb86c;">{{$1}}</span>')
     }
 }

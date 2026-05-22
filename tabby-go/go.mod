@@ -16,4 +16,5 @@ require (
 	github.com/creack/goselect v0.1.2 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/text v0.35.0 // indirect
 )

@@ -11,9 +11,25 @@ github.com/creack/goselect
 # github.com/creack/pty v1.1.24
 ## explicit; go 1.18
 github.com/creack/pty
+# github.com/getsentry/sentry-go v0.46.2
+## explicit; go 1.25.0
+github.com/getsentry/sentry-go
+github.com/getsentry/sentry-go/attribute
+github.com/getsentry/sentry-go/internal/debug
+github.com/getsentry/sentry-go/internal/debuglog
+github.com/getsentry/sentry-go/internal/http
+github.com/getsentry/sentry-go/internal/otel/baggage
+github.com/getsentry/sentry-go/internal/otel/baggage/internal/baggage
+github.com/getsentry/sentry-go/internal/protocol
+github.com/getsentry/sentry-go/internal/ratelimit
+github.com/getsentry/sentry-go/internal/telemetry
+github.com/getsentry/sentry-go/internal/util
+github.com/getsentry/sentry-go/report
 # github.com/kr/fs v0.1.0
 ## explicit
 github.com/kr/fs
+# github.com/kr/text v0.2.0
+## explicit
 # github.com/pkg/sftp v1.13.7
 ## explicit; go 1.15
 github.com/pkg/sftp
