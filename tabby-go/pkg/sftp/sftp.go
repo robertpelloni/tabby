@@ -5,6 +5,8 @@
 package sftp
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
@@ -17,11 +19,17 @@ import (
 	sftpPkg "github.com/pkg/sftp"
 )
 
+// ProgressReporter is an interface for reporting transfer progress
+type ProgressReporter interface {
+	ReportProgress(transferID string, bytesTransferred, totalBytes int64, complete bool, err string)
+}
+
 // Manager manages SFTP sessions
 type Manager struct {
 	sshMgr   *ssh.Manager
 	sessions map[string]*Session
 	mu       sync.RWMutex
+	reporter ProgressReporter
 }
 
 // Session represents an active SFTP session
@@ -32,10 +40,11 @@ type Session struct {
 }
 
 // NewManager creates a new SFTP session manager
-func NewManager(sshMgr *ssh.Manager) *Manager {
+func NewManager(sshMgr *ssh.Manager, reporter ProgressReporter) *Manager {
 	return &Manager{
 		sshMgr:   sshMgr,
 		sessions: make(map[string]*Session),
+		reporter: reporter,
 	}
 }
 
@@ -94,6 +103,23 @@ func (m *Manager) List(params api.SFTPListParams) ([]api.SFTPFile, error) {
 	return files, nil
 }
 
+type progressWriter struct {
+	io.Writer
+	total      int64
+	current    int64
+	transferID string
+	reporter   ProgressReporter
+}
+
+func (pw *progressWriter) Write(p []byte) (int, error) {
+	n, err := pw.Writer.Write(p)
+	pw.current += int64(n)
+	if pw.reporter != nil && pw.transferID != "" {
+		pw.reporter.ReportProgress(pw.transferID, pw.current, pw.total, false, "")
+	}
+	return n, err
+}
+
 // Download downloads a file from the remote server
 func (m *Manager) Download(params api.SFTPDownloadParams) (*api.SFTPTransferResult, error) {
 	m.mu.RLock()
@@ -110,18 +136,50 @@ func (m *Manager) Download(params api.SFTPDownloadParams) (*api.SFTPTransferResu
 	}
 	defer remoteFile.Close()
 
-	localFile, err := os.Create(params.LocalPath)
+	info, err := remoteFile.Stat()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create local file: %w", err)
+		return nil, fmt.Errorf("failed to stat remote file: %w", err)
 	}
-	defer localFile.Close()
 
-	n, err := io.Copy(localFile, remoteFile)
+	var writer io.Writer
+	var result api.SFTPTransferResult
+
+	if params.LocalPath != "" {
+		localFile, err := os.Create(params.LocalPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create local file: %w", err)
+		}
+		defer localFile.Close()
+		writer = localFile
+	} else {
+		var buf bytes.Buffer
+		writer = &buf
+		defer func() {
+			result.Data = base64.StdEncoding.EncodeToString(buf.Bytes())
+		}()
+	}
+
+	pw := &progressWriter{
+		Writer:     writer,
+		total:      info.Size(),
+		transferID: params.TransferID,
+		reporter:   m.reporter,
+	}
+
+	n, err := io.Copy(pw, remoteFile)
 	if err != nil {
+		if m.reporter != nil && params.TransferID != "" {
+			m.reporter.ReportProgress(params.TransferID, pw.current, pw.total, false, err.Error())
+		}
 		return nil, fmt.Errorf("failed to download file: %w", err)
 	}
 
-	return &api.SFTPTransferResult{BytesTransferred: n}, nil
+	if m.reporter != nil && params.TransferID != "" {
+		m.reporter.ReportProgress(params.TransferID, pw.current, pw.total, true, "")
+	}
+
+	result.BytesTransferred = n
+	return &result, nil
 }
 
 // Upload uploads a file to the remote server
@@ -134,11 +192,32 @@ func (m *Manager) Upload(params api.SFTPUploadParams) (*api.SFTPTransferResult, 
 		return nil, fmt.Errorf("session not found: %s", params.SessionID)
 	}
 
-	localFile, err := os.Open(params.LocalPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open local file: %w", err)
+	var reader io.Reader
+	var size int64
+
+	if params.LocalPath != "" {
+		localFile, err := os.Open(params.LocalPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open local file: %w", err)
+		}
+		defer localFile.Close()
+
+		info, err := localFile.Stat()
+		if err != nil {
+			return nil, fmt.Errorf("failed to stat local file: %w", err)
+		}
+		reader = localFile
+		size = info.Size()
+	} else if params.Data != "" {
+		decoded, err := base64.StdEncoding.DecodeString(params.Data)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode data: %w", err)
+		}
+		reader = bytes.NewReader(decoded)
+		size = int64(len(decoded))
+	} else {
+		return nil, fmt.Errorf("either localPath or data must be provided")
 	}
-	defer localFile.Close()
 
 	// Ensure remote directory exists
 	remoteDir := path.Dir(params.RemotePath)
@@ -150,9 +229,23 @@ func (m *Manager) Upload(params api.SFTPUploadParams) (*api.SFTPTransferResult, 
 	}
 	defer remoteFile.Close()
 
-	n, err := io.Copy(remoteFile, localFile)
+	pw := &progressWriter{
+		Writer:     remoteFile,
+		total:      size,
+		transferID: params.TransferID,
+		reporter:   m.reporter,
+	}
+
+	n, err := io.Copy(pw, reader)
 	if err != nil {
+		if m.reporter != nil && params.TransferID != "" {
+			m.reporter.ReportProgress(params.TransferID, pw.current, pw.total, false, err.Error())
+		}
 		return nil, fmt.Errorf("failed to upload file: %w", err)
+	}
+
+	if m.reporter != nil && params.TransferID != "" {
+		m.reporter.ReportProgress(params.TransferID, pw.current, pw.total, true, "")
 	}
 
 	return &api.SFTPTransferResult{BytesTransferred: n}, nil

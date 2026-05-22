@@ -10,7 +10,7 @@ import (
 // TestManagerCreation verifies the SFTP manager is created correctly
 func TestManagerCreation(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 	if mgr == nil {
 		t.Fatal("Manager should not be nil")
 	}
@@ -19,7 +19,7 @@ func TestManagerCreation(t *testing.T) {
 // TestOpenNonexistentConnection verifies opening SFTP on non-existent connection fails
 func TestOpenNonexistentConnection(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	_, err := mgr.Open(api.SFTPOpenParams{ConnectionID: "nonexistent"})
 	if err == nil {
@@ -30,7 +30,7 @@ func TestOpenNonexistentConnection(t *testing.T) {
 // TestListNonexistentSession verifies listing with non-existent session fails
 func TestListNonexistentSession(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	_, err := mgr.List(api.SFTPListParams{SessionID: "nonexistent", Path: "/"})
 	if err == nil {
@@ -41,7 +41,7 @@ func TestListNonexistentSession(t *testing.T) {
 // TestDownloadNonexistentSession verifies download with non-existent session fails
 func TestDownloadNonexistentSession(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	_, err := mgr.Download(api.SFTPDownloadParams{
 		SessionID:  "nonexistent",
@@ -56,7 +56,7 @@ func TestDownloadNonexistentSession(t *testing.T) {
 // TestUploadNonexistentSession verifies upload with non-existent session fails
 func TestUploadNonexistentSession(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	_, err := mgr.Upload(api.SFTPUploadParams{
 		SessionID:  "nonexistent",
@@ -71,7 +71,7 @@ func TestUploadNonexistentSession(t *testing.T) {
 // TestDeleteNonexistentSession verifies delete with non-existent session fails
 func TestDeleteNonexistentSession(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	err := mgr.Delete("nonexistent", "/tmp/test")
 	if err == nil {
@@ -82,7 +82,7 @@ func TestDeleteNonexistentSession(t *testing.T) {
 // TestRenameNonexistentSession verifies rename with non-existent session fails
 func TestRenameNonexistentSession(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	err := mgr.Rename("nonexistent", "/old", "/new")
 	if err == nil {
@@ -93,7 +93,7 @@ func TestRenameNonexistentSession(t *testing.T) {
 // TestMkdirNonexistentSession verifies mkdir with non-existent session fails
 func TestMkdirNonexistentSession(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	err := mgr.Mkdir("nonexistent", "/tmp/newdir")
 	if err == nil {
@@ -104,7 +104,7 @@ func TestMkdirNonexistentSession(t *testing.T) {
 // TestMkdirAllNonexistentSession verifies mkdirAll with non-existent session fails
 func TestMkdirAllNonexistentSession(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	err := mgr.MkdirAll("nonexistent", "/tmp/a/b/c")
 	if err == nil {
@@ -115,7 +115,7 @@ func TestMkdirAllNonexistentSession(t *testing.T) {
 // TestStatNonexistentSession verifies stat with non-existent session fails
 func TestStatNonexistentSession(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	_, err := mgr.Stat("nonexistent", "/tmp/test")
 	if err == nil {
@@ -126,7 +126,7 @@ func TestStatNonexistentSession(t *testing.T) {
 // TestLstatNonexistentSession verifies lstat with non-existent session fails
 func TestLstatNonexistentSession(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	_, err := mgr.Lstat("nonexistent", "/tmp/test")
 	if err == nil {
@@ -137,7 +137,7 @@ func TestLstatNonexistentSession(t *testing.T) {
 // TestChmodNonexistentSession verifies chmod with non-existent session fails
 func TestChmodNonexistentSession(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	err := mgr.Chmod("nonexistent", "/tmp/test", 0755)
 	if err == nil {
@@ -148,7 +148,7 @@ func TestChmodNonexistentSession(t *testing.T) {
 // TestReadlinkNonexistentSession verifies readlink with non-existent session fails
 func TestReadlinkNonexistentSession(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	_, err := mgr.Readlink("nonexistent", "/tmp/link")
 	if err == nil {
@@ -159,7 +159,7 @@ func TestReadlinkNonexistentSession(t *testing.T) {
 // TestSymlinkNonexistentSession verifies symlink with non-existent session fails
 func TestSymlinkNonexistentSession(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	err := mgr.Symlink("nonexistent", "/tmp/target", "/tmp/link")
 	if err == nil {
@@ -170,7 +170,7 @@ func TestSymlinkNonexistentSession(t *testing.T) {
 // TestRmdirNonexistentSession verifies rmdir with non-existent session fails
 func TestRmdirNonexistentSession(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	err := mgr.Rmdir("nonexistent", "/tmp/dir")
 	if err == nil {
@@ -181,7 +181,7 @@ func TestRmdirNonexistentSession(t *testing.T) {
 // TestReadDirNonexistentSession verifies readDir with non-existent session fails
 func TestReadDirNonexistentSession(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	_, err := mgr.ReadDir("nonexistent", "/tmp")
 	if err == nil {
@@ -192,7 +192,7 @@ func TestReadDirNonexistentSession(t *testing.T) {
 // TestCloseNonexistentSession verifies closing non-existent session fails
 func TestCloseNonexistentSession(t *testing.T) {
 	sshMgr := ssh.NewManager(func(method string, params interface{}) {})
-	mgr := NewManager(sshMgr)
+	mgr := NewManager(sshMgr, nil)
 
 	err := mgr.Close("nonexistent")
 	if err == nil {

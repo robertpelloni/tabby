@@ -137,4 +137,11 @@ export function initSSH () {
             w.webContents.send('ssh:portForwardEvent', params)
         })
     })
+
+    goBackend.on('sftp.progress', (params: any) => {
+        const { BrowserWindow } = require('electron')
+        BrowserWindow.getAllWindows().forEach(w => {
+            w.webContents.send('sftp:progress', params)
+        })
+    })
 }

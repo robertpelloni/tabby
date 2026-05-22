@@ -5,10 +5,11 @@ import { LogService } from 'tabby-core'
 import { BaseSession, UTF8SplitterMiddleware, InputProcessor } from 'tabby-terminal'
 import { SSHSession } from './ssh'
 import { SSHProfile } from '../api'
+import * as russh from 'russh'
 
 
 export class SSHShellSession extends BaseSession {
-    shell?: any
+    shell?: russh.Channel
     get serviceMessage$ (): Observable<string> { return this.serviceMessage }
     private serviceMessage = new Subject<string>()
     private ssh: SSHSession|null
@@ -52,11 +53,11 @@ export class SSHShellSession extends BaseSession {
 
         this.loginScriptProcessor?.executeUnconditionalScripts()
 
-        this.shell?.data$?.subscribe(data => {
+        this.shell.data$.subscribe(data => {
             this.emitOutput(Buffer.from(data))
         })
 
-        this.shell?.eof$?.subscribe(() => {
+        this.shell.eof$.subscribe(() => {
             this.logger.info('Shell session ended')
             if (this.open) {
                 this.destroy()

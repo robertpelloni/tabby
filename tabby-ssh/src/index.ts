@@ -15,7 +15,7 @@ import { SSHSettingsTabComponent } from './components/sshSettingsTab.component'
 import { SSHTabComponent } from './components/sshTab.component'
 import { SFTPPanelComponent } from './components/sftpPanel.component'
 import { SFTPDeleteModalComponent } from './components/sftpDeleteModal.component'
-import { KeyboardInteractiveAuthPanelComponent } from './components/keyboardInteractiveAuthPanel.component'
+import { KeyboardInteractiveAuthComponent } from './components/keyboardInteractiveAuthPanel.component'
 import { HostKeyPromptModalComponent } from './components/hostKeyPromptModal.component'
 
 import { SSHConfigProvider } from './config'
@@ -57,7 +57,7 @@ import { SFTPCreateDirectoryModalComponent } from './components/sftpCreateDirect
         SSHSettingsTabComponent,
         SSHTabComponent,
         SFTPPanelComponent,
-        KeyboardInteractiveAuthPanelComponent,
+        KeyboardInteractiveAuthComponent,
         HostKeyPromptModalComponent,
     ],
 })

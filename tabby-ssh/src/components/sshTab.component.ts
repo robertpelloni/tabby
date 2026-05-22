@@ -1,3 +1,4 @@
+import * as russh from 'russh'
 import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker'
 import colors from 'ansi-colors'
 import { Component, Injector, HostListener } from '@angular/core'
@@ -29,7 +30,6 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
     sftpPath = '/'
     enableToolbar = true
     activeKIPrompt: KeyboardInteractivePrompt|null = null
-    jumpHostPath: string[] = []
 
     constructor (
         injector: Injector,
@@ -85,8 +85,6 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
                     throw new Error(`${profile.options.host}: jump host "${profile.options.jumpHost}" not found in your config`)
                 }
 
-                this.jumpHostPath.unshift(jumpConnection.name)
-
                 const jumpSession = await this.setupOneSession(
                     this.injector,
                     this.profilesService.getConfigProxyForProfile<SSHProfile>(jumpConnection),
@@ -100,12 +98,17 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
                     }
                 })
 
+                if (!(jumpSession.ssh instanceof russh.AuthenticatedSSHClient)) {
+                    throw new Error('Jump session is not authenticated yet somehow')
+                }
+
                 try {
-                    // For tabby-go proxying, the JumpHost networking logic is handled fully
-                    // in the backend inside connectViaJump. We don't need to manually
-                    // open a TCP Forward Channel using an IPC facade.
-                    // However, we still link them conceptually.
-                    session.jumpChannel = { active: true } // Mock to satisfy checks
+                    session.jumpChannel = await jumpSession.ssh.openTCPForwardChannel({
+                        addressToConnectTo: profile.options.host,
+                        portToConnectTo: profile.options.port ?? 22,
+                        originatorAddress: '127.0.0.1',
+                        originatorPort: 0,
+                    })
                 } catch (err) {
                     jumpSession.emitServiceMessage(colors.bgRed.black(' X ') + ` Could not set up port forward on ${jumpConnection.name}`)
                     throw err
@@ -135,7 +138,7 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
             this.startSpinner(this.translate.instant(_('Connecting')))
 
             try {
-                await (session as any).connect()
+                await session.start()
             } finally {
                 this.stopSpinner()
             }
@@ -195,7 +198,7 @@ export class SSHTabComponent extends ConnectableTerminalTabComponent<SSHProfile>
         if (!this.session?.open) {
             return true
         }
-        if (!(this.profile.options.warnOnClose ?? this.config.store.ssh.warnOnClose)) {
+        if (!this.profile.options.warnOnClose) {
             return true
         }
         return (await this.platform.showMessageBox(

@@ -1,43 +1,17 @@
-.main-container(style='display: flex; flex-direction: row; height: 100%; width: 100%;')
-    .terminal-container(style='flex: 1; display: flex; flex-direction: column; min-width: 0;')
-        .terminal-toolbar-spacer
-        .content(#content, [style.opacity]='frontendIsReady ? 1 : 0', style='flex: 1; position: relative;')
-        search-panel(
-            *ngIf='showSearchPanel && hasFocus && frontend',
-            @toolbarSlide,
-            [@.disabled]='!config.store.accessibility.animations',
-            [frontend]='frontend',
-            (close)='showSearchPanel = false; frontend.cancelSearch()'
-        )
+.terminal-toolbar-spacer
+.content(#content, [style.opacity]='frontendIsReady ? 1 : 0')
+search-panel(
+    *ngIf='showSearchPanel && hasFocus && frontend',
+    @toolbarSlide,
+    [@.disabled]='!config.store.accessibility.animations',
+    [frontend]='frontend',
+    (close)='showSearchPanel = false; frontend.cancelSearch()'
+)
 
-        button.btn.btn-sm.btn-link.toolbar-pin-button(
-            *ngIf='enableToolbar && !pinToolbar',
-            (click)='togglePinToolbar()',
-            (mouseenter)='showToolbar()',
-            (mouseleave)='hideToolbar()'
-        )
-            i.fas.fa-wrench
-
-        // IDE Input Box (Warp Parity)
-        .ide-input-container(*ngIf='config.store.terminal.useBlockFrontend', style='display: flex; flex-direction: row; border-top: 1px solid #444; background: #1e1e1e; padding: 10px; align-items: flex-start;')
-            .prompt-indicator(style='margin-right: 10px; color: #50fa7b; font-weight: bold; font-family: monospace;') $
-            .ide-input(#ideInput, style='flex: 1; background: transparent; color: #f8f8f2; border: none; outline: none; font-family: monospace; resize: none; overflow: hidden; min-height: 40px;')
-            button.btn.btn-sm.btn-link(title="Command Catalog & Workflows", (click)="openCommandCatalog()", style="margin-left: 10px; color: #8be9fd;")
-                i.fas.fa-book
-            button.btn.btn-sm.btn-link(title="Toggle AI Agent Chat", (click)="toggleAgentChat()", style="margin-left: 10px; color: #ff79c6;")
-                i.fas.fa-robot
-            button.btn.btn-sm.btn-link(title="Generate Command with AI", (click)="generateCommand()", style="margin-left: 10px; color: #ffb86c;")
-                i.fas.fa-magic
-
-    // AI Agent Chat Sidebar
-    .agent-chat-sidebar(*ngIf='showAgentChat', style='width: 300px; border-left: 1px solid #444; display: flex; flex-direction: column; background: #282a36;')
-        .sidebar-header(style='padding: 10px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center;')
-            strong(style='color: #ff79c6;') Tabby AI Agent
-            button.btn.btn-link.btn-sm.p-0((click)="toggleAgentChat()", style='color: #ccc;')
-                i.fas.fa-times
-        .chat-messages(style='flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px;')
-            .message(*ngFor='let msg of agentMessages', [ngStyle]="{'align-self': msg.role === 'user' ? 'flex-end' : 'flex-start', 'background': msg.role === 'user' ? '#44475a' : 'transparent', 'padding': msg.role === 'user' ? '8px 12px' : '0', 'border-radius': '18px'}")
-                strong(*ngIf="msg.role === 'agent'", style='color: #ff79c6; margin-bottom: 4px; display: block;') Tabby AI
-                div([innerHTML]='msg.content')
-        .chat-input(style='padding: 10px; border-top: 1px solid #444;')
-            input.form-control.form-control-sm(type='text', placeholder='Ask the agent...', [(ngModel)]='agentInput', (keydown.enter)='sendAgentMessage()', style='background: #1e1e1e; border: 1px solid #444; color: #f8f8f2;')
+button.btn.btn-sm.btn-link.toolbar-pin-button(
+    *ngIf='enableToolbar && !pinToolbar',
+    (click)='togglePinToolbar()',
+    (mouseenter)='showToolbar()',
+    (mouseleave)='hideToolbar()'
+)
+    i.fas.fa-wrench

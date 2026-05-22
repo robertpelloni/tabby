@@ -37,10 +37,3 @@ sentry-symbols.js
 
 crowdin.yml
 .crowdin.env
-
-# Go build output
-build/tabby-backend
-build/tabby-backend.exe
-
-# Jules AI session logs (auto-generated, not needed in repo)
-.jules/sessions/

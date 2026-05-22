@@ -4,9 +4,7 @@ terminal-toolbar([tab]='this')
     strong.me-auto(
         style='user-select: text; cursor: text;'
         onclick='event.stopPropagation()'
-    )
-        span(*ngIf="jumpHostPath.length > 0", style="color: #ffb86c; font-size: 0.9em; margin-right: 5px;") (via {{ jumpHostPath.join(' -> ') }}) ->
-        | {{profile.options.user}}@{{profile.options.host}}:{{profile.options.port}}
+    ) {{profile.options.user}}@{{profile.options.host}}:{{profile.options.port}}
 
     .me-2(
         ngbDropdown,

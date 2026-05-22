@@ -33,7 +33,7 @@ type NativeApp struct {
 func NewNativeApp() *NativeApp {
 	app := &NativeApp{}
 	app.sshMgr = ssh.NewManager(app.sendNotification)
-	app.sftpMgr = sftp.NewManager(app.sshMgr)
+	app.sftpMgr = sftp.NewManager(app.sshMgr, app)
 	return app
 }
 
@@ -68,6 +68,16 @@ func (a *NativeApp) Run() error {
 }
 
 // sendNotification handles notifications from the backend
+func (a *NativeApp) ReportProgress(transferID string, bytesTransferred, totalBytes int64, complete bool, err string) {
+	a.sendNotification("sftp.progress", api.TransferProgressNotification{
+		TransferID:       transferID,
+		BytesTransferred: bytesTransferred,
+		TotalBytes:       totalBytes,
+		Complete:         complete,
+		Error:            err,
+	})
+}
+
 func (a *NativeApp) sendNotification(method string, params interface{}) {
 	switch method {
 	case "ssh.data":

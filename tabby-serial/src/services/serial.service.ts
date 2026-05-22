@@ -1,6 +1,8 @@
 import { Injectable, Injector } from '@angular/core'
-import { HostAppService, PartialProfile, Platform, ProfilesService } from 'tabby-core'
 import WSABinding from 'serialport-binding-webserialapi'
+import AbstractBinding from '@serialport/binding-abstract'
+import { autoDetect } from '@serialport/bindings-cpp'
+import { HostAppService, PartialProfile, Platform, ProfilesService } from 'tabby-core'
 import { SerialPortInfo, SerialProfile } from '../api'
 import { SerialTabComponent } from '../components/serialTab.component'
 
@@ -9,29 +11,21 @@ export class SerialService {
     private constructor (
         private injector: Injector,
         private hostApp: HostAppService,
-
-
     ) { }
 
-    detectBinding() { return this.hostApp.platform === Platform.Web ? WSABinding : null; }
+    detectBinding (): typeof AbstractBinding {
+        return this.hostApp.platform === Platform.Web ? WSABinding : autoDetect()
+    }
 
     async listPorts (): Promise<SerialPortInfo[]> {
         try {
-            if (this.hostApp.platform === Platform.Web) {
-                return (await (this.detectBinding() as any).list()).map((x: any) => ({
-                    name: x.path,
-                    description: `${x.manufacturer ?? ''} ${x.serialNumber ?? ''}`.trim() || undefined,
-                }))
-            } else {
-                const result = await window['require']('electron').ipcRenderer.invoke('serial:listPorts');
-                return (result.ports || []).map((x: any) => ({
-                    name: x.name,
-                    description: `${x.manufacturer ?? ''} ${x.serialNumber ?? ''}`.trim() || undefined,
-                }));
-            }
+            return (await this.detectBinding().list()).map(x => ({
+                name: x.path,
+                description: `${x.manufacturer ?? ''} ${x.serialNumber ?? ''}`.trim() || undefined,
+            }))
         } catch (err) {
-            console.error('Failed to list serial ports', err);
-            return [];
+            console.error('Failed to list serial ports', err)
+            return []
         }
     }
 

@@ -91,7 +91,7 @@ func New() *Server {
 		writer: os.Stdout,
 	}
 	s.sshMgr = ssh.NewManager(s.sendNotification)
-	s.sftpMgr = sftp.NewManager(s.sshMgr)
+	s.sftpMgr = sftp.NewManager(s.sshMgr, s)
 	s.ptyMgr = pty.NewManager(s.sendNotification)
 	s.serialMgr = serial.NewManager(s.sendNotification)
 	s.telnetMgr = telnet.NewManager(s.sendNotification)
@@ -112,7 +112,7 @@ func NewWithIO(in io.Reader, out io.Writer) *Server {
 		writer: out,
 	}
 	s.sshMgr = ssh.NewManager(s.sendNotification)
-	s.sftpMgr = sftp.NewManager(s.sshMgr)
+	s.sftpMgr = sftp.NewManager(s.sshMgr, s)
 	s.ptyMgr = pty.NewManager(s.sendNotification)
 	s.serialMgr = serial.NewManager(s.sendNotification)
 	s.telnetMgr = telnet.NewManager(s.sendNotification)
@@ -365,6 +365,16 @@ func (s *Server) sendNotification(method string, params interface{}) {
 		Params:  params,
 	}
 	s.sendMessage(notif)
+}
+
+func (s *Server) ReportProgress(transferID string, bytesTransferred, totalBytes int64, complete bool, err string) {
+	s.sendNotification("sftp.progress", api.TransferProgressNotification{
+		TransferID:       transferID,
+		BytesTransferred: bytesTransferred,
+		TotalBytes:       totalBytes,
+		Complete:         complete,
+		Error:            err,
+	})
 }
 
 func (s *Server) sendMessage(msg interface{}) {

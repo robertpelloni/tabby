@@ -310,6 +310,7 @@ type SFTPDownloadParams struct {
 	SessionID  string `json:"sessionId"`
 	RemotePath string `json:"remotePath"`
 	LocalPath  string `json:"localPath"`
+	TransferID string `json:"transferId,omitempty"`
 }
 
 // SFTPUploadParams uploads a file
@@ -317,11 +318,14 @@ type SFTPUploadParams struct {
 	SessionID  string `json:"sessionId"`
 	LocalPath  string `json:"localPath"`
 	RemotePath string `json:"remotePath"`
+	TransferID string `json:"transferId,omitempty"`
+	Data       string `json:"data,omitempty"` // Base64-encoded fallback
 }
 
 // SFTPTransferResult is returned after a file transfer
 type SFTPTransferResult struct {
-	BytesTransferred int64 `json:"bytesTransferred"`
+	BytesTransferred int64  `json:"bytesTransferred"`
+	Data             string `json:"data,omitempty"` // Base64-encoded for Download fallback
 }
 
 // SFTPChmodParams changes file permissions

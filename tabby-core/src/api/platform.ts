@@ -25,6 +25,10 @@ export abstract class FileTransfer {
     abstract getSize (): number
     abstract close (): void
 
+    getFilePath (): string|null {
+        return null
+    }
+
     getSpeed (): number {
         return this.lastChunkSpeed
     }
@@ -64,6 +68,16 @@ export abstract class FileTransfer {
 
     setCompleted (completed: boolean): void {
         this.completed = completed
+    }
+
+    updateProgress (bytesTransferred: number, totalBytes: number): void {
+        const delta = bytesTransferred - this.completedBytes
+        this.completedBytes = bytesTransferred
+        this.totalSize = totalBytes
+        if (delta > 0) {
+            this.lastChunkSpeed = delta * 1000 / (Date.now() - this.lastChunkStartTime)
+            this.lastChunkStartTime = Date.now()
+        }
     }
 
     protected increaseProgress (bytes: number): void {

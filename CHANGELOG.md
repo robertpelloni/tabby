@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.231-nightly.9] - 2026-05-22
+
+### Changed
+- Version bump
+
 ## [1.0.231-nightly.8] - 2026-05-19
 ### Changed
 - Implemented Warp-style Agent Chat functionality. Added `ai:chat` IPC channel handling to the frontend, electron app bridge, and the Go backend logic.
