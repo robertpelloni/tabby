@@ -1,28 +1,27 @@
 # Handoff - Session Summary
 
 ## Accomplishments
-1.  **Upstream Sync**: Synchronized the local `master` branch with `upstream/master` (Eugeny/tabby). Resolved significant conflicts in `tabby-ssh/src/session/ssh.ts` and `tabby-ssh/src/session/sftp.ts` to preserve the project's core "Go Backend Port" proxy logic while incorporating upstream improvements.
-2.  **Branch Reconciliation**:
-    *   Merged `origin/jules-15161538455472121726-f7446b36`, adding `SyncService` to route cloud sync requests to the Go backend.
-    *   Merged `origin/jules-1428656648723903667-9e24334c`, ensuring all release-related adjustments are integrated.
-3.  **UI Restoration**: Discovered and fixed regressions in the SFTP UI (Rename and Create Directory buttons) and the SSH tab (jump host path display) that were lost during previous merge activities.
-4.  **SFTP Progress Indicators**:
-    *   **Go Backend**: Implemented real-time progress tracking in SFTP `Upload` and `Download` methods.
-    *   **JSON-RPC API**: Added `TransferID` and progress notification support.
-    *   **Frontend Wiring**: Updated `SFTPSession` to capture `sftp:progress` events and update `FileTransfer` objects, enabling live progress bars in the global transfers menu.
-5.  **Version Governance**: Bumped the project version to `1.0.231-nightly.9`. Updated `VERSION.md`, `CHANGELOG.md`, and all 15 `package.json` files.
-6.  **Documentation Update**: Updated `VISION.md`, `ROADMAP.md`, `TODO.md`, and `MEMORY.md` to accurately reflect the current goal of 1:1 parity with Warp, WaveTerm, and Hyper.
+1.  **Upstream Sync**: Synchronized `master` with `upstream/master` (Eugeny/tabby), resolving deep conflicts to maintain the Go backend proxy architecture while adopting upstream fixes.
+2.  **Feature Integration**:
+    *   Merged `SyncService` for cloud-to-go routing.
+    *   Implemented real-time SFTP progress reporting in the Go backend.
+    *   Optimized SFTP data flow using direct file paths via `getFilePath()`, drastically reducing memory usage during large transfers.
+3.  **UI Restoration & Fixes**:
+    *   Restored Rename, Create Directory, and Refresh buttons in the SFTP panel.
+    *   Fixed `jumpHostPath` visualization in the SSH tab.
+    *   Wired Go progress notifications to the Angular global transfers menu.
+4.  **Backend Verification**: Built `build/tabby-backend` and verified JSON-RPC 2.0 protocol updates via automated test scripts.
+5.  **Governance**: Unified monorepo versioning to `1.0.231-nightly.9`.
 
 ## Current State
 *   **Version**: 1.0.231-nightly.9
-*   **Go Backend Proxy**: Active and verified for SSH and SFTP.
-*   **SFTP UI**: Fully restored and enhanced with real-time progress tracking.
-*   **Tests**: Go backend tests are passing (`tabby-go`).
+*   **Architecture**: Angular frontend services (SSH/SFTP/Sync) act as thin proxies to a native Go daemon.
+*   **Efficiency**: SFTP is no longer bottlenecked by base64/IPC buffering for local file operations.
 
 ## Pending Tasks
-1.  **SFTP Improvements**: Drag-and-drop support for folders still needs refinement in some edge cases.
-2.  **Build Verification**: Full frontend build and E2E verification of data flow should be performed in a fresh environment.
-3.  **BTK Native UI**: Go backend BTK integration remains a stub for future native UI development.
+1.  **BTK Native UI**: Go backend supports BTK, but a full native Go frontend for terminal rendering is not yet implemented.
+2.  **Block-Based Rendering**: Foundation is in `tabby-terminal/src/frontends/blockFrontend.ts`, but needs completion to reach Warp parity.
+3.  **Cross-Platform Builds**: NSIS and DMG build scripts need verification with the new Go backend packaging.
 
 ## Notes for Successor
-The Go backend migration is now highly functional with progress reporting. The next major focus should be the "Block-based" terminal paradigm in `tabby-terminal/src/frontends/blockFrontend.ts`.
+The system is now stable and performant with the Go backend integration. The SFTP optimization in this session is a template for other native operations: always prefer passing file paths/descriptors to Go instead of streaming data over IPC if the target is the local filesystem.
