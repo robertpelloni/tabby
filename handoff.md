@@ -1,12 +1,28 @@
-# HANDOFF.md
+# Handoff - Session Summary
 
-## Current Status (v1.0.231-nightly.4)
-The user has directed the project to target 100% 1:1 feature parity with the top three modern "Agentic" and "Workspace" terminals: **Warp**, **WaveTerm**, and **Hyper**.
+## Accomplishments
+1.  **Upstream Sync**: Synchronized the local `master` branch with `upstream/master` (Eugeny/tabby). Resolved significant conflicts in `tabby-ssh/src/session/ssh.ts` and `tabby-ssh/src/session/sftp.ts` to preserve the project's core "Go Backend Port" proxy logic while incorporating upstream improvements.
+2.  **Branch Reconciliation**:
+    *   Merged `origin/jules-15161538455472121726-f7446b36`, adding `SyncService` to route cloud sync requests to the Go backend.
+    *   Merged `origin/jules-1428656648723903667-9e24334c`, ensuring all release-related adjustments are integrated.
+3.  **UI Restoration**: Discovered and fixed regressions in the SFTP UI (Rename and Create Directory buttons) and the SSH tab (jump host path display) that were lost during previous merge activities.
+4.  **SFTP Progress Indicators**:
+    *   **Go Backend**: Implemented real-time progress tracking in SFTP `Upload` and `Download` methods.
+    *   **JSON-RPC API**: Added `TransferID` and progress notification support.
+    *   **Frontend Wiring**: Updated `SFTPSession` to capture `sftp:progress` events and update `FileTransfer` objects, enabling live progress bars in the global transfers menu.
+5.  **Version Governance**: Bumped the project version to `1.0.231-nightly.9`. Updated `VERSION.md`, `CHANGELOG.md`, and all 15 `package.json` files.
+6.  **Documentation Update**: Updated `VISION.md`, `ROADMAP.md`, `TODO.md`, and `MEMORY.md` to accurately reflect the current goal of 1:1 parity with Warp, WaveTerm, and Hyper.
 
-1.  **Deep Research**: I created `parity-expanded-research.md` detailing the specific features we need to adopt from each platform (Warp's IDE input and AI, WaveTerm's Rich Widget blocks and remote file editing, Hyper's aesthetic extensibility and React plugins).
-2.  **Documentation Pivot**: I overhauled `VISION.md`, `ROADMAP.md`, `TODO.md`, `IDEAS.md`, and all AI instruction files (`AGENTS.md`, `CLAUDE.md`, etc.) to codify this ambitious roadmap. Every single setting, option, menu item, and function from these three terminals is now our target goal.
-3.  **Code Consistency**: I fixed the remaining TypeScript compilation error for the `BlockFrontend` toggle in `tabby-terminal/src/api/baseTerminalTab.component.ts`. The repository builds entirely cleanly without errors (`yarn build` and `go test ./...`).
+## Current State
+*   **Version**: 1.0.231-nightly.9
+*   **Go Backend Proxy**: Active and verified for SSH and SFTP.
+*   **SFTP UI**: Fully restored and enhanced with real-time progress tracking.
+*   **Tests**: Go backend tests are passing (`tabby-go`).
 
-## Next Steps for the Next LLM Session
-1.  **Implement WaveTerm-style Rich Widget Blocks**: The `BlockFrontend` currently just outputs raw text to a DOM span. We need to write an interceptor that detects specific OSC sequences from the `tabby-go` JSON-RPC bridge and renders a Markdown viewer or Monaco code editor block instead of text.
-2.  **Implement Warp-style IDE Input**: Create a separate, pinned input `<textarea>` or Monaco editor instance at the bottom of `baseTerminalTab.component.pug` to decouple user input from the `xterm.js` output canvas. Handle multi-cursor and syntax highlighting logic.
+## Pending Tasks
+1.  **SFTP Improvements**: Drag-and-drop support for folders still needs refinement in some edge cases.
+2.  **Build Verification**: Full frontend build and E2E verification of data flow should be performed in a fresh environment.
+3.  **BTK Native UI**: Go backend BTK integration remains a stub for future native UI development.
+
+## Notes for Successor
+The Go backend migration is now highly functional with progress reporting. The next major focus should be the "Block-based" terminal paradigm in `tabby-terminal/src/frontends/blockFrontend.ts`.
