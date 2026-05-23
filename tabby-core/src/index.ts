@@ -31,6 +31,7 @@ import { UnlockVaultModalComponent } from './components/unlockVaultModal.compone
 import { WelcomeTabComponent } from './components/welcomeTab.component'
 import { TransfersMenuComponent } from './components/transfersMenu.component'
 import { ProfileIconComponent } from './components/profileIcon.component'
+import { AgentStatusComponent } from './components/agentStatus.component'
 
 import { AutofocusDirective } from './directives/autofocus.directive'
 import { AlwaysVisibleTypeaheadDirective } from './directives/alwaysVisibleTypeahead.directive'
@@ -46,6 +47,7 @@ import { VaultFileProvider } from './services/vault.service'
 import { HotkeysService } from './services/hotkeys.service'
 import { CustomMissingTranslationHandler, LocaleService, TabbyFormatedDatePipe } from './services/locale.service'
 import { CommandService } from './services/commands.service'
+import { AgentService } from './services/agent.service'
 
 import { NewTheme } from './theme'
 import { CoreConfigProvider } from './config'
@@ -132,6 +134,7 @@ const PROVIDERS = [
         DropZoneDirective,
         CdkAutoDropGroup,
         ProfileIconComponent,
+        AgentStatusComponent,
         TabbyFormatedDatePipe,
     ],
     exports: [
