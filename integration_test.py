@@ -45,6 +45,26 @@ def run_test():
     res = request("sync.pull")
     print(f"Sync Pull Response: {res['result']['timestamp']}")
 
+    # 5. Agent Task Execution
+    print("Testing Agent Protocol...")
+    res = request("agent.runTask", {"description": "Verify Integration"})
+    task_id = res['result']['id']
+    print(f"Agent Task Started: {task_id}")
+
+    res = request("agent.listTasks")
+    print(f"Agent List Tasks: {len(res['result'])} tasks found")
+
+    # Wait for completion
+    print("Waiting for task completion...")
+    for _ in range(10):
+        time.sleep(0.5)
+        res = request("agent.getTaskStatus", {"id": task_id})
+        status = res['result']['status']
+        progress = res['result']['progress']
+        print(f"Task {task_id} status: {status} ({progress*100:.0f}%)")
+        if status == "completed":
+            break
+
     proc.terminate()
     print("Integration Test Finished.")
 

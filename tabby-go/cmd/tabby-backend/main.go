@@ -36,7 +36,7 @@ func main() {
 	if err == nil {
 		logFile, err := os.OpenFile(filepath.Join(home, "tabby-backend.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err == nil {
-			multiWriter := io.MultiWriter(os.Stdout, logFile)
+			multiWriter := io.MultiWriter(os.Stderr, logFile)
 			log.SetOutput(multiWriter)
 		} else {
 			log.Printf("Failed to open log file: %v", err)

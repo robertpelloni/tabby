@@ -185,7 +185,7 @@ msgstr "背景类型"
 
 #: locale/tmp-html/tabby-terminal/src/components/inputProcessingSettings.component.html:4
 msgid "Backspace key mode"
-msgstr "背空键模式"
+msgstr "退格键模式"
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:14
 #: tabby-serial/src/components/serialTab.component.ts:93
@@ -651,7 +651,7 @@ msgstr "断开连接"
 
 #: tabby-terminal/src/hotkeys.ts:106
 msgid "Disconnect current tab (Serial/Telnet/SSH)"
-msgstr "重新连接当前标签页 (Serial/Telnet/SSH)"
+msgstr "断开当前标签页 (Serial/Telnet/SSH)"
 
 #: tabby-ssh/src/components/sshTab.component.ts:198
 #: tabby-telnet/src/components/telnetTab.component.ts:81

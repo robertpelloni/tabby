@@ -62,7 +62,8 @@
 ---
 
 ## Completed ✓
-- [x] **Go Backend Parity (Phase 1)**: Integrated PTY, Serial, SSH, SFTP protocols within the Go daemon proxying through JSON-RPC 2.0. Finished proxyJump jump hosts integration and End-to-End integration testing.
+- [x] **Go Backend Parity (Phase 1)**: Integrated PTY, Serial, SSH, SFTP protocols within the Go daemon proxying through JSON-RPC 2.0. Finished proxyJump jump hosts integration and End-to-End integration testing. ✅
+- [x] **Autonomous Protocol Driver**: Implemented `tabby-go/pkg/agent` and integrated it into the RPC server. Verified async task orchestration via `integration_test.py`. ✅
 - [x] **X11 Forwarding**: Implemented X11 socket forwarding in the Go backend (`pkg/ssh/x11.go`). Sent `x11-req` payload packet correctly.
 - [x] **BlockFrontend Stub**: Built the experimental UI toggle for DOM-based block rendering over traditional `xterm.js` continuous streams.
 - [x] **Version Management**: Fixed version mismatch and created `scripts/bump-version.mjs`.
