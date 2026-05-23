@@ -1,14 +1,45 @@
 # Changelog
 
-## [1.0.231-nightly.9] - 2026-05-22
+## [1.0.231-nightly.19] - 2026-05-23
 
 ### Changed
 - Version bump
 
-## [1.0.231-nightly.8] - 2026-05-19
+## [1.0.231-nightly.14] - 2026-05-12
+### Added
+- Implemented a base `registerCompletionItemProvider` dictionary overlay on top of the Monaco IDE input window, providing intelligent Warp-style shell autocomplete suggestions.
+- Bound `Cmd+F` and `Ctrl+F` keystrokes inside the Monaco UI block to redirect focus automatically to Tabby's global terminal output search panel, removing the isolated/redundant Monaco native find widget.
+
+
+## [1.0.231-nightly.13] - 2026-05-12
 ### Changed
-- Implemented Warp-style Agent Chat functionality. Added `ai:chat` IPC channel handling to the frontend, electron app bridge, and the Go backend logic.
-- Resolved AI Chat sidebar miswiring from reusing `ai:explainError`.
+- Converted `generateCommand()` AI text generation to use an explicit overlay `prompt()` window, preventing the destruction of currently typed user command text in the Monaco IDE box (Warp parity).
+- Successfully hooked up the `ReactPluginDecorator` to the Angular lifecycle, validating that simple isolated React components can inject UI frames directly on top of the Terminal canvas without relying on standard Webpack/Angular DI modules.
+
+
+## [1.0.231-nightly.12] - 2026-05-12
+### Changed
+- Improved the Workflows Catalog Modal to actively parse template strings (e.g. `{port}`) and prompt the user to fulfill variables via a popup before pasting the finalized command string back into the Warp-style IDE Monaco editor.
+- Configured a persistent rolling `tabby-backend.log` file in the user's home directory (`os.UserHomeDir`) alongside `os.Stdout` to ensure trace logs and backend panics are easily retrievable by users reporting issues from the standalone daemon.
+
+
+## [1.0.231-nightly.11] - 2026-05-12
+### Added
+- Completed Tabby Agent Sidebar Chat integration, sending real conversation payloads containing `role` and `content` through the `ipcRenderer` directly to the `ai.agentChat` JSON-RPC orchestrator on the backend.
+- Extended the `CommandCatalogModalComponent` UI to properly format and highlight `{parameter}` blocks inline matching Warp Drive workflows.
+
+
+## [1.0.231-nightly.10] - 2026-05-12
+### Added
+- Created `ReactPluginDecorator` in the Angular frontend that exposes a `window['tabbyReactPlugins']` interface, giving users the ability to inject native React or DOM extensions over the Tabby window seamlessly (Hyper parity).
+- Initialized official Sentry Go error tracking on the Go daemon inside `main.go`. This automatically recovers and captures native panics on the daemon via the `SENTRY_DSN` env var.
+
+
+## [1.0.231-nightly.8] - 2026-05-11
+### Added
+- Integrated actual OpenAI API requests to the Go backend (`tabby-go/pkg/ai`) triggered by the `OPENAI_API_KEY` environment variable. If missing, it gracefully falls back to the local mock behavior.
+- Implemented Hyper-style hot-reloading configurations. The Go backend (`tabby-go/pkg/config`) now utilizes an `os.Stat` polling loop to watch the active YAML configuration file and broadcasts JSON-RPC `host:config-change` events instantly to the Angular frontend for zero-restart visual updates.
+
 
 ## [1.0.231-nightly.7] - 2026-05-11
 ### Changed
@@ -378,3 +409,13 @@ Version number is maintained in [VERSION.md](VERSION.md) and is the single sourc
 - **UI Framework**: Bootstrap 5 (via ng-bootstrap), FontAwesome 6
 - **State**: Angular services, RxJS observables
 - **Config**: YAML-based configuration with platform-specific defaults
+
+## v1.0.231-nightly.17
+* Create `tabby-go/pkg/sync` implementation representing the Warp Drive Cloud Sync backend stub.
+* Connect JSON-RPC `sync.push` and `sync.pull` commands to the `server.go` IPC handler to allow the frontend to serialize Workflows and Profiles.
+* Increment version tracking documents and prepare HANDOFF logic.
+
+## v1.0.231-nightly.18
+* Create `tabby-core/src/services/sync.service.ts` to act as the Cloud Sync frontend proxy.
+* Expose `SyncService` through `tabby-core` index API, wired up to call `sync.push` and `sync.pull` JSON-RPC commands in the Go backend.
+* Increment version tracking documents and prepare HANDOFF logic.

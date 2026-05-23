@@ -2,53 +2,73 @@
 
 ## Critical / High Priority
 
-### Version Management
-- [x] **Fix version mismatch**: `app/package.json` says `1.0.0-alpha.1` while all plugins are `1.0.231-nightly.0` ✅
-- [x] **Automated version bump script**: Created `scripts/bump-version.mjs` ✅
-- [x] **Bump version to 1.0.231-nightly.9**: Synchronized across all 15 package.json files. ✅
+### Warp & WaveTerm UI/UX Parity (Phase 2)
+- [x] **Block-Based Output Parsing (BlockFrontend)**:
+  - Extend the experimental `tabby-terminal/src/frontends/blockFrontend.ts`.
+  - Implement a basic ANSI-to-HTML parser (or adapt `xterm.js` logic) so `span.textContent` doesn't just swallow control codes.
+  - Intercept the PTY data stream and parse shell prompts (detect when a command ends and a new one begins).
+  - Render each command execution as a distinct, isolated DOM element ("Block").
+- [x] **IDE-Like Text Editing**:
+  - Build a dedicated, pinned `contenteditable` (or Monaco Editor) input box at the bottom of the screen.
+  - Implement Mouse click to place cursor.
+  - Implement Multi-cursor editing (`Alt+Click`, `Cmd+D`).
+  - Implement Intelligent fuzzy-search Tab completion.
+  - Implement Real-time syntax highlighting and error validation (red squiggles).
+- [ ] **Block Actions UI**:
+  - Implement Copy command / Copy output for a specific block.
+  - Implement Filtering/searching within a block.
+  - Implement Generating shareable web links for a block.
+  - Implement Keyboard navigation between blocks.
+- [x] **Rich Widget Blocks (WaveTerm)**:
+  - Add logic to intercept specific OSC codes from the `tabby-go` backend that tell the frontend to render the next block as Markdown, an Image, or a Code Editor buffer.
 
-### Go Backend Port
-- [x] **Create Go module structure** ✅
-- [x] **Go SSH client PoC** ✅
-- [x] **Go SFTP client** ✅
-- [x] **Communication layer**: JSON-RPC 2.0 ✅
-- [x] **TypeScript client**: Angular service proxy ✅
-- [x] **PTY management in Go** ✅
-- [x] **Serial port in Go** ✅
-- [x] **SSH Port Forwarding** ✅
-- [x] **SSH Proxy Support** ✅
-- [x] **SSH Host Key Verification** ✅
-- [x] **SSH Keyboard-Interactive Auth** ✅
-- [x] **BTK Native UI Integration** ✅
-- [x] **Go Backend Config** ✅
-- [x] **Terminal Middleware** ✅
-- [x] **Known Hosts Manager** ✅
-- [x] **Session Recovery** ✅
-- [x] **Notification System** ✅
-- [x] **Cloud Sync**: Integrated `SyncService` to route requests to Go backend. ✅
-- [x] **End-to-end testing**: Go backend tests passing. ✅
-- [x] **SFTP Progress Tracking**: Real-time progress reporting implemented in Go and wired to frontend. ✅
-- [x] **SFTP Path Optimization**: Direct path-based transfers implemented to bypass base64 memory overhead. ✅
-- [ ] **Real PTY support**: Cross-platform PTY via creack/pty + Windows ConPTY
-- [ ] **Real Serial support**: go.bug.st/serial integration
-- [ ] **SFTP File Manager UI**: Basic UI restored (Rename, Create Dir, Upload, Download).
-- [ ] **BTK Native Terminal App**: Full native UI with terminal rendering
+### Agentic AI Integration (Phase 3)
+- [x] **AI Command Search**: Natural language to shell command generation within the IDE input box.
+- [x] **Explain Error Action**: A one-click button on failed blocks that reads the command, stderr, and environment to suggest a fix.
+- [x] **Terminal Agent Chat**: A dedicated sidebar/panel for conversational interaction with an AI.
+- [x] **Workflow Generation**: AI-assisted creation of parameterized, saved shell scripts.
 
-### SSH Feature Completeness
-- [x] **SFTP UI Restoration**: Fixed regressions in Rename and Create Directory functionality. ✅
-- [x] **SFTP Progress indicators**: Real-time bars in global transfers menu. ✅
-- [ ] **SFTP Drag-and-drop support polish**: Improve folder drop feedback.
-- [ ] **Port forwarding management UI**:
-  - Local, remote, and dynamic port forwarding config exists.
-  - Need runtime management UI (add/remove forwards while connected).
-- [x] **Jump host chain visualization**: Restored `jumpHostPath` in SSH tab UI. ✅
-- [ ] **SSH config file import**: Verify and enhance `sshImporters.ts`.
-
-### Build & Infrastructure
-- [x] **Upstream Sync**: Merged `upstream/master` (Eugeny/tabby) into `master`. ✅
-- [x] **Feature Branch Merging**: Merged SyncService and Release branches. ✅
-- [ ] **Sync Electron versions**: electron-builder.yml, package.json, CI all consistent.
-- [ ] **Automated release workflow**: Tag push → build → draft release.
+### Workflows & Collaboration (Phase 4)
+- [x] **Command Catalog**: A searchable UI (Command Palette style) for saved, parameterized commands.
+- [ ] **Cloud Sync Backend**: A secure backend service to synchronize Workflows, Environment Variables, and SSH Profiles.
 
 ---
-[Rest of file unchanged...]
+
+## Medium Priority
+
+### Hyper Parity (Phase 5)
+- [x] **Hot Reloading Configuration**: Watch the Tabby config file and instantly re-render UI elements (like themes) without a restart.
+- [x] **React/Web Component Plugin API**: Develop a wrapper around the Angular Dependency Injection system so users can write simple scripts exporting React components to customize the terminal chrome.
+
+### Feature Completeness & Polish (Phase 6)
+- [x] **SFTP File Manager UI**: Full bidirectional file browser, drag-and-drop file transfer, progress indicators, directory tree browsing.
+- [x] **Port Forwarding Management UI**: Add/remove forwards while connected, status indicators for active forwards.
+- [x] **Jump Host Chain Visualization**: Show jump host path in UI.
+- [ ] **SSH Config File Import**: Verify and enhance `sshImporters.ts`.
+- [ ] **Settings Descriptions/Tooltips**: Add descriptions to all config options in settings UI.
+- [ ] **Profile Group Management**: Improve group editing and organization.
+- [ ] **Terminal Broadcast**: Send input to all visible terminals.
+- [ ] **Session Logging**: Record terminal output to file.
+- [ ] **Serial Terminal**: Hex view mode, advanced flow control settings, connection logging.
+
+### Testing & Code Quality
+- [ ] **Sync Electron versions**: electron-builder.yml, package.json, CI all consistent.
+- [ ] **Automated release workflow**: Tag push → build → draft release.
+- [ ] **Unit test framework setup**: Jest or Karma for TypeScript tests.
+- [ ] **Core service tests**: ConfigService, HotkeysService, TabsService.
+- [ ] **Migrate to TypeScript 5.x**: Currently on 4.9 (Angular 15 may need update).
+- [ ] **ESLint strict mode**: Enable stricter linting rules.
+
+---
+
+## Completed ✓
+- [x] **Go Backend Parity (Phase 1)**: Integrated PTY, Serial, SSH, SFTP protocols within the Go daemon proxying through JSON-RPC 2.0. Finished proxyJump jump hosts integration and End-to-End integration testing.
+- [x] **X11 Forwarding**: Implemented X11 socket forwarding in the Go backend (`pkg/ssh/x11.go`). Sent `x11-req` payload packet correctly.
+- [x] **BlockFrontend Stub**: Built the experimental UI toggle for DOM-based block rendering over traditional `xterm.js` continuous streams.
+- [x] **Version Management**: Fixed version mismatch and created `scripts/bump-version.mjs`.
+- [x] **Go Backend Port**: Created `tabby-go/` directory, implemented PTY, Serial, SSH, and SFTP Go clients.
+- [x] **Communication Layer**: Implemented JSON-RPC 2.0 over stdin/stdout with async notifications.
+- [x] **Frontend Refactoring**: Rewrote `SSHSession` and `SFTPSession` to act as thin IPC proxy clients. Removed `russh` Node.js native dependency.
+- [x] **Electron Main Process Router**: Registered `ipcMain.handle` endpoints to multiplex `ssh:*` and `sftp:*` requests to the `tabby-go` daemon.
+- [x] **Build Fixes**: Cleaned up failing CGo code (`tabby-go/pkg/ui`) and fixed TypeScript strict compilation errors.
+- [x] **Documentation**: Updated `VISION.md`, `ROADMAP.md`, `TODO.md`, `IDEAS.md`, `CHANGELOG.md`, `MEMORY.md`, `DEPLOY.md`, and `HANDOFF.md` to reflect the massive Warp, WaveTerm, and Hyper parity vision.

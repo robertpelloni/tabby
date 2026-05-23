@@ -48,7 +48,6 @@ export class VSDevToolsProvider extends ShellProvider {
                         args: ['/k', bat],
                         icon: vsIconMap[version],
                         env: {},
-                        shellType: 'cmd',
                     })
                 }
             } catch (_) {

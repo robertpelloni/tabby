@@ -138,7 +138,6 @@ type SSHConnectionResult struct {
 	RemoteAddress string   `json:"remoteAddress"`
 	Banner        string   `json:"banner,omitempty"`
 	AuthMethods   []string `json:"authMethods"`
-	JumpChain     []string `json:"jumpChain,omitempty"` // Ordered list of jump host identifiers (e.g. ["bastion1", "bastion2"])
 }
 
 // SSHSessionResult is returned after starting a shell session
@@ -310,7 +309,6 @@ type SFTPDownloadParams struct {
 	SessionID  string `json:"sessionId"`
 	RemotePath string `json:"remotePath"`
 	LocalPath  string `json:"localPath"`
-	TransferID string `json:"transferId,omitempty"`
 }
 
 // SFTPUploadParams uploads a file
@@ -318,14 +316,11 @@ type SFTPUploadParams struct {
 	SessionID  string `json:"sessionId"`
 	LocalPath  string `json:"localPath"`
 	RemotePath string `json:"remotePath"`
-	TransferID string `json:"transferId,omitempty"`
-	Data       string `json:"data,omitempty"` // Base64-encoded fallback
 }
 
 // SFTPTransferResult is returned after a file transfer
 type SFTPTransferResult struct {
-	BytesTransferred int64  `json:"bytesTransferred"`
-	Data             string `json:"data,omitempty"` // Base64-encoded for Download fallback
+	BytesTransferred int64 `json:"bytesTransferred"`
 }
 
 // SFTPChmodParams changes file permissions

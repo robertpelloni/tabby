@@ -12,9 +12,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"path/filepath"
+	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/robertpelloni/tabby/tabby-go/internal/server"
 )
 
@@ -28,8 +32,34 @@ func main() {
 		os.Exit(0)
 	}
 
+	home, err := os.UserHomeDir()
+	if err == nil {
+		logFile, err := os.OpenFile(filepath.Join(home, "tabby-backend.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err == nil {
+			multiWriter := io.MultiWriter(os.Stdout, logFile)
+			log.SetOutput(multiWriter)
+		} else {
+			log.Printf("Failed to open log file: %v", err)
+		}
+	} else {
+		log.Printf("Failed to get home dir for logging: %v", err)
+	}
+
 	log.SetPrefix("[tabby-go] ")
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
+	err = sentry.Init(sentry.ClientOptions{
+		Dsn: os.Getenv("SENTRY_DSN"),
+		Release: "tabby-backend@v1.0.231-nightly.0",
+		EnableTracing: true,
+		TracesSampleRate: 1.0,
+	})
+	if err != nil {
+		log.Printf("Sentry initialization failed: %v", err)
+	}
+	// Flush buffered events before the program terminates.
+	defer sentry.Flush(2 * time.Second)
+	defer sentry.Recover()
 
 	srv := server.New()
 

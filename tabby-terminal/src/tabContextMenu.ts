@@ -214,4 +214,3 @@ export class SaveAsProfileContextMenu extends TabContextMenuItemProvider {
         return []
     }
 }
-

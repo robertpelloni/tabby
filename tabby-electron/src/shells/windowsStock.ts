@@ -52,7 +52,6 @@ export class WindowsStockShellsProvider extends WindowsBaseShellProvider {
                     WT_SESSION: '0',
                 },
                 icon: require('../icons/clink.svg'),
-                shellType: 'cmd',
             },
             {
                 id: 'cmd',
@@ -60,7 +59,6 @@ export class WindowsStockShellsProvider extends WindowsBaseShellProvider {
                 command: 'cmd.exe',
                 env: {},
                 icon: require('../icons/cmd.svg'),
-                shellType: 'cmd',
             },
             {
                 id: 'powershell',
@@ -69,7 +67,6 @@ export class WindowsStockShellsProvider extends WindowsBaseShellProvider {
                 args: ['-nologo'],
                 icon: require('../icons/powershell.svg'),
                 env: this.getEnvironment(),
-                shellType: 'powershell',
             },
         ]
     }

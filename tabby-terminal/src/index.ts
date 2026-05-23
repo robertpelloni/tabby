@@ -9,6 +9,7 @@ import TabbyCorePlugin, { ConfigProvider, HotkeyProvider, TabContextMenuItemProv
 import { SettingsTabProvider } from 'tabby-settings'
 
 import { AppearanceSettingsTabComponent } from './components/appearanceSettingsTab.component'
+import { CommandCatalogModalComponent } from './components/commandCatalogModal.component'
 import { ColorSchemeSettingsTabComponent } from './components/colorSchemeSettingsTab.component'
 import { TerminalSettingsTabComponent } from './components/terminalSettingsTab.component'
 import { ColorPickerComponent } from './components/colorPicker.component'
@@ -26,6 +27,7 @@ import { TerminalContextMenuItemProvider } from './api/contextMenuProvider'
 import { TerminalColorSchemeProvider } from './api/colorSchemeProvider'
 import { TerminalSettingsTabProvider, AppearanceSettingsTabProvider, ColorSchemeSettingsTabProvider } from './settings'
 import { DebugDecorator } from './features/debug'
+import { ReactPluginDecorator } from './api/reactPlugin'
 import { ZModemDecorator } from './features/zmodem'
 import { TerminalConfigProvider } from './config'
 import { TerminalHotkeyProvider } from './hotkeys'
@@ -53,6 +55,7 @@ import { DefaultColorSchemes } from './colorSchemes'
 
         { provide: ConfigProvider, useClass: TerminalConfigProvider, multi: true },
         { provide: HotkeyProvider, useClass: TerminalHotkeyProvider, multi: true },
+        { provide: TerminalDecorator, useClass: ReactPluginDecorator, multi: true },
         { provide: TerminalDecorator, useClass: ZModemDecorator, multi: true },
         { provide: TerminalDecorator, useClass: DebugDecorator, multi: true },
 
@@ -71,6 +74,7 @@ import { DefaultColorSchemes } from './colorSchemes'
         ColorSchemeSelectorComponent,
         AppearanceSettingsTabComponent,
         ColorSchemeSettingsTabComponent,
+        CommandCatalogModalComponent,
         TerminalSettingsTabComponent,
         SearchPanelComponent,
         StreamProcessingSettingsComponent,

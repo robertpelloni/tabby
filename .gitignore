@@ -37,3 +37,11 @@ sentry-symbols.js
 
 crowdin.yml
 .crowdin.env
+
+# Go build output
+build/
+tabby-go/vendor/
+tabby-go/wails-app/build/bin/
+
+# Jules session logs
+.jules/sessions/

@@ -1,27 +1,18 @@
-# Handoff - Session Summary
+# Handoff Document
 
-## Accomplishments
-1.  **Upstream Sync**: Synchronized `master` with `upstream/master` (Eugeny/tabby), resolving deep conflicts to maintain the Go backend proxy architecture while adopting upstream fixes.
-2.  **Feature Integration**:
-    *   Merged `SyncService` for cloud-to-go routing.
-    *   Implemented real-time SFTP progress reporting in the Go backend.
-    *   Optimized SFTP data flow using direct file paths via `getFilePath()`, drastically reducing memory usage during large transfers.
-3.  **UI Restoration & Fixes**:
-    *   Restored Rename, Create Directory, and Refresh buttons in the SFTP panel.
-    *   Fixed `jumpHostPath` visualization in the SSH tab.
-    *   Wired Go progress notifications to the Angular global transfers menu.
-4.  **Backend Verification**: Built `build/tabby-backend` and verified JSON-RPC 2.0 protocol updates via automated test scripts.
-5.  **Governance**: Unified monorepo versioning to `1.0.231-nightly.9`.
+## Current Status
+The project is currently at version **v1.0.231-nightly.18**.
 
-## Current State
-*   **Version**: 1.0.231-nightly.9
-*   **Architecture**: Angular frontend services (SSH/SFTP/Sync) act as thin proxies to a native Go daemon.
-*   **Efficiency**: SFTP is no longer bottlenecked by base64/IPC buffering for local file operations.
+## Recent Work
+*   **Warp Drive Parity (Cloud Sync):** Built out the Angular frontend service `SyncService` in `tabby-core`. This service exposes `push()` and `pull()` commands which forward payloads across the `ipcRenderer` border to the `tabby-go` daemon's `sync.push` and `sync.pull` JSON-RPC targets.
+*   **API Export:** Exposed the `SyncService` cleanly via `tabby-core/src/index.ts` so plugins (like the upcoming Workflow catalog) can depend on it natively.
+*   **Build Verification:** Successfully ran the memory-intensive `yarn build` using the 8GB node limit constraint to prevent OOMs. The Go tests and builds completed without regressions.
 
-## Pending Tasks
-1.  **BTK Native UI**: Go backend supports BTK, but a full native Go frontend for terminal rendering is not yet implemented.
-2.  **Block-Based Rendering**: Foundation is in `tabby-terminal/src/frontends/blockFrontend.ts`, but needs completion to reach Warp parity.
-3.  **Cross-Platform Builds**: NSIS and DMG build scripts need verification with the new Go backend packaging.
+## Next Steps
+*   **Command Catalog UI:** Now that the `SyncService` exists, build out the `CommandCatalogModalComponent` (or similar overlay). It needs to pull Workflows from the sync service, render them in a searchable list, and inject the selected command back into the `baseTerminalTab`'s Monaco IDE input editor.
+*   **Hyper-Style Extensibility (Phase 5):** The next major target is implementing the React Web Component API wrapper. Developers should be able to push raw `.tsx` functional components into the configuration directory, and the Angular app should render them seamlessly as terminal overlays.
 
-## Notes for Successor
-The system is now stable and performant with the Go backend integration. The SFTP optimization in this session is a template for other native operations: always prefer passing file paths/descriptors to Go instead of streaming data over IPC if the target is the local filesystem.
+## Relevant Notes
+*   If `yarn build` fails with `Allocation failed - JavaScript heap out of memory`, ensure you run it with `export NODE_OPTIONS=--max-old-space-size=8192`.
+*   Remember to update `SUBMODULE_INVENTORY.md` and `VERSION.md` systematically after completing tasks.
+*   Do not kill `node` processes blindly, as it terminates the underlying LLM agent environment.
