@@ -23,9 +23,10 @@ At the absolute start of every session:
 - **Strict Versioning**: Use `node scripts/bump-version.mjs [patch|nightly]` to keep all 15+ packages synchronized. Reference the version bump in commit messages.
 
 ## 4. Verification & Testing
-- **Backend**: Every modification to Go code requires running `cd tabby-go && go test ./...`.
+- **Unified Test Command**: Use `yarn test` from the root to execute both Go unit tests and the integration test suite.
+- **Backend**: Every modification to Go code requires running `yarn test:go` (or `cd tabby-go && go test ./...`).
 - **Agent Orchestration**: Autonomous workflows must be managed by the `tabby-go/pkg/agent` driver via the `agent.*` RPC methods.
-- **Integration**: Verify JSON-RPC protocol updates using `integration_test.py`.
+- **Integration**: Verify JSON-RPC protocol updates using `yarn test:integration` (requires a built `build/tabby-backend`).
 - **Frontend**: Visually verify UI modifications using Playwright screenshots.
 
 ## 5. Session Handoff

@@ -15,7 +15,7 @@ This file is the single source of truth for all AI dev tools (Google Jules, Clau
 ## 2. Core Directives
 1.  **Always Verify Your Work**: After every action that modifies the codebase, use a read-only tool (e.g., `yarn build`, `go test ./...`, `list_files`, `read_file`) to confirm the outcome. Do not mark a task as complete without verification.
 2.  **Edit Source, Not Artifacts**: Never edit files in `dist`, `build`, or `target` directories. Trace the code back to its source, modify it, and run the appropriate build command.
-3.  **Proactive Testing**: For any code change, attempt to run relevant unit tests (or write them). The Go backend uses `go test ./...`. The frontend uses Webpack.
+3.  **Proactive Testing**: For any code change, attempt to run relevant unit tests (or write them). Use `yarn test` from the root to run both Go unit tests and the integration test suite. The frontend uses Webpack.
 4.  **Diagnose Before Changing Environment**: Read error logs carefully. Do not immediately try to install/uninstall packages without understanding the expected environment setup.
 5.  **Autonomous Problem Solving**: Strive to solve problems autonomously. Only ask for help if the request is ambiguous, you are stuck after multiple approaches, or you need a decision that significantly alters the scope.
 6.  **Knowledgebase Lookup**: Utilize the `knowledgebase_lookup` tool early and often for guidance on bootstrapping, testing, tool issues, etc.

@@ -101,8 +101,12 @@
     "node-gyp": "^10.0.0"
   },
   "scripts": {
-    "build": "npm run build:typings && node scripts/build-modules.mjs",
+    "build": "npm run build:typings && npm run build:go && node scripts/build-modules.mjs",
+    "build:go": "cd tabby-go && go build -o ../build/tabby-backend ./cmd/tabby-backend/main.go",
     "build:typings": "node scripts/build-typings.mjs",
+    "test": "npm run test:go && npm run test:integration",
+    "test:go": "cd tabby-go && go test -mod=vendor ./...",
+    "test:integration": "python integration_test.py",
     "watch": "cross-env TABBY_DEV=1 webpack --progress --color --watch",
     "start": "cross-env TABBY_DEV=1 electron app -d --inspect",
     "start:prod": "electron app --debug",
