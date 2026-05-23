@@ -1085,11 +1085,10 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         const result = await modal.result.catch(() => null)
 
         if (result && this.ideInput?.nativeElement) {
-            this.monacoEditor?.setValue(result);
+            this.monacoEditor?.setValue(result.command);
             this.monacoEditor?.focus();
         }
-
-}
+    }
 
     showAgentChat = false;
     agentInput = '';

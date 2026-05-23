@@ -6,6 +6,8 @@ The project is currently at version **v1.0.231-nightly.19**.
 ## Recent Work
 *   **Agent Driver (Go Backend):** Implemented the core `agent` package in `tabby-go` for autonomous task orchestration. This provides task status tracking, progress indicators, and async execution within the Go daemon.
 *   **Agent RPC Integration:** Registered `agent.runTask`, `agent.listTasks`, and `agent.getTaskStatus` JSON-RPC 2.0 methods in the Go server, enabling the Electron frontend to drive backend-level automation.
+*   **Block Output Parsing:** Implemented heuristic shell prompt detection in `BlockFrontend` to automatically partition terminal output into discrete, actionable blocks.
+*   **Command Catalog:** Built the `CommandCatalogModalComponent` UI to allow users to search and apply parameterized workflows synced from the cloud backend.
 *   **Warp Drive Parity (Cloud Sync):** Built out the Angular frontend service `SyncService` in `tabby-core`. This service exposes `push()` and `pull()` commands which forward payloads across the `ipcRenderer` border to the `tabby-go` daemon's `sync.push` and `sync.pull` JSON-RPC targets.
 *   **API Export:** Exposed the `SyncService` cleanly via `tabby-core/src/index.ts` so plugins (like the upcoming Workflow catalog) can depend on it natively.
 *   **Build Verification:** Successfully ran the memory-intensive `yarn build` using the 8GB node limit constraint to prevent OOMs. The Go tests and builds completed without regressions.

@@ -168,9 +168,17 @@ export class BlockFrontend extends Frontend {
         if (data.includes('\x1b]1337;WaveTermWidget=')) {
             this.renderWidget(data)
         } else {
+            // Detect common shell prompts and rotate blocks
+            // Simple heuristic: if a line ends with $, # or > followed by a space
+            const hasPrompt = /[\$#>]\s$/.test(data) || data.includes('\r\n$ ') || data.includes('\r\n# ') || data.includes('\r\n> ')
+
+            if (hasPrompt && this.currentBlock && (this.currentBlock.querySelector('.block-output')?.innerHTML || '').length > 0) {
+                 this.createNewBlock()
+            }
+
             // Render basic ANSI control codes to HTML using ansi-to-html
             const span = document.createElement('span')
-            span.innerHTML = this.ansiConverter.toHtml(data).replace(/\\n/g, '<br/>')
+            span.innerHTML = this.ansiConverter.toHtml(data).replace(/\r\n/g, '<br/>').replace(/\n/g, '<br/>')
             (this.currentBlock.querySelector('.block-output') || this.currentBlock).appendChild(span)
         }
         this.container.scrollTop = this.container.scrollHeight

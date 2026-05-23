@@ -6,7 +6,7 @@
 - [x] **Block-Based Output Parsing (BlockFrontend)**:
   - Extend the experimental `tabby-terminal/src/frontends/blockFrontend.ts`.
   - Implement a basic ANSI-to-HTML parser (or adapt `xterm.js` logic) so `span.textContent` doesn't just swallow control codes.
-  - Intercept the PTY data stream and parse shell prompts (detect when a command ends and a new one begins).
+  - Intercept the PTY data stream and parse shell prompts (detect when a command ends and a new one begins). ✅
   - Render each command execution as a distinct, isolated DOM element ("Block").
 - [x] **IDE-Like Text Editing**:
   - Build a dedicated, pinned `contenteditable` (or Monaco Editor) input box at the bottom of the screen.
@@ -29,7 +29,7 @@
 - [x] **Workflow Generation**: AI-assisted creation of parameterized, saved shell scripts.
 
 ### Workflows & Collaboration (Phase 4)
-- [x] **Command Catalog**: A searchable UI (Command Palette style) for saved, parameterized commands.
+- [x] **Command Catalog**: A searchable UI (Command Palette style) for saved, parameterized commands. ✅
 - [ ] **Cloud Sync Backend**: A secure backend service to synchronize Workflows, Environment Variables, and SSH Profiles.
 
 ---
