@@ -417,6 +417,18 @@ type BannerNotification struct {
 	Message      string `json:"message"`
 }
 
+// ---- Agent API Types ----
+
+// AgentRunTaskParams contains parameters for starting an agent task
+type AgentRunTaskParams struct {
+	Description string `json:"description"`
+}
+
+// AgentGetTaskStatusParams contains parameters for getting a task's status
+type AgentGetTaskStatusParams struct {
+	ID string `json:"id"`
+}
+
 // PortForwardEventNotification is sent when a port forward connection event occurs
 type PortForwardEventNotification struct {
 	ConnectionID  string `json:"connectionId"`

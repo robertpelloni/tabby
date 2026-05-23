@@ -48,6 +48,7 @@ package server
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -55,6 +56,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/robertpelloni/tabby/tabby-go/pkg/agent"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ai"
 	tabbysync "github.com/robertpelloni/tabby/tabby-go/pkg/sync"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/api"
@@ -76,6 +78,7 @@ type Server struct {
 	ptyMgr       *pty.Manager
 	serialMgr    *serial.Manager
 	telnetMgr    *telnet.Manager
+	agentMgr     *agent.Manager
 	aiMgr        *ai.Manager
 	syncMgr      *tabbysync.Manager
 	knownHosts   *knownhosts.Manager
@@ -99,6 +102,7 @@ func New() *Server {
 	s.ptyMgr = pty.NewManager(s.sendNotification)
 	s.serialMgr = serial.NewManager(s.sendNotification)
 	s.telnetMgr = telnet.NewManager(s.sendNotification)
+	s.agentMgr = agent.NewManager()
 	s.aiMgr = ai.NewManager()
 	s.syncMgr = tabbysync.NewManager()
 	s.knownHosts = knownhosts.NewManager()
@@ -133,6 +137,7 @@ func NewWithIO(in io.Reader, out io.Writer) *Server {
 	s.ptyMgr = pty.NewManager(s.sendNotification)
 	s.serialMgr = serial.NewManager(s.sendNotification)
 	s.telnetMgr = telnet.NewManager(s.sendNotification)
+	s.agentMgr = agent.NewManager()
 	s.knownHosts = knownhosts.NewManager()
 	s.notifMgr = notification.NewManager()
 	s.recoveryMgr = recovery.NewManager()
@@ -359,6 +364,14 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 			result, err = s.aiMgr.Chat(p)
 		}
 
+	// ---- Agent ----
+	case "agent.runTask":
+		result, err = s.handleAgentRunTask(req.Params)
+	case "agent.listTasks":
+		result = s.agentMgr.ListTasks()
+	case "agent.getTaskStatus":
+		result, err = s.handleAgentGetTaskStatus(req.Params)
+
 	default:
 		s.sendError(req.ID, api.ErrorMethodNotFound, fmt.Sprintf("Method not found: %s", req.Method), nil)
 		return
@@ -426,17 +439,6 @@ func (s *Server) handleSSHConnect(params interface{}) (*api.SSHConnectionResult,
 	if err := reMarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.sshMgr.Connect(p)
 }
@@ -445,17 +447,6 @@ func (s *Server) handleSSHStartShell(params interface{}) (*api.SSHSessionResult,
 	var p api.SSHSessionParams
 	if err := reMarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.sshMgr.StartShell(p)
@@ -466,17 +457,6 @@ func (s *Server) handleSSHResize(params interface{}) error {
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.sshMgr.Resize(p)
 }
@@ -485,17 +465,6 @@ func (s *Server) handleSSHWrite(params interface{}) error {
 	var p api.SSHWriteParams
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.sshMgr.Write(p)
@@ -506,17 +475,6 @@ func (s *Server) handleSSHClose(params interface{}) error {
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.sshMgr.Close(p)
 }
@@ -526,17 +484,6 @@ func (s *Server) handleSSHAddForward(params interface{}) (*api.PortForwardResult
 	if err := reMarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.sshMgr.AddForward(p)
 }
@@ -545,17 +492,6 @@ func (s *Server) handleSSHRemoveForward(params interface{}) error {
 	var p api.PortForwardRemoveParams
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.sshMgr.RemoveForward(p)
@@ -568,17 +504,6 @@ func (s *Server) handleSSHListForwards(params interface{}) ([]api.PortForwardInf
 	var p connParams
 	if err := reMarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.sshMgr.ListForwards(p.ConnectionID), nil
@@ -609,17 +534,6 @@ func (s *Server) handleSFTPOpen(params interface{}) (*api.SFTPOpenResult, error)
 	if err := reMarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.sftpMgr.Open(p)
 }
@@ -628,17 +542,6 @@ func (s *Server) handleSFTPList(params interface{}) ([]api.SFTPFile, error) {
 	var p api.SFTPListParams
 	if err := reMarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.sftpMgr.List(p)
@@ -649,17 +552,6 @@ func (s *Server) handleSFTPDownload(params interface{}) (*api.SFTPTransferResult
 	if err := reMarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.sftpMgr.Download(p)
 }
@@ -668,17 +560,6 @@ func (s *Server) handleSFTPUpload(params interface{}) (*api.SFTPTransferResult, 
 	var p api.SFTPUploadParams
 	if err := reMarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.sftpMgr.Upload(p)
@@ -692,17 +573,6 @@ func (s *Server) handleSFTPDelete(params interface{}) error {
 	var p deleteParams
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.sftpMgr.Delete(p.SessionID, p.RemotePath)
@@ -718,17 +588,6 @@ func (s *Server) handleSFTPRename(params interface{}) error {
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.sftpMgr.Rename(p.SessionID, p.OldPath, p.NewPath)
 }
@@ -741,17 +600,6 @@ func (s *Server) handleSFTPMkdir(params interface{}) error {
 	var p mkdirParams
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.sftpMgr.Mkdir(p.SessionID, p.Path)
@@ -766,17 +614,6 @@ func (s *Server) handleSFTPMkdirAll(params interface{}) error {
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.sftpMgr.MkdirAll(p.SessionID, p.Path)
 }
@@ -789,17 +626,6 @@ func (s *Server) handleSFTPStat(params interface{}) (*api.SFTPFile, error) {
 	var p statParams
 	if err := reMarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.sftpMgr.Stat(p.SessionID, p.Path)
@@ -814,17 +640,6 @@ func (s *Server) handleSFTPLstat(params interface{}) (*api.SFTPFile, error) {
 	if err := reMarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.sftpMgr.Lstat(p.SessionID, p.Path)
 }
@@ -838,17 +653,6 @@ func (s *Server) handleSFTPReadDir(params interface{}) ([]api.SFTPFile, error) {
 	if err := reMarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.sftpMgr.ReadDir(p.SessionID, p.Path)
 }
@@ -857,17 +661,6 @@ func (s *Server) handleSFTPChmod(params interface{}) error {
 	var p api.SFTPChmodParams
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.sftpMgr.Chmod(p.SessionID, p.Path, p.Mode)
@@ -890,17 +683,6 @@ func (s *Server) handleSFTPSymlink(params interface{}) error {
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.sftpMgr.Symlink(p.SessionID, p.OldPath, p.NewPath)
 }
@@ -914,17 +696,6 @@ func (s *Server) handleSFTPRmdir(params interface{}) error {
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.sftpMgr.Rmdir(p.SessionID, p.Path)
 }
@@ -937,17 +708,6 @@ func (s *Server) handleSFTPClose(params interface{}) error {
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.sftpMgr.Close(p.SessionID)
 }
@@ -959,17 +719,6 @@ func (s *Server) handlePTYSpawn(params interface{}) (*api.PTYSpawnResult, error)
 	if err := reMarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.ptyMgr.Spawn(p)
 }
@@ -978,17 +727,6 @@ func (s *Server) handlePTYResize(params interface{}) error {
 	var p api.PTYResizeParams
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.ptyMgr.Resize(p.ID, p.Columns, p.Rows)
@@ -999,17 +737,6 @@ func (s *Server) handlePTYWrite(params interface{}) error {
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.ptyMgr.Write(p.ID, p.Data)
 }
@@ -1018,17 +745,6 @@ func (s *Server) handlePTYKill(params interface{}) error {
 	var p api.PTYKillParams
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.ptyMgr.Kill(p.ID, p.Signal)
@@ -1041,17 +757,6 @@ func (s *Server) handleSerialOpen(params interface{}) (*api.SerialOpenResult, er
 	if err := reMarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.serialMgr.Open(p)
 }
@@ -1061,17 +766,6 @@ func (s *Server) handleSerialWrite(params interface{}) error {
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.serialMgr.Write(p.ID, p.Data)
 }
@@ -1080,17 +774,6 @@ func (s *Server) handleSerialClose(params interface{}) error {
 	var p api.SerialCloseParams
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.serialMgr.Close(p.ID)
@@ -1114,17 +797,6 @@ func (s *Server) handleTelnetConnect(params interface{}) (interface{}, error) {
 	if err := reMarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.telnetMgr.Connect(telnet.TelnetConnectParams{Host: p.Host, Port: p.Port})
 }
@@ -1136,17 +808,6 @@ func (s *Server) handleTelnetWrite(params interface{}) error {
 	}
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.telnetMgr.Write(p.ConnectionID, p.Data)
@@ -1161,17 +822,6 @@ func (s *Server) handleTelnetResize(params interface{}) error {
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.telnetMgr.Resize(p.ConnectionID, p.Width, p.Height)
 }
@@ -1182,17 +832,6 @@ func (s *Server) handleTelnetClose(params interface{}) error {
 	}
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.telnetMgr.Close(p.ConnectionID)
@@ -1213,17 +852,6 @@ func (s *Server) handleKnownHostsGet(params interface{}) (*knownhosts.KnownHost,
 	var p knownhosts.Selector
 	if err := reMarshal(params, &p); err != nil {
 		return nil, fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.knownHosts.GetFor(p), nil
@@ -1270,17 +898,6 @@ func (s *Server) handleKnownHostsLoadFile(params interface{}) error {
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.knownHosts.LoadFromFile(p.Path)
 }
@@ -1291,17 +908,6 @@ func (s *Server) handleKnownHostsSaveFile(params interface{}) error {
 	}
 	if err := reMarshal(params, &p); err != nil {
 		return fmt.Errorf("invalid params: %w", err)
-	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
 	}
 
 	return s.knownHosts.SaveToFile(p.Path)
@@ -1400,17 +1006,6 @@ func (s *Server) handleRecoverySave(params interface{}) error {
 	if p.Path == "" {
 		p.Path = recovery.GetRecoveryPath()
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.recoveryMgr.Save(p.Path)
 }
@@ -1425,17 +1020,32 @@ func (s *Server) handleRecoveryLoad(params interface{}) (*recovery.RecoveryFile,
 	if p.Path == "" {
 		p.Path = recovery.GetRecoveryPath()
 	}
-	s.configMgr = config.NewManager()
-
-	// Start polling the config file from the standard path and emit host:config-change IPC
-	configPath := config.GetConfigPath()
-	if configPath != "" {
-		s.configMgr.Load(configPath)
-		s.configMgr.OnChange(func(store *config.Store) {
-			s.sendNotification("host:config-change", nil)
-		})
-		s.configMgr.StartWatching()
-	}
 
 	return s.recoveryMgr.Load(p.Path)
+}
+
+// ---- Agent Handlers ----
+
+func (s *Server) handleAgentRunTask(params interface{}) (*agent.Task, error) {
+	var p struct {
+		Description string `json:"description"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	return s.agentMgr.RunTask(context.Background(), p.Description)
+}
+
+func (s *Server) handleAgentGetTaskStatus(params interface{}) (*agent.Task, error) {
+	var p struct {
+		ID string `json:"id"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	task, ok := s.agentMgr.GetTask(p.ID)
+	if !ok {
+		return nil, fmt.Errorf("task not found: %s", p.ID)
+	}
+	return task, nil
 }

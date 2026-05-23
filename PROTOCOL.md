@@ -24,6 +24,7 @@ At the absolute start of every session:
 
 ## 4. Verification & Testing
 - **Backend**: Every modification to Go code requires running `cd tabby-go && go test ./...`.
+- **Agent Orchestration**: Autonomous workflows must be managed by the `tabby-go/pkg/agent` driver via the `agent.*` RPC methods.
 - **Integration**: Verify JSON-RPC protocol updates using `integration_test.py`.
 - **Frontend**: Visually verify UI modifications using Playwright screenshots.
 
