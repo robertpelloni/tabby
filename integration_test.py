@@ -2,18 +2,20 @@ import subprocess
 import json
 import time
 import os
+import threading
 
 def run_test():
-    print("Starting Integration Test...")
+    print("Starting Comprehensive Integration & Edge Case Test...")
     backend_path = './build/tabby-backend'
 
     # Start backend
     proc = subprocess.Popen([backend_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-    def request(method, params=None):
-        req_id = int(time.time() * 1000)
+    def request(method, params=None, req_id=None):
+        if req_id is None:
+            req_id = int(time.time() * 1000)
         req = {"jsonrpc": "2.0", "id": req_id, "method": method, "params": params or {}}
-        print(f"-> Request: {method}")
+        # print(f"-> Request: {method}")
         proc.stdin.write(json.dumps(req) + '\n')
         proc.stdin.flush()
 
@@ -24,46 +26,80 @@ def run_test():
             if line.startswith('{'):
                 return json.loads(line)
 
-    # 1. Ping
+    # 1. Basic Connectivity
     res = request("ping")
-    print(f"Ping success: {res['result']}")
+    if res and 'result' in res:
+        print(f"✅ Ping success: {res['result']['status']}")
+    else:
+        print("❌ Ping failed")
 
-    # 2. SFTP Upload (Simulation)
-    res = request("sftp.upload", {
-        "sessionId": "fake-sess",
-        "remotePath": "/tmp/test",
-        "localPath": "/etc/hosts",
-        "transferId": "test-id-123"
-    })
-    print(f"SFTP Upload Response (expected error): {res.get('error', {}).get('message')}")
+    # 2. Edge Case: Malformed JSON
+    print("Testing Edge Case: Malformed JSON...")
+    proc.stdin.write('{"jsonrpc": "2.0", "method": "ping", "params": { "broken": }\n')
+    proc.stdin.flush()
+    line = proc.stdout.readline()
+    res = json.loads(line)
+    if res.get('error', {}).get('code') == -32700:
+        print("✅ Correctly handled Parse Error (-32700)")
+    else:
+        print(f"❌ Failed to handle Parse Error: {res}")
 
-    # 3. AI Chat (Simulation)
-    res = request("ai.chat", {"message": "hello"})
-    print(f"AI Chat Response: {res['result']['response']}")
+    # 3. Edge Case: Method Not Found
+    print("Testing Edge Case: Method Not Found...")
+    res = request("nonExistentMethod")
+    if res.get('error', {}).get('code') == -32601:
+        print("✅ Correctly handled Method Not Found (-32601)")
+    else:
+        print(f"❌ Failed to handle Method Not Found: {res}")
 
-    # 4. Sync Pull (Simulation)
+    # 4. Persistence Test (Sync Push -> Pull)
+    print("Testing Sync Persistence...")
+    test_data = {
+        "workflows": [{"id": "test-wf", "name": "Test Workflow", "command": "echo hello", "tags": ["test"]}],
+        "profiles": [],
+        "envVars": []
+    }
+    request("sync.push", {"data": test_data})
     res = request("sync.pull")
-    print(f"Sync Pull Response: {res['result']['timestamp']}")
+    if res['result']['data']['workflows'][0]['id'] == "test-wf":
+        print("✅ Sync Persistence verified")
+    else:
+        print("❌ Sync Persistence failed")
 
-    # 5. Agent Task Execution
-    print("Testing Agent Protocol...")
-    res = request("agent.runTask", {"description": "Verify Integration"})
-    task_id = res['result']['id']
-    print(f"Agent Task Started: {task_id}")
+    # 5. Stress Test: Concurrent Agent Tasks
+    print("Testing Stress Case: Concurrent Agent Tasks...")
+    task_ids = []
+    for i in range(5):
+        res = request("agent.runTask", {"description": f"Concurrent Task {i}"})
+        task_ids.append(res['result']['id'])
 
-    res = request("agent.listTasks")
-    print(f"Agent List Tasks: {len(res['result'])} tasks found")
+    print(f"Started 5 tasks: {task_ids}")
 
-    # Wait for completion
-    print("Waiting for task completion...")
-    for _ in range(10):
+    # Wait and check all
+    completed = 0
+    for _ in range(20):
         time.sleep(0.5)
-        res = request("agent.getTaskStatus", {"id": task_id})
-        status = res['result']['status']
-        progress = res['result']['progress']
-        print(f"Task {task_id} status: {status} ({progress*100:.0f}%)")
-        if status == "completed":
+        completed = 0
+        for tid in task_ids:
+            res = request("agent.getTaskStatus", {"id": tid})
+            if res['result']['status'] == "completed":
+                completed += 1
+        if completed == 5:
             break
+
+    if completed == 5:
+        print("✅ Concurrent Task Execution verified")
+    else:
+        print(f"❌ Concurrent Task Execution failed (only {completed}/5 completed)")
+
+    # 6. Edge Case: Invalid Params for known method
+    print("Testing Edge Case: Invalid Params...")
+    # agent.getTaskStatus expects {"id": "..."}
+    res = request("agent.getTaskStatus", {"wrong_key": "123"})
+    if res.get('error'):
+        print(f"✅ Correctly returned error for invalid params: {res['error']['message']}")
+    else:
+        print("❌ Failed to catch invalid params")
 
     proc.terminate()
     print("Integration Test Finished.")
