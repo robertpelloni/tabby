@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core'
+import { Subject, Observable } from 'rxjs'
 import { Logger, LogService } from './log.service'
 
 export interface AgentTask {
@@ -13,11 +14,20 @@ export interface AgentTask {
 @Injectable({ providedIn: 'root' })
 export class AgentService {
     private logger: Logger
+    private taskUpdated = new Subject<AgentTask>()
+    private tasks: Map<string, AgentTask> = new Map()
+
+    readonly taskUpdated$: Observable<AgentTask> = this.taskUpdated.asObservable()
 
     constructor (
         log: LogService,
     ) {
         this.logger = log.create('agent')
+        const ipc = window['require']('electron').ipcRenderer
+        ipc.on('agent:taskUpdated', (_event, task: AgentTask) => {
+            this.tasks.set(task.id, task)
+            this.taskUpdated.next(task)
+        })
     }
 
     async runTask (description: string): Promise<AgentTask | null> {
@@ -36,6 +46,9 @@ export class AgentService {
         try {
             const ipc = window['require']('electron').ipcRenderer
             const result = await ipc.invoke('agent:listTasks')
+            for (const task of result) {
+                this.tasks.set(task.id, task)
+            }
             return result
         } catch (e) {
             this.logger.error('Failed to list agent tasks', e)

@@ -13,4 +13,11 @@ export function initAgent() {
     ipcMain.handle('agent:getTaskStatus', async (_event, params) => {
         return goBackend.request('agent.getTaskStatus', params)
     })
+
+    goBackend.on('agent.taskUpdated', (task: any) => {
+        const { BrowserWindow } = require('electron')
+        BrowserWindow.getAllWindows().forEach(w => {
+            w.webContents.send('agent:taskUpdated', task)
+        })
+    })
 }

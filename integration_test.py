@@ -12,6 +12,7 @@ def run_test():
     proc = subprocess.Popen([backend_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
     latencies = []
+    notifications = []
 
     def request(method, params=None, req_id=None):
         if req_id is None:
@@ -28,9 +29,13 @@ def run_test():
                 return None
             if line.startswith('{'):
                 res = json.loads(line)
-                end_time = time.perf_counter()
-                latencies.append((end_time - start_time) * 1000) # ms
-                return res
+                if res.get('id') == req_id:
+                    end_time = time.perf_counter()
+                    latencies.append((end_time - start_time) * 1000) # ms
+                    return res
+                elif 'method' in res:
+                    notifications.append(res)
+                    # print(f"Received Notification: {res['method']}")
 
     # 1. Connectivity & Baseline Latency
     print("Benchmarking Baseline (Ping)...")
@@ -54,30 +59,46 @@ def run_test():
     print(f"Sync Latency (100 items): avg={statistics.mean(latencies):.2f}ms")
     latencies.clear()
 
-    # 3. Concurrency Soak Test
+    # 3. Concurrency Soak Test & Diagnostic
     print("Running Stress Case: Concurrent Agent Tasks...")
     task_ids = []
     for i in range(10):
-        res = request("agent.runTask", {"description": f"Soak Task {i}"})
-        task_ids.append(res['result']['id'])
+        res = request("agent.runTask", {"description": "Environment Diagnostic" if i == 0 else f"Soak Task {i}"})
+        if res and 'result' in res:
+            task_ids.append(res['result']['id'])
+        else:
+            print(f"Failed to start task {i}: {res}")
 
     # Polling stress
     print("Polling status under load...")
     start_soak = time.time()
     completed = 0
+    diagnostic_result = ""
+
     while completed < 10 and (time.time() - start_soak) < 30:
         time.sleep(0.1)
         completed = 0
         for tid in task_ids:
             res = request("agent.getTaskStatus", {"id": tid})
-            if res['result']['status'] == "completed":
-                completed += 1
+            if res and 'result' in res:
+                if res['result']['status'] == "completed":
+                    completed += 1
+                    if res['result']['description'] == "Environment Diagnostic":
+                        diagnostic_result = res['result']['result']
 
     print(f"Soak Test Latency: avg={statistics.mean(latencies):.2f}ms")
     if completed == 10:
         print("✅ Soak Test verified (10/10 tasks completed)")
+        print(f"Diagnostic Result:\n{diagnostic_result}")
     else:
         print(f"❌ Soak Test failed ({completed}/10 tasks completed)")
+
+    # 4. Verify Notifications
+    agent_notifs = [n for n in notifications if n['method'] == 'agent.taskUpdated']
+    if len(agent_notifs) > 0:
+        print(f"✅ Received {len(agent_notifs)} agent notifications")
+    else:
+        print("❌ No agent notifications received")
 
     proc.terminate()
     print("Performance Integration Test Finished.")

@@ -14,9 +14,15 @@ export class AgentStatusComponent {
     ) { }
 
     async ngOnInit () {
-        setInterval(async () => {
-            this.tasks = await this.agent.listTasks()
-        }, 1000)
+        this.tasks = await this.agent.listTasks()
+        this.agent.taskUpdated$.subscribe(task => {
+            const index = this.tasks.findIndex(t => t.id === task.id)
+            if (index !== -1) {
+                this.tasks[index] = task
+            } else {
+                this.tasks.push(task)
+            }
+        })
     }
 
     get runningTasks () {

@@ -7,7 +7,7 @@ import (
 )
 
 func TestManager_RunTask(t *testing.T) {
-	mgr := NewManager()
+	mgr := NewManager(nil)
 	ctx := context.Background()
 
 	task, err := mgr.RunTask(ctx, "Test Task")
@@ -29,7 +29,7 @@ func TestManager_RunTask(t *testing.T) {
 }
 
 func TestManager_GetTask(t *testing.T) {
-	mgr := NewManager()
+	mgr := NewManager(nil)
 	ctx := context.Background()
 
 	task, _ := mgr.RunTask(ctx, "Test Task")
@@ -45,7 +45,7 @@ func TestManager_GetTask(t *testing.T) {
 }
 
 func TestManager_ListTasks(t *testing.T) {
-	mgr := NewManager()
+	mgr := NewManager(nil)
 	ctx := context.Background()
 
 	mgr.RunTask(ctx, "Task 1")
@@ -58,7 +58,7 @@ func TestManager_ListTasks(t *testing.T) {
 }
 
 func TestManager_TaskCompletion(t *testing.T) {
-	mgr := NewManager()
+	mgr := NewManager(nil)
 	ctx := context.Background()
 
 	task, _ := mgr.RunTask(ctx, "Completion Task")

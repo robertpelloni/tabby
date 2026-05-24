@@ -48,6 +48,7 @@ import { HotkeysService } from './services/hotkeys.service'
 import { CustomMissingTranslationHandler, LocaleService, TabbyFormatedDatePipe } from './services/locale.service'
 import { CommandService } from './services/commands.service'
 import { AgentService } from './services/agent.service'
+import { SyncService } from './services/sync.service'
 
 import { NewTheme } from './theme'
 import { CoreConfigProvider } from './config'
@@ -76,6 +77,7 @@ const PROVIDERS = [
     { provide: ProfileProvider, useExisting: SplitLayoutProfilesService, multi: true },
     { provide: CommandProvider, useExisting: CoreCommandProvider, multi: true },
     AgentService,
+    SyncService,
     {
         provide: LOCALE_ID,
         deps: [LocaleService],
