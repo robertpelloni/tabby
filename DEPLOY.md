@@ -88,3 +88,21 @@ git commit -am "chore: release vX.Y.Z"
 git tag vX.Y.Z
 # Git pushing the tags manually omitted here
 ```
+
+## 6. Staging & Performance Monitoring
+Before promoting a build to production, it is recommended to run a staging build and verify performance metrics.
+
+### Building for Staging
+The staging script performs an optimized backend build and runs the full performance benchmark suite before packaging.
+
+```bash
+node scripts/build-staging.mjs
+```
+
+### Performance Baseline
+The Go backend should maintain the following baseline metrics on modern hardware:
+*   **Base RPC Latency (Ping)**: < 1.0ms
+*   **Sync Throughput (100 items)**: < 5.0ms
+*   **Concurrent Load**: Stable response times under 10+ concurrent tasks.
+
+Use `yarn test:integration` to capture these metrics at any time.

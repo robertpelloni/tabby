@@ -102,7 +102,7 @@
   },
   "scripts": {
     "build": "npm run build:typings && npm run build:go && node scripts/build-modules.mjs",
-    "build:go": "cd tabby-go && go build -o ../build/tabby-backend ./cmd/tabby-backend/main.go",
+    "build:go": "cd tabby-go && go build -ldflags=\"-s -w\" -o ../build/tabby-backend ./cmd/tabby-backend/main.go",
     "build:typings": "node scripts/build-typings.mjs",
     "test": "npm run test:go && npm run test:integration",
     "test:go": "cd tabby-go && go test -mod=vendor ./...",
