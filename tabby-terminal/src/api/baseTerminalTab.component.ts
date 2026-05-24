@@ -378,6 +378,10 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
             'xterm-webgl': XTermWebGLFrontend,
             'block': BlockFrontend,
         }[this.config.store.terminal.frontend] ?? XTermFrontend
+
+        if (this.config.store.terminal.frontend === 'block') {
+            this.config.store.terminal.useBlockFrontend = true
+        }
         this.frontend = new cls(this.injector)
 
         this.frontendReady$.pipe(first()).subscribe(() => {
