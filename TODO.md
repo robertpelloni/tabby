@@ -14,11 +14,11 @@
   - Implement Multi-cursor editing (`Alt+Click`, `Cmd+D`).
   - Implement Intelligent fuzzy-search Tab completion.
   - Implement Real-time syntax highlighting and error validation (red squiggles).
-- [ ] **Block Actions UI**:
-  - Implement Copy command / Copy output for a specific block.
-  - Implement Filtering/searching within a block.
-  - Implement Generating shareable web links for a block.
-  - Implement Keyboard navigation between blocks.
+- [x] **Block Actions UI**:
+  - Implement Copy command / Copy output for a specific block. ✅
+  - Implement Filtering/searching within a block. ✅
+  - Implement Generating shareable web links for a block. ✅
+  - Implement Keyboard navigation between blocks. ✅
 - [x] **Rich Widget Blocks (WaveTerm)**:
   - Add logic to intercept specific OSC codes from the `tabby-go` backend that tell the frontend to render the next block as Markdown, an Image, or a Code Editor buffer.
 

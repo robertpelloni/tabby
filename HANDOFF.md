@@ -8,6 +8,7 @@ The project is currently at version **v1.0.231-nightly.19**.
 *   **Agent RPC Integration:** Registered `agent.runTask`, `agent.listTasks`, and `agent.getTaskStatus` JSON-RPC 2.0 methods in the Go server, enabling the Electron frontend to drive backend-level automation.
 *   **Block Output Parsing:** Implemented heuristic shell prompt detection in `BlockFrontend` to automatically partition terminal output into discrete, actionable blocks.
 *   **Agent Management UI:** Integrated `AgentService` and `AgentStatusComponent` into the frontend, providing a real-time status tracker and progress indicator for autonomous backend tasks in the main toolbar.
+*   **Block Actions:** Enhanced `BlockFrontend` with a comprehensive set of block-level actions: copy command, copy output, integrated search/filtering, and shareable link generation. Implemented `Ctrl+Arrow` navigation for cycling through blocks.
 *   **Command Catalog:** Built the `CommandCatalogModalComponent` UI to allow users to search and apply parameterized workflows synced from the cloud backend.
 *   **Warp Drive Parity (Cloud Sync):** Built out the Angular frontend service `SyncService` in `tabby-core`. This service exposes `push()` and `pull()` commands which forward payloads across the `ipcRenderer` border to the `tabby-go` daemon's `sync.push` and `sync.pull` JSON-RPC targets.
 *   **API Export:** Exposed the `SyncService` cleanly via `tabby-core/src/index.ts` so plugins (like the upcoming Workflow catalog) can depend on it natively.
