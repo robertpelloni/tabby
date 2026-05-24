@@ -23,7 +23,7 @@ export class AgentService {
     async runTask (description: string): Promise<AgentTask | null> {
         try {
             const ipc = window['require']('electron').ipcRenderer
-            const result = await ipc.invoke('agent.runTask', { description })
+            const result = await ipc.invoke('agent:runTask', { description })
             this.logger.info(`Started task ${result.id}: ${description}`)
             return result
         } catch (e) {
@@ -35,7 +35,7 @@ export class AgentService {
     async listTasks (): Promise<AgentTask[]> {
         try {
             const ipc = window['require']('electron').ipcRenderer
-            const result = await ipc.invoke('agent.listTasks')
+            const result = await ipc.invoke('agent:listTasks')
             return result
         } catch (e) {
             this.logger.error('Failed to list agent tasks', e)
@@ -46,7 +46,7 @@ export class AgentService {
     async getTaskStatus (id: string): Promise<AgentTask | null> {
         try {
             const ipc = window['require']('electron').ipcRenderer
-            const result = await ipc.invoke('agent.getTaskStatus', { id })
+            const result = await ipc.invoke('agent:getTaskStatus', { id })
             return result
         } catch (e) {
             this.logger.error(`Failed to get status for task ${id}`, e)

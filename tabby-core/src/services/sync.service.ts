@@ -22,7 +22,7 @@ export class SyncService {
     async push (data: SyncData): Promise<boolean> {
         try {
             const ipc = window['require']('electron').ipcRenderer
-            const result = await ipc.invoke('sync.push', { data })
+            const result = await ipc.invoke('sync:push', { data })
             this.logger.info('Pushed sync data', result)
             return result.success
         } catch (e) {
@@ -34,7 +34,7 @@ export class SyncService {
     async pull (): Promise<SyncData | null> {
         try {
             const ipc = window['require']('electron').ipcRenderer
-            const result = await ipc.invoke('sync.pull')
+            const result = await ipc.invoke('sync:pull')
             this.logger.info('Pulled sync data', result)
             return result.data
         } catch (e) {

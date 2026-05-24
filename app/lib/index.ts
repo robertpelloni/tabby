@@ -16,6 +16,8 @@ import './lru'
 import { parseArgs } from './cli'
 import { initSSH } from './ssh'
 import { initAI } from './ai'
+import { initAgent } from './agent'
+import { initSync } from './sync'
 import { Application } from './app'
 import electronDebug from 'electron-debug'
 import { loadConfig } from './config'
@@ -37,6 +39,8 @@ process.mainModule = module
 
     initSSH()
     initAI()
+    initAgent()
+    initSync()
 const application = new Application(configStore)
 
 // Register tabby:// URL scheme
