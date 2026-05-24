@@ -9,7 +9,6 @@ import TabbyCorePlugin, { ConfigProvider, HotkeyProvider, TabContextMenuItemProv
 import { SettingsTabProvider } from 'tabby-settings'
 
 import { AppearanceSettingsTabComponent } from './components/appearanceSettingsTab.component'
-import { CommandCatalogModalComponent } from './components/commandCatalogModal.component'
 import { ColorSchemeSettingsTabComponent } from './components/colorSchemeSettingsTab.component'
 import { TerminalSettingsTabComponent } from './components/terminalSettingsTab.component'
 import { ColorPickerComponent } from './components/colorPicker.component'
@@ -74,7 +73,6 @@ import { DefaultColorSchemes } from './colorSchemes'
         ColorSchemeSelectorComponent,
         AppearanceSettingsTabComponent,
         ColorSchemeSettingsTabComponent,
-        CommandCatalogModalComponent,
         TerminalSettingsTabComponent,
         SearchPanelComponent,
         StreamProcessingSettingsComponent,

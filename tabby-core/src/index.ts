@@ -75,6 +75,7 @@ const PROVIDERS = [
     { provide: FileProvider, useClass: VaultFileProvider, multi: true },
     { provide: ProfileProvider, useExisting: SplitLayoutProfilesService, multi: true },
     { provide: CommandProvider, useExisting: CoreCommandProvider, multi: true },
+    AgentService,
     {
         provide: LOCALE_ID,
         deps: [LocaleService],
