@@ -1,6 +1,6 @@
 module github.com/robertpelloni/tabby/tabby-go
 
-go 1.26.0
+go 1.25
 
 require (
 	github.com/BurntSushi/toml v1.6.0

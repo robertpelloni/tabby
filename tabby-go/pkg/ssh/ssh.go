@@ -147,10 +147,11 @@ func (m *Manager) Connect(params api.SSHConnectParams) (*api.SSHConnectionResult
 	}
 
 	// Determine target address
-	addr := fmt.Sprintf("%s:%d", params.Host, params.Port)
-	if params.Port == 0 {
-		addr = fmt.Sprintf("%s:22", params.Host)
+	port := params.Port
+	if port == 0 {
+		port = 22
 	}
+	addr := net.JoinHostPort(params.Host, fmt.Sprintf("%d", port))
 
 	// Connect via the appropriate transport
 	var client *ssh.Client
@@ -162,10 +163,10 @@ func (m *Manager) Connect(params api.SSHConnectParams) (*api.SSHConnectionResult
 		m.sendServiceMessage(params.Host, "Using proxy command: "+params.ProxyCommand)
 		client, err = m.connectViaProxyCommand(params.ProxyCommand, addr, config)
 	case params.SocksProxyHost != "":
-		m.sendServiceMessage(params.Host, fmt.Sprintf("Using SOCKS proxy: %s:%d", params.SocksProxyHost, params.SocksProxyPort))
+		m.sendServiceMessage(params.Host, fmt.Sprintf("Using SOCKS proxy: %s", net.JoinHostPort(params.SocksProxyHost, fmt.Sprintf("%d", params.SocksProxyPort))))
 		client, err = m.connectViaSocksProxy(params.SocksProxyHost, params.SocksProxyPort, addr, config)
 	case params.HTTPProxyHost != "":
-		m.sendServiceMessage(params.Host, fmt.Sprintf("Using HTTP proxy: %s:%d", params.HTTPProxyHost, params.HTTPProxyPort))
+		m.sendServiceMessage(params.Host, fmt.Sprintf("Using HTTP proxy: %s", net.JoinHostPort(params.HTTPProxyHost, fmt.Sprintf("%d", params.HTTPProxyPort))))
 		client, err = m.connectViaHTTPProxy(params.HTTPProxyHost, params.HTTPProxyPort, addr, config)
 	default:
 		client, err = ssh.Dial("tcp", addr, config)
@@ -209,9 +210,25 @@ func (m *Manager) Connect(params api.SSHConnectParams) (*api.SSHConnectionResult
 		ServerVersion: conn.ServerVer,
 		RemoteAddress: addr,
 		Banner:        banner,
+		JumpChain:     m.buildJumpChain(params),
 	}
 
 	return result, nil
+}
+
+// buildJumpChain returns a list of hostnames in the jump chain
+func (m *Manager) buildJumpChain(params api.SSHConnectParams) []string {
+	var chain []string
+	curr := &params
+	for curr != nil {
+		chain = append(chain, curr.Host)
+		curr = curr.JumpHost
+	}
+	// Reverse to show jump1 -> jump2 -> target
+	for i, j := 0, len(chain)-1; i < j; i, j = i+1, j-1 {
+		chain[i], chain[j] = chain[j], chain[i]
+	}
+	return chain
 }
 
 // StartShell opens a shell session on an existing connection
@@ -531,7 +548,7 @@ func (m *Manager) ListForwards(connectionID string) []api.PortForwardInfo {
 
 // startLocalForward starts a local port forward (local -> remote)
 func (m *Manager) startLocalForward(conn *Connection, fwd *Forward) error {
-	listenAddr := fmt.Sprintf("%s:%d", fwd.Host, fwd.Port)
+	listenAddr := net.JoinHostPort(fwd.Host, fmt.Sprintf("%d", fwd.Port))
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		return fmt.Errorf("failed to listen on %s: %w", listenAddr, err)
@@ -559,13 +576,12 @@ func (m *Manager) startLocalForward(conn *Connection, fwd *Forward) error {
 }
 
 func (m *Manager) handleLocalForwardConn(conn *Connection, fwd *Forward, localConn net.Conn) {
-	targetAddr := fwd.TargetAddr
-	targetPort := fwd.TargetPort
+	targetAddr := net.JoinHostPort(fwd.TargetAddr, fmt.Sprintf("%d", fwd.TargetPort))
 
 	// Open a channel to the remote SSH server
-	remoteConn, err := conn.Client.Dial("tcp", fmt.Sprintf("%s:%d", targetAddr, targetPort))
+	remoteConn, err := conn.Client.Dial("tcp", targetAddr)
 	if err != nil {
-		m.sendServiceMessage(conn.ID, fmt.Sprintf("Could not forward to %s:%d: %v", targetAddr, targetPort, err))
+		m.sendServiceMessage(conn.ID, fmt.Sprintf("Could not forward to %s: %v", targetAddr, err))
 		localConn.Close()
 		return
 	}
@@ -577,7 +593,7 @@ func (m *Manager) handleLocalForwardConn(conn *Connection, fwd *Forward, localCo
 
 // startRemoteForward starts a remote port forward (remote -> local)
 func (m *Manager) startRemoteForward(conn *Connection, fwd *Forward) error {
-	remoteAddr := fmt.Sprintf("%s:%d", fwd.Host, fwd.Port)
+	remoteAddr := net.JoinHostPort(fwd.Host, fmt.Sprintf("%d", fwd.Port))
 	listener, err := conn.Client.Listen("tcp", remoteAddr)
 	if err != nil {
 		return fmt.Errorf("failed to listen on remote %s: %w", remoteAddr, err)
@@ -597,7 +613,7 @@ func (m *Manager) startRemoteForward(conn *Connection, fwd *Forward) error {
 				}
 			}
 
-			localAddr := fmt.Sprintf("%s:%d", fwd.TargetAddr, fwd.TargetPort)
+			localAddr := net.JoinHostPort(fwd.TargetAddr, fmt.Sprintf("%d", fwd.TargetPort))
 			localConn, err := net.Dial("tcp", localAddr)
 			if err != nil {
 				m.sendServiceMessage(conn.ID, fmt.Sprintf("Could not connect to local %s: %v", localAddr, err))
@@ -615,7 +631,7 @@ func (m *Manager) startRemoteForward(conn *Connection, fwd *Forward) error {
 
 // startDynamicForward starts a dynamic (SOCKS5) port forward
 func (m *Manager) startDynamicForward(conn *Connection, fwd *Forward) error {
-	listenAddr := fmt.Sprintf("%s:%d", fwd.Host, fwd.Port)
+	listenAddr := net.JoinHostPort(fwd.Host, fmt.Sprintf("%d", fwd.Port))
 	listener, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		return fmt.Errorf("failed to listen on %s: %w", listenAddr, err)
@@ -703,7 +719,7 @@ func (m *Manager) handleSOCKS5Conn(conn *Connection, localConn net.Conn) {
 	}
 
 	// Connect through SSH
-	remoteConn, err := conn.Client.Dial("tcp", fmt.Sprintf("%s:%d", targetAddr, targetPort))
+	remoteConn, err := conn.Client.Dial("tcp", net.JoinHostPort(targetAddr, fmt.Sprintf("%d", targetPort)))
 	if err != nil {
 		localConn.Write([]byte{0x05, 0x05, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
 		return
@@ -980,10 +996,11 @@ func (m *Manager) connectViaJump(jumpParams *api.SSHConnectParams, targetAddr st
 		return nil, fmt.Errorf("failed to build jump host config: %w", err)
 	}
 
-	jumpAddr := fmt.Sprintf("%s:%d", jumpParams.Host, jumpParams.Port)
-	if jumpParams.Port == 0 {
-		jumpAddr = fmt.Sprintf("%s:22", jumpParams.Host)
+	jumpPort := jumpParams.Port
+	if jumpPort == 0 {
+		jumpPort = 22
 	}
+	jumpAddr := net.JoinHostPort(jumpParams.Host, fmt.Sprintf("%d", jumpPort))
 
 	// 2. Connect to the jump host (handling recursive chains natively)
 	var jumpClient *ssh.Client
@@ -1057,7 +1074,7 @@ func (m *Manager) connectViaProxyCommand(proxyCmd string, targetAddr string, con
 
 // connectViaSocksProxy connects through a SOCKS5 proxy
 func (m *Manager) connectViaSocksProxy(proxyHost string, proxyPort int, targetAddr string, config *ssh.ClientConfig) (*ssh.Client, error) {
-	proxyAddr := fmt.Sprintf("%s:%d", proxyHost, proxyPort)
+	proxyAddr := net.JoinHostPort(proxyHost, fmt.Sprintf("%d", proxyPort))
 	conn, err := net.Dial("tcp", proxyAddr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SOCKS proxy: %w", err)
@@ -1095,7 +1112,7 @@ func (m *Manager) connectViaSocksProxy(proxyHost string, proxyPort int, targetAd
 
 // connectViaHTTPProxy connects through an HTTP CONNECT proxy
 func (m *Manager) connectViaHTTPProxy(proxyHost string, proxyPort int, targetAddr string, config *ssh.ClientConfig) (*ssh.Client, error) {
-	proxyAddr := fmt.Sprintf("%s:%d", proxyHost, proxyPort)
+	proxyAddr := net.JoinHostPort(proxyHost, fmt.Sprintf("%d", proxyPort))
 	conn, err := net.Dial("tcp", proxyAddr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to HTTP proxy: %w", err)
@@ -1228,7 +1245,7 @@ func (m *Manager) handleX11Channel(connID string, newChannel ssh.NewChannel) {
 		port = 6000 + d
 	}
 
-	xConn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", xHost, port))
+	xConn, err := net.Dial("tcp", net.JoinHostPort(xHost, fmt.Sprintf("%d", port)))
 	if err != nil {
 		m.sendServiceMessage(connID, fmt.Sprintf("Could not connect to X server: %v", err))
 		ch.Close()

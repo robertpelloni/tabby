@@ -138,6 +138,7 @@ type SSHConnectionResult struct {
 	RemoteAddress string   `json:"remoteAddress"`
 	Banner        string   `json:"banner,omitempty"`
 	AuthMethods   []string `json:"authMethods"`
+	JumpChain     []string `json:"jumpChain,omitempty"`
 }
 
 // SSHSessionResult is returned after starting a shell session
