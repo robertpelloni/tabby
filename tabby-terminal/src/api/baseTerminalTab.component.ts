@@ -8,7 +8,7 @@ import { AppService, ConfigService, BaseTabComponent, HostAppService, HotkeysSer
 
 import { BaseSession } from '../session'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
-import { CommandCatalogModalComponent } from '../components/commandCatalogModal.component'
+import { CommandCatalogModalComponent } from 'tabby-core'
 
 import { Frontend } from '../frontends/frontend'
 import { XTermFrontend, XTermWebGLFrontend } from '../frontends/xtermFrontend'
