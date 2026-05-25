@@ -138,7 +138,7 @@ type SSHConnectionResult struct {
 	RemoteAddress string   `json:"remoteAddress"`
 	Banner        string   `json:"banner,omitempty"`
 	AuthMethods   []string `json:"authMethods"`
-	JumpChain     []string `json:"jumpChain,omitempty"` // Ordered list of jump host identifiers (e.g. ["bastion1", "bastion2"])
+	JumpChain     []string `json:"jumpChain,omitempty"`
 }
 
 // SSHSessionResult is returned after starting a shell session
@@ -310,7 +310,6 @@ type SFTPDownloadParams struct {
 	SessionID  string `json:"sessionId"`
 	RemotePath string `json:"remotePath"`
 	LocalPath  string `json:"localPath"`
-	TransferID string `json:"transferId,omitempty"`
 }
 
 // SFTPUploadParams uploads a file
@@ -318,14 +317,11 @@ type SFTPUploadParams struct {
 	SessionID  string `json:"sessionId"`
 	LocalPath  string `json:"localPath"`
 	RemotePath string `json:"remotePath"`
-	TransferID string `json:"transferId,omitempty"`
-	Data       string `json:"data,omitempty"` // Base64-encoded fallback
 }
 
 // SFTPTransferResult is returned after a file transfer
 type SFTPTransferResult struct {
-	BytesTransferred int64  `json:"bytesTransferred"`
-	Data             string `json:"data,omitempty"` // Base64-encoded for Download fallback
+	BytesTransferred int64 `json:"bytesTransferred"`
 }
 
 // SFTPChmodParams changes file permissions
@@ -420,6 +416,18 @@ type Prompt struct {
 type BannerNotification struct {
 	ConnectionID string `json:"connectionId"`
 	Message      string `json:"message"`
+}
+
+// ---- Agent API Types ----
+
+// AgentRunTaskParams contains parameters for starting an agent task
+type AgentRunTaskParams struct {
+	Description string `json:"description"`
+}
+
+// AgentGetTaskStatusParams contains parameters for getting a task's status
+type AgentGetTaskStatusParams struct {
+	ID string `json:"id"`
 }
 
 // PortForwardEventNotification is sent when a port forward connection event occurs

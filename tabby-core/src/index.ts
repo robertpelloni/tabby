@@ -22,6 +22,7 @@ import { ToggleComponent } from './components/toggle.component'
 import { WindowControlsComponent } from './components/windowControls.component'
 import { RenameTabModalComponent } from './components/renameTabModal.component'
 import { SelectorModalComponent } from './components/selectorModal.component'
+import { CommandCatalogModalComponent } from './components/commandCatalogModal.component'
 import { SplitTabComponent, SplitTabRecoveryProvider } from './components/splitTab.component'
 import { SplitTabSpannerComponent } from './components/splitTabSpanner.component'
 import { SplitTabDropZoneComponent } from './components/splitTabDropZone.component'
@@ -30,6 +31,7 @@ import { UnlockVaultModalComponent } from './components/unlockVaultModal.compone
 import { WelcomeTabComponent } from './components/welcomeTab.component'
 import { TransfersMenuComponent } from './components/transfersMenu.component'
 import { ProfileIconComponent } from './components/profileIcon.component'
+import { AgentStatusComponent } from './components/agentStatus.component'
 
 import { AutofocusDirective } from './directives/autofocus.directive'
 import { AlwaysVisibleTypeaheadDirective } from './directives/alwaysVisibleTypeahead.directive'
@@ -45,6 +47,8 @@ import { VaultFileProvider } from './services/vault.service'
 import { HotkeysService } from './services/hotkeys.service'
 import { CustomMissingTranslationHandler, LocaleService, TabbyFormatedDatePipe } from './services/locale.service'
 import { CommandService } from './services/commands.service'
+import { AgentService } from './services/agent.service'
+import { SyncService } from './services/sync.service'
 
 import { NewTheme } from './theme'
 import { CoreConfigProvider } from './config'
@@ -72,6 +76,8 @@ const PROVIDERS = [
     { provide: FileProvider, useClass: VaultFileProvider, multi: true },
     { provide: ProfileProvider, useExisting: SplitLayoutProfilesService, multi: true },
     { provide: CommandProvider, useExisting: CoreCommandProvider, multi: true },
+    AgentService,
+    SyncService,
     {
         provide: LOCALE_ID,
         deps: [LocaleService],
@@ -120,6 +126,7 @@ const PROVIDERS = [
         FastHtmlBindDirective,
         AlwaysVisibleTypeaheadDirective,
         SelectorModalComponent,
+        CommandCatalogModalComponent,
         SplitTabComponent,
         SplitTabSpannerComponent,
         SplitTabDropZoneComponent,
@@ -130,6 +137,7 @@ const PROVIDERS = [
         DropZoneDirective,
         CdkAutoDropGroup,
         ProfileIconComponent,
+        AgentStatusComponent,
         TabbyFormatedDatePipe,
     ],
     exports: [
@@ -268,6 +276,7 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
 export { AppRootComponent as bootstrap }
 export * from './api'
 export { AppHotkeyProvider }
+export { CommandCatalogModalComponent } from './components/commandCatalogModal.component'
 
 // Deprecations
 export { ToolbarButton as IToolbarButton } from './api'

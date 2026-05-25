@@ -15,7 +15,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"strconv"
 	"sync"
 	"time"
 
@@ -99,10 +98,11 @@ type TelnetConnectResult struct {
 
 // Connect establishes a new Telnet connection
 func (m *Manager) Connect(params TelnetConnectParams) (*TelnetConnectResult, error) {
-	addr := net.JoinHostPort(params.Host, strconv.Itoa(params.Port))
-	if params.Port == 0 {
-		addr = fmt.Sprintf("%s:23", params.Host)
+	port := params.Port
+	if port == 0 {
+		port = 23
 	}
+	addr := net.JoinHostPort(params.Host, fmt.Sprintf("%d", port))
 
 	conn, err := net.DialTimeout("tcp", addr, 30*time.Second)
 	if err != nil {

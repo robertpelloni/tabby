@@ -72,6 +72,13 @@ ansi-styles@^4.1.0:
   dependencies:
     color-convert "^2.0.1"
 
+ansi-to-html@^0.7.2:
+  version "0.7.2"
+  resolved "https://registry.yarnpkg.com/ansi-to-html/-/ansi-to-html-0.7.2.tgz#a92c149e4184b571eb29a0135ca001a8e2d710cb"
+  integrity sha512-v6MqmEpNlxF+POuyhKkidusCHWWkaLcGRURzivcU3I9tv7k4JVhFcnukrM5Rlk2rUywdZuzYAZ+kbZqWCnfN3g==
+  dependencies:
+    entities "^2.2.0"
+
 balanced-match@^1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.2.tgz#e83e3a7e3f300b34cb9d87f615fa0cbf357690ee"
@@ -160,6 +167,11 @@ dataurl@0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/dataurl/-/dataurl-0.1.0.tgz#1f4734feddec05ffe445747978d86759c4b33199"
   integrity sha1-H0c0/t3sBf/kRXR5eNhnWcSzMZk=
+
+entities@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/entities/-/entities-2.2.0.tgz#098dc90ebb83d8dffa089d55256b351d34c4da55"
+  integrity sha512-p92if5Nz619I0w+akJrLZH0MX0Pb5DX39XOwQTtXSdQQOaYH03S1uIQp4mhOZtAXrxq4ViO67YTiLBo2638o9A==
 
 exit-on-epipe@~1.0.1:
   version "1.0.1"

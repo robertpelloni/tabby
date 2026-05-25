@@ -23,5 +23,10 @@ export class ElectronConfigProvider extends ConfigProvider {
         },
     }
 
-    defaults = {}
+    defaults = {
+        goBackend: {
+            enabled: false,
+            binaryPath: null,
+        },
+    }
 }

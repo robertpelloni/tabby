@@ -386,10 +386,6 @@ class ElectronFileUpload extends FileUpload {
         return path.basename(this.filePath)
     }
 
-    getFilePath (): string|null {
-        return this.filePath
-    }
-
     getMode (): number {
         return this.mode
     }
@@ -434,10 +430,6 @@ class ElectronFileDownload extends FileDownload {
 
     getName (): string {
         return path.basename(this.filePath)
-    }
-
-    getFilePath (): string|null {
-        return this.filePath
     }
 
     getSize (): number {

@@ -1,0 +1,21 @@
+.dropdown(n-dropdown)
+    button.btn.btn-sm.btn-link.dropdown-toggle(type="button", [title]="'Autonomous Agent Tasks'|translate")
+        i.fas.fa-robot
+        .badge.bg-primary.ms-1(*ngIf="runningTasks.length > 0") {{runningTasks.length}}
+
+    .dropdown-menu.dropdown-menu-end
+        .dropdown-header(translate) Autonomous Tasks
+        .dropdown-divider(*ngIf="tasks.length === 0")
+        .dropdown-item-text.text-muted(*ngIf="tasks.length === 0", translate) No tasks running
+
+        button.dropdown-item(
+            *ngFor="let task of tasks",
+            [class.active]="task.status === 'running'"
+        )
+            .d-flex.w-100.justify-content-between
+                strong {{task.description}}
+                small.text-muted {{task.status}}
+            .progress.mt-1(style="height: 4px;")
+                .progress-bar([style.width.%]="task.progress * 100")
+            small.text-muted(*ngIf="task.result") {{task.result}}
+            small.text-danger(*ngIf="task.error") {{task.error}}

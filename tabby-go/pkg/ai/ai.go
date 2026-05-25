@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 type Manager struct{}
@@ -192,7 +193,8 @@ I couldn't identify the exact cause of this error. Please review the output abov
 }
 
 type ChatParams struct {
-	Message string `json:"message"`
+	Message  string    `json:"message,omitempty"`
+	Messages []openAIMsg `json:"messages,omitempty"`
 }
 
 type ChatResult struct {
@@ -200,21 +202,37 @@ type ChatResult struct {
 }
 
 func (m *Manager) Chat(params ChatParams) (*ChatResult, error) {
-	msg := strings.ToLower(params.Message)
-	var response string
+	// Attempt OpenAI first
+	if os.Getenv("OPENAI_API_KEY") != "" {
+		sysPrompt := "You are Tabby AI, a helpful terminal assistant. Provide concise answers and use Markdown for formatting."
+		var userPrompt string
+		if len(params.Messages) > 0 {
+			// In a real implementation we would send the full history.
+			// For this stub, we just send the last message content.
+			userPrompt = params.Messages[len(params.Messages)-1].Content
+		} else {
+			userPrompt = params.Message
+		}
 
+		resp, err := callOpenAI(sysPrompt, userPrompt)
+		if err == nil {
+			return &ChatResult{Response: resp}, nil
+		}
+	}
+
+	msg := strings.ToLower(params.Message)
+	if len(params.Messages) > 0 {
+		msg = strings.ToLower(params.Messages[len(params.Messages)-1].Content)
+	}
+
+	var response string
 	if strings.Contains(msg, "hello") || strings.Contains(msg, "hi") {
 		response = "Hello! I am Tabby AI. How can I help you manage your terminal session?"
 	} else if strings.Contains(msg, "help") {
 		response = "I can help you generate shell commands, explain errors, or manage your workflows. Just ask!"
-	} else if strings.Contains(msg, "clear") {
-		response = "If you want to clear your terminal screen, you can type `clear` or press `Ctrl+L`."
 	} else {
-		// Mock response for other inputs
-		response = fmt.Sprintf("You said: '%s'. I am currently a mock AI agent, but in the future I will be able to help you with that!", params.Message)
+		response = "I am currently in mock mode. Set OPENAI_API_KEY to enable full chat capabilities!"
 	}
 
-	return &ChatResult{
-		Response: response,
-	}, nil
+	return &ChatResult{Response: response}, nil
 }

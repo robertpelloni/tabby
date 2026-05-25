@@ -1,175 +1,233 @@
-# Tabby Go
+# tabby-go — Tabby Go Backend
 
-A modern, native terminal emulator built with Go (Wails) + xterm.js, replacing the original Electron-based Tabby architecture for improved performance and reduced resource usage.
+Go-based backend for Tabby terminal emulator, providing performance-critical native functionality via a JSON-RPC 2.0 interface.
+
+## Status
+
+**Active Development** — SSH, SFTP, PTY, Serial, Port Forwarding, BTK native UI integration.
 
 ## Architecture
 
-| Component | Technology |
-|-----------|-----------|
-| Backend | Go (Wails v2) |
-| Terminal | xterm.js 5.x with addons |
-| Frontend | Vanilla JS + CSS |
-| Bindings | 68 Wails RPC methods |
-| Config | TOML-based settings |
+```
+┌──────────────────────────────────────────────┐
+│         Electron / TypeScript Frontend        │
+│         or BTK Native UI (future)             │
+├──────────────────────────────────────────────┤
+│        JSON-RPC 2.0 over stdin/stdout         │
+│               (40+ methods)                   │
+├──────────────────────────────────────────────┤
+│              Go Backend                       │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
+│  │ SSH Mgr  │  │ SFTP Mgr │  │ PTY Mgr  │   │
+│  │ • shells │  │ • list   │  │ • spawn  │   │
+│  │ • auth   │  │ • upload │  │ • resize │   │
+│  │ • jumps  │  │ • down   │  │ • kill   │   │
+│  │ • fwd    │  │ • chmod  │  └──────────┘   │
+│  │ • x11    │  │ • sym    │                  │
+│  │ • proxy  │  │ • mkdir  │  ┌──────────┐   │
+│  └──────────┘  └──────────┘  │Serial Mgr│   │
+│                               │ • open   │   │
+│  ┌──────────┐                 │ • write  │   │
+│  │ BTK UI   │                 │ • close  │   │
+│  │ (CGo)    │                 └──────────┘   │
+│  └──────────┘                                 │
+└──────────────────────────────────────────────┘
+```
 
-## Go Packages (17 tested)
+## Building
 
-| Package | Description |
-|---------|-------------|
-| `pkg/ssh` | SSH client with password/key/agent/keyboard-interactive auth |
-| `pkg/sftp` | SFTP client with 17 operations |
-| `pkg/telnet` | Telnet client with NAWS resize |
-| `pkg/serial` | Serial port communication |
-| `pkg/pty` | Cross-platform PTY (ConPTY/Unix) |
-| `pkg/vault` | AES-256-CBC encrypted credential storage |
-| `pkg/keychain` | OS keychain integration with vault fallback |
-| `pkg/profile` | Connection profile management |
-| `pkg/session` | Session persistence and recovery |
-| `pkg/settings` | TOML configuration management |
-| `pkg/config` | Application configuration |
-| `pkg/audit` | Connection audit logging with rotation |
-| `pkg/updater` | GitHub releases update checker |
-| `pkg/notification` | System notification backend |
-| `pkg/hotkey` | Global hotkey registration |
-| `pkg/knownhosts` | SSH known hosts management |
-| `pkg/colorscheme` | Color scheme definitions |
-| `pkg/recovery` | Crash recovery mechanisms |
-| `pkg/api` | JSON-RPC API layer |
-| `pkg/middleware` | RPC middleware |
+```bash
+cd tabby-go
 
-## Connection Types
+# Build the JSON-RPC backend (pure Go, no CGo)
+go build -mod=mod -o ../build/tabby-backend ./cmd/tabby-backend
 
-- **Local Shell**: PTY (ConPTY on Windows, `creack/pty` on Unix), multi-shell, reconnect
-- **SSH**: Password/key/agent/keyboard-interactive auth, jump hosts, ProxyJump, keepalive, timeout, agent forwarding, passphrase
-- **Serial Port**: Configurable baud rate, data bits, stop bits, parity
-- **Telnet**: Full protocol support, NAWS resize, reconnect
+# Run tests
+go test -mod=mod ./...
+```
+
+## Running
+
+The backend is designed to be spawned by Electron as a child process:
+
+```bash
+# stdio mode (default) — used by Electron
+tabby-backend
+
+# Check version
+tabby-backend --version
+```
+
+## JSON-RPC API (40+ methods)
+
+### Lifecycle
+| Method | Description |
+|--------|-------------|
+| `ping` | Health check with version info |
+
+### SSH
+| Method | Description |
+|--------|-------------|
+| `ssh.connect` | Connect to SSH server |
+| `ssh.startShell` | Start shell session |
+| `ssh.resize` | Resize terminal |
+| `ssh.write` | Write data to session |
+| `ssh.close` | Close session/connection |
+| `ssh.listConnections` | List active connections |
+
+### SSH Port Forwarding
+| Method | Description |
+|--------|-------------|
+| `ssh.addForward` | Add port forward (local/remote/dynamic) |
+| `ssh.removeForward` | Remove port forward |
+| `ssh.listForwards` | List active port forwards |
+
+### SSH Authentication
+| Method | Description |
+|--------|-------------|
+| `ssh.verifyHostKey` | Accept/reject host key prompt |
+| `ssh.keyboardInteractiveResp` | Respond to keyboard-interactive auth |
+
+### SFTP
+| Method | Description |
+|--------|-------------|
+| `sftp.open` | Open SFTP session |
+| `sftp.list` | List directory contents |
+| `sftp.readDir` | List directory with symlink info |
+| `sftp.download` | Download file |
+| `sftp.upload` | Upload file |
+| `sftp.delete` | Delete file/directory |
+| `sftp.rename` | Rename file/directory |
+| `sftp.mkdir` | Create directory |
+| `sftp.mkdirAll` | Create directory tree |
+| `sftp.stat` | Get file info |
+| `sftp.lstat` | Get file info (no follow symlinks) |
+| `sftp.chmod` | Change file permissions |
+| `sftp.readlink` | Read symbolic link target |
+| `sftp.symlink` | Create symbolic link |
+| `sftp.rmdir` | Remove directory |
+| `sftp.close` | Close SFTP session |
+
+### PTY
+| Method | Description |
+|--------|-------------|
+| `pty.spawn` | Spawn local PTY |
+| `pty.resize` | Resize PTY |
+| `pty.write` | Write data |
+| `pty.kill` | Kill process |
+
+### Serial
+| Method | Description |
+|--------|-------------|
+| `serial.open` | Open serial port |
+| `serial.write` | Write data |
+| `serial.close` | Close port |
+| `serial.listPorts` | List available ports |
+
+### Notifications (server → client)
+
+| Method | Description |
+|--------|-------------|
+| `ssh.data` | Data received from SSH/PTY/serial session |
+| `ssh.exit` | Session exited |
+| `pty.data` / `pty.exit` | PTY data/exit |
+| `serial.data` / `serial.exit` | Serial data/exit |
+| `ssh.banner` | SSH server banner |
+| `ssh.hostKeyPrompt` | Host key verification prompt |
+| `ssh.keyboardInteractive` | Keyboard-interactive auth prompt |
+| `ssh.serviceMessage` | Informational message |
+| `ssh.portForwardEvent` | Port forward connection event |
 
 ## SSH Features
 
-- SFTP browser with 17 operations + drag & drop upload + directory picker downloads
-- Port forwarding (local/remote/dynamic SOCKS5)
-- Jump Host chain with ProxyJump support
-- Login scripts (auto-run on connect)
-- Host key verification dialog
-- SSH config import from `~/.ssh/config`
-- Key passphrase support
-- Agent forwarding toggle
-- Keepalive & timeout configuration
-- Keyboard-interactive auth with inline password dialog
+### Authentication Methods
+- **Password**: Direct password authentication
+- **Public Key**: Private key file or inline key data
+- **Agent**: SSH agent (Unix socket / Windows named pipe / Pageant)
+- **Keyboard-Interactive**: Interactive challenge-response with client-side forwarding
+- **None**: No authentication (testing)
 
-## Terminal & UI
+### Connection Methods
+- Direct TCP connection
+- Jump host / proxy jump (supports nested chains)
+- Proxy command (e.g., `nc %h %p`)
+- SOCKS5 proxy
+- HTTP CONNECT proxy
 
-- **Tab Management**: Status indicators, color labels, badge notifications, drag-and-drop reordering
-- **Split Pane**: Vertical/horizontal with auto-resize during drag
-- **Command Palette**: 38+ commands (Ctrl+Shift+P)
-- **Terminal Context Menu**: Copy/Paste/Search Web/Clear
-- **Terminal Title Tracking**: OSC 0/2 sequences update tab + window title
-- **Scroll-to-Bottom Button**: Floating button when scrolled up
-- **Settings Panel**: Font, size, scrollback, cursor, idle timeout, color scheme, shell
-- **Quick Connect**: Welcome screen with action buttons
-- **Notification Center**: Bell button with event history
-- **Custom CSS**: User-defined styles applied on load
-- **Clickable URLs**: Open in default browser
-- **Multi-line Paste Warning**: Confirms before pasting multi-line content
-- **Loading Spinner**: Animated spinner during SSH connection
-- **13+ Color Schemes**: Including light theme
-- **Thin Overlay Scrollbar**: Custom scrollbar styling
-- **Application Menu Bar**: File/Edit/View/Help menus
+### Port Forwarding
+- **Local**: `localhost:localPort → remote:targetPort` via SSH tunnel
+- **Remote**: `remote:remotePort → localhost:targetPort` (reverse tunnel)
+- **Dynamic**: SOCKS5 proxy on `localhost:port` (routes traffic through SSH)
 
-## Data & Persistence
+### Other SSH Features
+- X11 forwarding (channel-level support)
+- Agent forwarding
+- Known hosts verification
+- Keepalive with disconnect detection
+- Custom algorithm selection (KEX, cipher, MAC, compression)
 
-- **Profile CRUD**: Groups, duplicate, type switching, import/export (JSON)
-- **Profile Group Collapse/Expand**: Click to toggle, persists in localStorage
-- **Session Persistence & Auto-Reconnect**: Survives app restart
-- **Reconnect Overlay**: Connection lost dialog with Reconnect/Close buttons
-- **Snippets System**: Save and run command snippets
-- **Connection Log Viewer**: Filterable modal with color-coded entries
+## SFTP Features
 
-## Security & Operations
+- Directory listing with symlink detection and resolution
+- File upload/download with progress
+- Recursive directory creation
+- Symbolic link creation and reading
+- File permission changes (chmod)
+- File info with and without symlink following
 
-- **AES-256-CBC Encrypted Vault**: Secure local credential storage
-- **OS Keychain Integration**: With vault fallback for unsupported platforms
-- **Connection Audit Logging**: JSON-line format with 10MB rotation
-- **Auto-Updater**: Checks GitHub releases on startup (silent, 5s delay)
-- **Idle Connection Monitor**: Auto-disconnects after configurable timeout
-- **Inline Password Dialog**: Modal for keyboard-interactive SSH auth
+## BTK Native UI
 
-## File Transfer
+The `pkg/ui/` package provides Go bindings for BTK native widgets via CGo:
 
-- **Zmodem Support**: rz/sz via addon integration
-- **SFTP Upload/Download**: Drag & drop, directory picker
+- **bridge.h**: C API header (flat functions for CGo compatibility)
+- **bridge.cpp**: C++ implementation wrapping BTK's Qt-descended classes
+- **ui.go**: Go bindings with type-safe API
 
-## Keyboard Shortcuts
+### Supported Widgets
+App, Window, TabWidget, Splitter, Terminal, MenuBar, Menu, Action,
+ToolBar, StatusBar, Label, LineEdit, Button, ComboBox, Layout,
+Dialog, FileDialog
 
-| Shortcut | Action |
-|----------|--------|
-| Ctrl+Shift+P | Command Palette |
-| Ctrl+Shift+F | Tab Search |
-| Ctrl+Shift+S | Serial Dialog |
-| Ctrl+Shift+N | Telnet Dialog |
-| Ctrl+Shift+T | New Tab |
-| Ctrl+Shift+L | Connection Log |
-| Ctrl+Shift+O | Settings Panel |
-| Ctrl+Shift+E | Export Profiles |
-| Ctrl+W | Close Tab |
-| Ctrl+Tab | Next Tab |
-| Ctrl+Shift+Tab | Previous Tab |
-| Alt+1-9 | Switch to Tab N |
-
-## Build
-
+### Building with BTK
 ```bash
-# Prerequisites
-go install github.com/wailsapp/wails/v2/cmd/wails@latest
-
-# Development
-cd wails-app && wails dev
-
-# Production Build
-cd wails-app && wails build
-
-# Run Tests
-cd tabby-go && go test ./...
+# Requires BTK to be compiled first
+cmake -B build tabby-go/vendor/btk
+cmake --build build
+# Then link against BTK libraries
 ```
 
-## Code Stats
+## Testing
 
-| File | Lines |
-|------|-------|
-| main.js | ~3,900 |
-| app.go | 519 |
-| app.css | ~1,400 |
-| index.html | 221 |
-| **Total** | **~6,000+** |
+```bash
+go test -mod=mod ./...
+```
+
+## Dependencies
+
+- `golang.org/x/crypto/ssh` — SSH protocol implementation
+- `github.com/pkg/sftp` — SFTP protocol
+- `github.com/robertpelloni/btk` — Native UI toolkit (submodule, optional)
 
 ## Project Structure
 
 ```
 tabby-go/
+├── cmd/
+│   └── tabby-backend/     # JSON-RPC backend entry point
+├── internal/
+│   └── server/            # JSON-RPC server with method routing
 ├── pkg/
-│   ├── ssh/          # SSH client
-│   ├── sftp/         # SFTP client
-│   ├── telnet/       # Telnet client
-│   ├── serial/       # Serial port
-│   ├── pty/          # Cross-platform PTY
-│   ├── vault/        # Encrypted vault
-│   ├── keychain/     # OS keychain
-│   ├── profile/      # Connection profiles
-│   ├── session/      # Session persistence
-│   ├── settings/     # TOML settings
-│   ├── audit/        # Audit logging
-│   ├── updater/      # Update checker
-│   └── ...           # Other packages
-└── wails-app/
-    ├── app.go        # Wails bindings (68 methods)
-    ├── main.go       # App entrypoint
-    └── frontend/
-        ├── index.html
-        └── src/
-            ├── main.js   # App logic (~3,900 lines)
-            └── app.css   # Styling (~1,400 lines)
+│   ├── api/               # Shared types (SSH, SFTP, PTY, Serial, notifications)
+│   ├── ssh/               # SSH connection manager
+│   ├── sftp/              # SFTP file operations
+│   ├── pty/               # PTY process management
+│   ├── serial/            # Serial port communication (stub)
+│   ├── ui/                # BTK native UI bindings (CGo)
+│   │   ├── bridge.h       # C API header
+│   │   ├── bridge.cpp     # C++ implementation
+│   │   └── ui.go          # Go bindings
+│   └── nativeapp/         # Native app orchestration
+└── vendor/
+    ├── btk/               # BTK submodule
+    └── (Go dependencies)  # Vendored Go packages
 ```
-
-## License
-
-MIT

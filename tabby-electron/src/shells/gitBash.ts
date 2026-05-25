@@ -44,7 +44,6 @@ export class GitBashShellProvider extends WindowsBaseShellProvider {
             args: ['--login', '-i'],
             icon: require('../icons/git-bash.svg'),
             env: this.getEnvironment(),
-            shellType: 'unix',
         }]
     }
 }

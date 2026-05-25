@@ -1,0 +1,21 @@
+.modal-header
+    h3.modal-title(translate) Command Catalog
+    button.btn-close(type="button", (click)="modal.dismiss()")
+
+.modal-body
+    input.form-control.mb-3(
+        type="text",
+        [placeholder]="'Search workflows...'|translate",
+        [(ngModel)]="filter",
+        autofocus
+    )
+
+    .list-group.list-group-flush
+        button.list-group-item.list-group-item-action(
+            *ngFor="let w of getFilteredWorkflows()",
+            (click)="select(w)"
+        )
+            .d-flex.w-100.justify-content-between
+                h5.mb-1 {{w.name}}
+                small.text-muted(*ngFor="let tag of w.tags") {{tag}}
+            p.mb-1.text-monospace.small {{w.command}}

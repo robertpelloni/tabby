@@ -11,6 +11,7 @@ import { saveConfig } from './config'
 import { Window, WindowOptions } from './window'
 import { pluginManager } from './pluginManager'
 import { PTYManager } from './pty'
+import { goBackend } from './goBackend'
 
 /* eslint-disable block-scoped-var */
 
@@ -109,6 +110,35 @@ export class Application {
     }
 
     init (): void {
+
+        goBackend.start(__dirname)
+
+        // Handle Go backend serial notifications
+        goBackend.on('serial.data', (params: any) => {
+            this.broadcast('serial:data', params.serialId, params.data)
+        })
+
+        goBackend.on('serial.exit', (params: any) => {
+            this.broadcast('serial:exit', params.serialId, params.exitCode)
+        })
+
+        // Setup Serial IPC routes
+        ipcMain.handle('serial:open', async (_event, params) => {
+            return await goBackend.request('serial.open', params)
+        })
+
+        ipcMain.handle('serial:listPorts', async (_event) => {
+            return await goBackend.request('serial.listPorts', {})
+        })
+
+        ipcMain.on('serial:write', (_event, id, data) => {
+            goBackend.request('serial.write', { id, data })
+        })
+
+        ipcMain.on('serial:close', (_event, id) => {
+            goBackend.request('serial.close', { id })
+        })
+
         screen.on('display-metrics-changed', () => this.broadcast('host:display-metrics-changed'))
         screen.on('display-added', () => this.broadcast('host:displays-changed'))
         screen.on('display-removed', () => this.broadcast('host:displays-changed'))

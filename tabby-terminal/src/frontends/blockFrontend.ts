@@ -9,6 +9,7 @@ const AnsiToHtml = require('ansi-to-html')
 export class BlockFrontend extends Frontend {
     private container: HTMLElement
     private currentBlock: HTMLElement
+    private focusedBlockIndex = -1
     private ansiConverter: any
 
     constructor (injector: Injector) {
@@ -26,6 +27,17 @@ export class BlockFrontend extends Frontend {
         this.container.style.backgroundColor = '#1e1e1e'
         this.container.style.color = '#cccccc'
         this.container.style.fontFamily = 'monospace'
+        this.container.tabIndex = 0 // Make container focusable for keyboard events
+
+        this.container.onkeydown = (e) => {
+            if (e.ctrlKey && e.key === 'ArrowUp') {
+                this.navigateBlocks(-1)
+                e.preventDefault()
+            } else if (e.ctrlKey && e.key === 'ArrowDown') {
+                this.navigateBlocks(1)
+                e.preventDefault()
+            }
+        }
 
         host.appendChild(this.container)
         this.createNewBlock()
@@ -33,6 +45,26 @@ export class BlockFrontend extends Frontend {
             this.ready.next()
             this.ready.complete()
         }, 100)
+    }
+
+    private navigateBlocks (delta: number) {
+        const blocks = this.container.querySelectorAll('.terminal-block')
+        if (blocks.length === 0) return
+
+        // Remove highlight from previous
+        if (this.focusedBlockIndex !== -1) {
+            (blocks[this.focusedBlockIndex] as HTMLElement).style.backgroundColor = 'transparent'
+        }
+
+        if (this.focusedBlockIndex === -1) {
+            this.focusedBlockIndex = delta > 0 ? 0 : blocks.length - 1
+        } else {
+            this.focusedBlockIndex = (this.focusedBlockIndex + delta + blocks.length) % blocks.length
+        }
+
+        const target = blocks[this.focusedBlockIndex] as HTMLElement
+        target.style.backgroundColor = '#2c2e3b'
+        target.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }
 
     private createNewBlock() {
@@ -92,6 +124,75 @@ export class BlockFrontend extends Frontend {
             setTimeout(() => { copyBtn.innerText = originalText }, 2000);
         }
 
+        const searchBtn = document.createElement('button')
+        searchBtn.innerText = '🔍 Search'
+        searchBtn.style.background = '#44475a'
+        searchBtn.style.color = '#f8f8f2'
+        searchBtn.style.border = 'none'
+        searchBtn.style.borderRadius = '4px'
+        searchBtn.style.padding = '4px 8px'
+        searchBtn.style.cursor = 'pointer'
+        searchBtn.style.fontSize = '12px'
+        searchBtn.style.marginRight = '5px'
+
+        searchBtn.onclick = () => {
+            let searchInput = this.currentBlock.querySelector('.block-search-input') as HTMLInputElement
+            if (searchInput) {
+                searchInput.style.display = searchInput.style.display === 'none' ? 'block' : 'none'
+                if (searchInput.style.display === 'block') searchInput.focus()
+            } else {
+                searchInput = document.createElement('input')
+                searchInput.className = 'block-search-input'
+                searchInput.placeholder = 'Filter block output...'
+                searchInput.style.background = '#1e1e1e'
+                searchInput.style.color = '#f8f8f2'
+                searchInput.style.border = '1px solid #6272a4'
+                searchInput.style.borderRadius = '4px'
+                searchInput.style.padding = '2px 5px'
+                searchInput.style.marginTop = '5px'
+                searchInput.style.width = '200px'
+                searchInput.style.fontSize = '12px'
+
+                searchInput.oninput = () => {
+                    const term = searchInput.value.toLowerCase()
+                    const lines = outputContainer.querySelectorAll('span')
+                    lines.forEach(line => {
+                        if (line.innerText.toLowerCase().includes(term)) {
+                            line.style.display = 'inline'
+                            line.style.backgroundColor = term ? '#f1fa8c44' : 'transparent'
+                        } else {
+                            line.style.display = 'none'
+                        }
+                    })
+                }
+
+                this.currentBlock.insertBefore(searchInput, outputContainer)
+                searchInput.focus()
+            }
+        }
+
+        const shareBtn = document.createElement('button')
+        shareBtn.innerText = '🔗 Share'
+        shareBtn.style.background = '#44475a'
+        shareBtn.style.color = '#f8f8f2'
+        shareBtn.style.border = 'none'
+        shareBtn.style.borderRadius = '4px'
+        shareBtn.style.padding = '4px 8px'
+        shareBtn.style.cursor = 'pointer'
+        shareBtn.style.fontSize = '12px'
+        shareBtn.style.marginRight = '5px'
+
+        shareBtn.onclick = () => {
+            const content = outputContainer.innerText
+            // Mock sharing logic: generate a base64 link or similar
+            const blob = new Blob([content], { type: 'text/plain' })
+            const url = URL.createObjectURL(blob)
+            navigator.clipboard.writeText(url)
+            const originalText = shareBtn.innerText
+            shareBtn.innerText = '✅ Link Copied!'
+            setTimeout(() => { shareBtn.innerText = originalText }, 2000)
+        }
+
         const explainBtn = document.createElement('button')
         explainBtn.innerText = '✨ Explain Error'
         explainBtn.style.background = '#44475a'
@@ -128,6 +229,8 @@ export class BlockFrontend extends Frontend {
 
         actionsContainer.appendChild(copyCmdBtn)
         actionsContainer.appendChild(copyBtn)
+        actionsContainer.appendChild(searchBtn)
+        actionsContainer.appendChild(shareBtn)
         actionsContainer.appendChild(explainBtn)
 
         this.currentBlock.appendChild(outputContainer)
@@ -168,9 +271,17 @@ export class BlockFrontend extends Frontend {
         if (data.includes('\x1b]1337;WaveTermWidget=')) {
             this.renderWidget(data)
         } else {
+            // Detect common shell prompts and rotate blocks
+            // Simple heuristic: if a line ends with $, # or > followed by a space
+            const hasPrompt = /[\$#>]\s$/.test(data) || data.includes('\r\n$ ') || data.includes('\r\n# ') || data.includes('\r\n> ')
+
+            if (hasPrompt && this.currentBlock && (this.currentBlock.querySelector('.block-output')?.innerHTML || '').length > 0) {
+                 this.createNewBlock()
+            }
+
             // Render basic ANSI control codes to HTML using ansi-to-html
             const span = document.createElement('span')
-            span.innerHTML = this.ansiConverter.toHtml(data).replace(/\\n/g, '<br/>')
+            span.innerHTML = this.ansiConverter.toHtml(data).replace(/\r\n/g, '<br/>').replace(/\n/g, '<br/>')
             (this.currentBlock.querySelector('.block-output') || this.currentBlock).appendChild(span)
         }
         this.container.scrollTop = this.container.scrollHeight

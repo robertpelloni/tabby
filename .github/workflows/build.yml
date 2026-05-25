@@ -28,6 +28,14 @@ jobs:
     - name: Build typings
       run: yarn run build:typings
 
+    - name: Run Go tests
+      run: yarn run test:go
+
+    - name: Run integration tests
+      run: |
+        yarn run build:go
+        yarn run test:integration
+
     - name: Lint
       run: yarn run lint
 

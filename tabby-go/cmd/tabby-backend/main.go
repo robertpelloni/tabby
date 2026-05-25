@@ -28,7 +28,7 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Println("tabby-backend v1.0.231-nightly.0")
+		fmt.Println("tabby-backend v1.0.231-nightly.19")
 		os.Exit(0)
 	}
 

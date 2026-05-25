@@ -51,53 +51,13 @@
 - [ ] **Session Logging**: Record terminal output to file.
 - [ ] **Serial Terminal**: Hex view mode, advanced flow control settings, connection logging.
 
-### Serial Terminal
-- [ ] **Hex view mode**: Show hex dump alongside ASCII
-- [ ] **Advanced flow control settings**: Hardware flow control, parity, stop bits UI
-- [ ] **Connection logging**: Log serial communication to file
-- [ ] **Macro support**: Send pre-defined command sequences
-
-### Testing
-- [ ] **Unit test framework setup**: Jest or Karma for TypeScript tests
-- [ ] **Core service tests**: ConfigService, HotkeysService, TabsService
-- [ ] **SSH session tests**: Connection, authentication, data transfer
-- [ ] **Plugin loading tests**: Discovery, loading, error handling
-- [ ] **Config migration tests**: Upgrade paths between versions
-
-### Code Quality
-- [ ] **Migrate to TypeScript 5.x**: Currently on 4.9 (Angular 15 may need update)
-- [ ] **Replace synchronous IPC**: Convert `sendSync` calls to async patterns
-- [ ] **Reduce `any` types**: Add proper types in IPC boundaries
-- [ ] **ESLint strict mode**: Enable stricter linting rules
-
----
-
-## Low Priority
-
-### Documentation
-- [ ] **API documentation**: Complete TypeDoc for all public APIs
-- [ ] **Plugin development guide**: Step-by-step tutorial
-- [ ] **Architecture decision records**: Document why decisions were made
-- [ ] **In-app help system**: Contextual help in settings
-
-### Localization
-- [ ] **Complete translation coverage**: Ensure all strings are translatable
-- [ ] **RTL support**: Right-to-left language support
-- [ ] **Language-specific fonts**: Ensure CJK, Arabic, etc. render correctly
-
-### Performance
-- [ ] **Lazy loading**: Load plugins on demand
-- [ ] **Memory optimization**: Profile and reduce memory usage
-- [ ] **Startup time**: Reduce cold start time
-
-### Advanced Features
-- [ ] **Terminal multiplexing**: tmux-like session persistence
-- [ ] **Collaborative terminals**: Share terminal sessions
-- [x] **AI command suggestions**: Based on history and context
-- [ ] **Docker integration**: Built-in Docker container management
-- [ ] **Kubernetes integration**: kubectl integration with context awareness
-- [ ] **Snippet library**: Reusable command snippets with variables
-- [ ] **Credential sync**: Cross-device credential synchronization
+### Testing & Code Quality
+- [ ] **Sync Electron versions**: electron-builder.yml, package.json, CI all consistent.
+- [ ] **Automated release workflow**: Tag push → build → draft release.
+- [ ] **Unit test framework setup**: Jest or Karma for TypeScript tests.
+- [ ] **Core service tests**: ConfigService, HotkeysService, TabsService.
+- [ ] **Migrate to TypeScript 5.x**: Currently on 4.9 (Angular 15 may need update).
+- [ ] **ESLint strict mode**: Enable stricter linting rules.
 
 ---
 

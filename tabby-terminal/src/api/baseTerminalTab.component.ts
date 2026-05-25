@@ -1,4 +1,5 @@
 import { Observable, Subject, first, auditTime, debounce, interval } from 'rxjs'
+import * as monaco from 'monaco-editor'
 import { Spinner } from 'cli-spinner'
 import colors from 'ansi-colors'
 import { NgZone, OnInit, OnDestroy, Injector, ViewChild, HostBinding, Input, ElementRef, InjectFlags, Component } from '@angular/core'
@@ -6,9 +7,12 @@ import { trigger, transition, style, animate, AnimationTriggerMetadata } from '@
 import { AppService, ConfigService, BaseTabComponent, HostAppService, HotkeysService, NotificationsService, Platform, LogService, Logger, TabContextMenuItemProvider, SplitTabComponent, SubscriptionContainer, MenuItemOptions, PlatformService, HostWindowService, ResettableTimeout, TranslateService, ThemesService, FullyDefined } from 'tabby-core'
 
 import { BaseSession } from '../session'
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
+import { CommandCatalogModalComponent } from 'tabby-core'
 
 import { Frontend } from '../frontends/frontend'
 import { XTermFrontend, XTermWebGLFrontend } from '../frontends/xtermFrontend'
+import { BlockFrontend } from '../frontends/blockFrontend'
 import { ResizeEvent, BaseTerminalProfile } from './interfaces'
 import { TerminalDecorator } from './decorator'
 import { SearchPanelComponent } from '../components/searchPanel.component'
@@ -76,6 +80,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
 
     /** @hidden */
     @ViewChild('content') content
+    @ViewChild('ideInput') ideInput?: ElementRef<HTMLElement>
 
     /** @hidden */
     @HostBinding('style.background-color') backgroundColor: string|null = null
@@ -371,7 +376,12 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         const cls: new (..._) => Frontend = enable8884Workarround ? XTermFrontend : {
             xterm: XTermFrontend,
             'xterm-webgl': XTermWebGLFrontend,
+            'block': BlockFrontend,
         }[this.config.store.terminal.frontend] ?? XTermFrontend
+
+        if (this.config.store.terminal.frontend === 'block') {
+            this.config.store.terminal.useBlockFrontend = true
+        }
         this.frontend = new cls(this.injector)
 
         this.frontendReady$.pipe(first()).subscribe(() => {
@@ -921,5 +931,201 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
      */
     protected isSessionExplicitlyTerminated (): boolean {
         return false
+    }
+
+
+    private monacoEditor?: any
+
+    ngAfterViewInit (): void {
+
+        setTimeout(() => {
+            if (this.ideInput && this.config.store.terminal.useBlockFrontend) {
+                this.monacoEditor = monaco.editor.create(this.ideInput.nativeElement, {
+                    value: '',
+                    language: 'shell',
+                    theme: 'vs-dark',
+                    minimap: { enabled: false },
+                    lineNumbers: 'off',
+                    glyphMargin: false,
+                    folding: false,
+                    lineDecorationsWidth: 0,
+                    lineNumbersMinChars: 0,
+                    overviewRulerBorder: false,
+                    hideCursorInOverviewRuler: true,
+                    scrollBeyondLastLine: false,
+                    scrollbar: {
+                        vertical: 'hidden',
+                        horizontal: 'hidden'
+                    },
+                    renderLineHighlight: 'none',
+                    wordWrap: 'on'
+                });
+
+
+                // Register simple mock autocompletions for shell
+                if (!(window as any)._monacoShellRegistered) {
+                    monaco.languages.registerCompletionItemProvider('shell', {
+                        provideCompletionItems: (model, position) => {
+                            const word = model.getWordUntilPosition(position);
+                            const range = {
+                                startLineNumber: position.lineNumber,
+                                endLineNumber: position.lineNumber,
+                                startColumn: word.startColumn,
+                                endColumn: word.endColumn
+                            };
+
+                            const suggestions = ['docker', 'tar', 'git', 'kubectl', 'npm', 'yarn', 'ssh', 'cd', 'ls', 'grep', 'find', 'rm', 'mkdir', 'sudo', 'apt', 'brew'].map(cmd => ({
+                                label: cmd,
+                                kind: monaco.languages.CompletionItemKind.Keyword,
+                                insertText: cmd,
+                                range: range
+                            }));
+
+                            return { suggestions };
+                        }
+                    });
+                    (window as any)._monacoShellRegistered = true;
+                }
+
+
+
+                const validCommands = ['docker', 'tar', 'git', 'kubectl', 'npm', 'yarn', 'ssh', 'cd', 'ls', 'grep', 'find', 'rm', 'mkdir', 'sudo', 'apt', 'brew', 'cat', 'echo', 'pwd'];
+
+                this.monacoEditor.onDidChangeModelContent(() => {
+                    const model = this.monacoEditor?.getModel();
+                    if (!model) return;
+
+                    const text = model.getValue();
+                    const words = text.split(/\s+/);
+                    const markers: monaco.editor.IMarkerData[] = [];
+
+                    if (words.length > 0 && words[0].length > 0) {
+                        const firstWord = words[0];
+                        if (!validCommands.includes(firstWord) && !firstWord.startsWith('./') && !firstWord.startsWith('/')) {
+                            // First word isn't recognized, add a red squiggle
+                            markers.push({
+                                message: `Command '${firstWord}' is not recognized.`,
+                                severity: monaco.MarkerSeverity.Error,
+                                startLineNumber: 1,
+                                startColumn: 1,
+                                endLineNumber: 1,
+                                endColumn: firstWord.length + 1
+                            });
+                        }
+                    }
+
+                    monaco.editor.setModelMarkers(model, 'shell', markers);
+                });
+
+
+
+                this.monacoEditor.onKeyDown((e) => {
+                    // Cmd+F or Ctrl+F
+                    if (e.keyCode === monaco.KeyCode.KeyF && (e.metaKey || e.ctrlKey)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Close monaco's internal find
+                        const findController = this.monacoEditor.getContribution('editor.contrib.findController');
+                        if (findController) {
+                            (findController as any).closeFindWidget();
+                        }
+                        // Open Tabby global output search
+                        this.showSearchPanel = true;
+                        return;
+                    }
+
+                    if (e.keyCode === 3 && !e.shiftKey) {
+                        e.preventDefault();
+                        const command = this.monacoEditor?.getValue();
+                        this.monacoEditor?.setValue('');
+                        if (command) {
+                            this.sendInput(Buffer.from(command + '\r'));
+                        }
+                    }
+                });
+            }
+        }, 500)
+    }
+
+    onIdeInputKeydown(event: KeyboardEvent) {
+        // Handled by monaco
+    }
+
+
+    async generateCommand() {
+        if (!this.ideInput?.nativeElement) return;
+
+        const promptStr = prompt("Ask Tabby AI to generate a command:");
+        if (!promptStr) return;
+
+        this.monacoEditor?.updateOptions({ readOnly: true });
+
+        // Save current so we can append
+        const currentBuffer = this.monacoEditor?.getValue() || '';
+
+        try {
+            // Forward to the Go backend AI agent integration
+            const response = await window['require']('electron').ipcRenderer.invoke('ai:generateCommand', { prompt: promptStr });
+            const generated = response.command || '';
+
+            if (currentBuffer.length > 0) {
+                this.monacoEditor?.setValue(currentBuffer + " " + generated);
+            } else {
+                this.monacoEditor?.setValue(generated);
+            }
+
+        } catch (e) {
+            this.notifications.error('Failed to generate command', e.toString());
+        } finally {
+            this.monacoEditor?.updateOptions({ readOnly: false });
+            this.monacoEditor?.focus();
+        }
+    }
+
+
+
+    async openCommandCatalog() {
+        const modal = this.injector.get(NgbModal).open(CommandCatalogModalComponent, { size: 'lg' })
+        const result = await modal.result.catch(() => null)
+
+        if (result && this.ideInput?.nativeElement) {
+            this.monacoEditor?.setValue(result.command);
+            this.monacoEditor?.focus();
+        }
+    }
+
+    showAgentChat = false;
+    agentInput = '';
+    agentMessages: {role: 'user' | 'agent', content: string}[] = [
+        { role: 'agent', content: 'Hello! I am Tabby AI. How can I help you today?' }
+    ];
+
+    toggleAgentChat() {
+        this.showAgentChat = !this.showAgentChat;
+        if (this.showAgentChat) {
+            setTimeout(() => {
+                // Focus logic could go here if we had a ViewChild on the input
+            }, 100);
+        }
+    }
+
+    async sendAgentMessage() {
+        if (!this.agentInput.trim()) return;
+
+        const userMsg = this.agentInput.trim();
+        this.agentMessages.push({ role: 'user', content: userMsg });
+        this.agentInput = '';
+
+        // Add a temporary loading message
+        const loadingIndex = this.agentMessages.push({ role: 'agent', content: 'Thinking...' }) - 1;
+
+        try {
+            const response = await window['require']('electron').ipcRenderer.invoke('ai:agentChat', {
+                messages: this.agentMessages.slice(0, -1) // Exclude the "Thinking..." message
+            });
+            this.agentMessages[loadingIndex].content = response.response;
+        } catch (e) {
+            this.agentMessages[loadingIndex].content = `Error connecting to AI backend: ${e.toString()}`;
+        }
     }
 }

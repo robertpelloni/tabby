@@ -5,7 +5,7 @@ import { SSHTabComponent } from './components/sshTab.component'
 import { PasswordStorageService } from './services/passwordStorage.service'
 import { SSHAlgorithmType, SSHProfile } from './api'
 import { SSHProfileImporter } from './api/importer'
-import { defaultAlgorithms } from './algorithms'
+import { SupportedAlgorithms } from './algorithms'
 
 @Injectable({ providedIn: 'root' })
 export class SSHProfilesService extends QuickConnectProfileProvider<SSHProfile> {
@@ -55,7 +55,7 @@ export class SSHProfilesService extends QuickConnectProfileProvider<SSHProfile> 
     ) {
         super()
         for (const k of Object.values(SSHAlgorithmType)) {
-            this.configDefaults.options.algorithms[k] = [...defaultAlgorithms[k]]
+            this.configDefaults.options.algorithms[k] = [...SupportedAlgorithms[k]]
             if (k !== SSHAlgorithmType.COMPRESSION) { this.configDefaults.options.algorithms[k].sort() }
         }
     }

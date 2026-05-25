@@ -48,6 +48,7 @@ package server
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -55,6 +56,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/robertpelloni/tabby/tabby-go/pkg/agent"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ai"
 	tabbysync "github.com/robertpelloni/tabby/tabby-go/pkg/sync"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/api"
@@ -76,6 +78,7 @@ type Server struct {
 	ptyMgr       *pty.Manager
 	serialMgr    *serial.Manager
 	telnetMgr    *telnet.Manager
+	agentMgr     *agent.Manager
 	aiMgr        *ai.Manager
 	syncMgr      *tabbysync.Manager
 	knownHosts   *knownhosts.Manager
@@ -95,10 +98,11 @@ func New() *Server {
 		writer: os.Stdout,
 	}
 	s.sshMgr = ssh.NewManager(s.sendNotification)
-	s.sftpMgr = sftp.NewManager(s.sshMgr, s)
+	s.sftpMgr = sftp.NewManager(s.sshMgr)
 	s.ptyMgr = pty.NewManager(s.sendNotification)
 	s.serialMgr = serial.NewManager(s.sendNotification)
 	s.telnetMgr = telnet.NewManager(s.sendNotification)
+	s.agentMgr = agent.NewManager(s.sendNotification)
 	s.aiMgr = ai.NewManager()
 	s.syncMgr = tabbysync.NewManager()
 	s.knownHosts = knownhosts.NewManager()
@@ -129,10 +133,11 @@ func NewWithIO(in io.Reader, out io.Writer) *Server {
 		writer: out,
 	}
 	s.sshMgr = ssh.NewManager(s.sendNotification)
-	s.sftpMgr = sftp.NewManager(s.sshMgr, s)
+	s.sftpMgr = sftp.NewManager(s.sshMgr)
 	s.ptyMgr = pty.NewManager(s.sendNotification)
 	s.serialMgr = serial.NewManager(s.sendNotification)
 	s.telnetMgr = telnet.NewManager(s.sendNotification)
+	s.agentMgr = agent.NewManager(s.sendNotification)
 	s.knownHosts = knownhosts.NewManager()
 	s.notifMgr = notification.NewManager()
 	s.recoveryMgr = recovery.NewManager()
@@ -359,6 +364,14 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 			result, err = s.aiMgr.Chat(p)
 		}
 
+	// ---- Agent ----
+	case "agent.runTask":
+		result, err = s.handleAgentRunTask(req.Params)
+	case "agent.listTasks":
+		result = s.agentMgr.ListTasks()
+	case "agent.getTaskStatus":
+		result, err = s.handleAgentGetTaskStatus(req.Params)
+
 	default:
 		s.sendError(req.ID, api.ErrorMethodNotFound, fmt.Sprintf("Method not found: %s", req.Method), nil)
 		return
@@ -403,16 +416,6 @@ func (s *Server) sendNotification(method string, params interface{}) {
 		Params:  params,
 	}
 	s.sendMessage(notif)
-}
-
-func (s *Server) ReportProgress(transferID string, bytesTransferred, totalBytes int64, complete bool, err string) {
-	s.sendNotification("sftp.progress", api.TransferProgressNotification{
-		TransferID:       transferID,
-		BytesTransferred: bytesTransferred,
-		TotalBytes:       totalBytes,
-		Complete:         complete,
-		Error:            err,
-	})
 }
 
 func (s *Server) sendMessage(msg interface{}) {
@@ -1114,7 +1117,7 @@ func (s *Server) handleSerialListPorts(params interface{}) (*api.SerialListPorts
 	return &api.SerialListPortsResult{Ports: ports}, nil
 }
 
-	// ---- Telnet Handlers ----
+// ---- Telnet Handlers ----
 
 func (s *Server) handleTelnetConnect(params interface{}) (interface{}, error) {
 	var p struct {
@@ -1448,4 +1451,30 @@ func (s *Server) handleRecoveryLoad(params interface{}) (*recovery.RecoveryFile,
 	}
 
 	return s.recoveryMgr.Load(p.Path)
+}
+
+// ---- Agent Handlers ----
+
+func (s *Server) handleAgentRunTask(params interface{}) (*agent.Task, error) {
+	var p struct {
+		Description string `json:"description"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	return s.agentMgr.RunTask(context.Background(), p.Description)
+}
+
+func (s *Server) handleAgentGetTaskStatus(params interface{}) (*agent.Task, error) {
+	var p struct {
+		ID string `json:"id"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	task, ok := s.agentMgr.GetTask(p.ID)
+	if !ok {
+		return nil, fmt.Errorf("task not found: %s", p.ID)
+	}
+	return task, nil
 }
