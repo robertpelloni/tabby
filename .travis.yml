@@ -1,0 +1,46 @@
+language: node_js
+node_js: 7
+
+services:
+- docker
+
+cache:
+  directories:
+    - node_modules
+    - app/node_modules
+
+stages:
+  - build
+  - name: deploy
+    if: branch = master
+
+jobs:
+  include:
+    - stage: build
+      os: linux
+      env: BUILD_FOR=linux
+      script: ./travis.sh
+
+    - stage: build
+      os: osx
+      env: BUILD_FOR=macos
+      script: ./travis.sh
+
+    - stage: deploy
+      os: linux
+      env: BUILD_FOR=linux STAGE=deploy
+      script: ./travis.sh
+
+dist: trusty
+sudo: false
+
+addons:
+  apt:
+    packages:
+    - rpm
+    - wine
+    - mono-runtime
+    - yarn
+    sources:
+    - sourceline: 'deb https://dl.yarnpkg.com/debian/ stable main'
+      key_url: 'https://dl.yarnpkg.com/debian/pubkey.gpg'
