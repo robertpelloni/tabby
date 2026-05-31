@@ -61,6 +61,10 @@ export function TranslateMessageFormatCompilerFactory (): TranslateMessageFormat
     return new TranslateMessageFormatCompiler()
 }
 
+export function TranslateMessageFormatCompilerFactory (): TranslateMessageFormatCompiler {
+    return new TranslateMessageFormatCompiler()
+}
+
 const PROVIDERS = [
     { provide: HotkeyProvider, useClass: AppHotkeyProvider, multi: true },
     { provide: Theme, useClass: NewTheme, multi: true },
@@ -259,6 +263,13 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
     }
 
     static forRoot (): ModuleWithProviders<AppModule> {
+        const translateModule = TranslateModule.forRoot({
+            defaultLanguage: 'en',
+            compiler: {
+                provide: TranslateCompiler,
+                useFactory: TranslateMessageFormatCompilerFactory,
+            },
+        })
         return {
             ngModule: AppModule,
             providers: [
