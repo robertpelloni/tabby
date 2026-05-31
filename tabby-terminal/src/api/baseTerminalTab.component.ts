@@ -129,11 +129,11 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
     protected notifications: NotificationsService
     protected log: LogService
     protected decorators: TerminalDecorator[] = []
-    protected contextMenuProviders: TabContextMenuItemProvider[]
     protected hostWindow: HostWindowService
     protected translate: TranslateService
     protected multifocus: MultifocusService
     protected themes: ThemesService
+    protected commands: CommandService
     // Deps end
 
     protected logger: Logger
@@ -208,11 +208,11 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         this.notifications = injector.get(NotificationsService)
         this.log = injector.get(LogService)
         this.decorators = injector.get<any>(TerminalDecorator, null, InjectFlags.Optional) as TerminalDecorator[]
-        this.contextMenuProviders = injector.get<any>(TabContextMenuItemProvider, null, InjectFlags.Optional) as TabContextMenuItemProvider[]
         this.hostWindow = injector.get(HostWindowService)
         this.translate = injector.get(TranslateService)
         this.multifocus = injector.get(MultifocusService)
         this.themes = injector.get(ThemesService)
+        this.commands = injector.get(CommandService)
 
         this.logger = this.log.create('baseTerminalTab')
         this.setTitle(this.translate.instant('Terminal'))
@@ -337,8 +337,6 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         this.bellPlayer = document.createElement('audio')
         this.bellPlayer.src = require('../bell.ogg')
         this.bellPlayer.load()
-
-        this.contextMenuProviders.sort((a, b) => a.weight - b.weight)
     }
 
     /** @hidden */
@@ -489,13 +487,14 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
     }
 
     async buildContextMenu (): Promise<MenuItemOptions[]> {
-        let items: MenuItemOptions[] = []
-        for (const section of await Promise.all(this.contextMenuProviders.map(x => x.getItems(this)))) {
-            items = items.concat(section)
-            items.push({ type: 'separator' })
+        const contexts: CommandContext[] = [{ tab: this }]
+
+        // Top-level tab menu
+        if (this.parent) {
+            contexts.unshift({ tab: this.parent })
         }
-        items.splice(items.length - 1, 1)
-        return items
+
+        return this.commands.buildContextMenu(contexts, CommandLocation.TabBodyMenu)
     }
 
     /**

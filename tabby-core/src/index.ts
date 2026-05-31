@@ -53,10 +53,9 @@ import { SyncService } from './services/sync.service'
 import { NewTheme } from './theme'
 import { CoreConfigProvider } from './config'
 import { AppHotkeyProvider } from './hotkeys'
-import { TaskCompletionContextMenu, CommonOptionsContextMenu, TabManagementContextMenu, ProfilesContextMenu } from './tabContextMenu'
 import { LastCLIHandler, ProfileCLIHandler } from './cli'
 import { SplitLayoutProfilesService } from './profiles'
-import { CoreCommandProvider } from './commands'
+import { CoreCommandProvider, TaskCompletionCommandProvider } from './commands'
 
 export function TranslateMessageFormatCompilerFactory (): TranslateMessageFormatCompiler {
     return new TranslateMessageFormatCompiler()
@@ -66,10 +65,6 @@ const PROVIDERS = [
     { provide: HotkeyProvider, useClass: AppHotkeyProvider, multi: true },
     { provide: Theme, useClass: NewTheme, multi: true },
     { provide: ConfigProvider, useClass: CoreConfigProvider, multi: true },
-    { provide: TabContextMenuItemProvider, useClass: CommonOptionsContextMenu, multi: true },
-    { provide: TabContextMenuItemProvider, useClass: TabManagementContextMenu, multi: true },
-    { provide: TabContextMenuItemProvider, useClass: TaskCompletionContextMenu, multi: true },
-    { provide: TabContextMenuItemProvider, useClass: ProfilesContextMenu, multi: true },
     { provide: TabRecoveryProvider, useExisting: SplitTabRecoveryProvider, multi: true },
     { provide: CLIHandler, useClass: ProfileCLIHandler, multi: true },
     { provide: CLIHandler, useClass: LastCLIHandler, multi: true },
