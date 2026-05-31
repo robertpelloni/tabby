@@ -170,13 +170,23 @@ export default class ElectronModule {
     }
 
     private updateVibrancy () {
-        let vibrancyType = this.config.store.appearance.vibrancyType
-        if (this.hostApp.platform === Platform.Windows && !isWindowsBuild(WIN_BUILD_FLUENT_BG_SUPPORTED)) {
-            vibrancyType = null
-        }
-        this.electron.ipcRenderer.send('window-set-vibrancy', this.config.store.appearance.vibrancy, vibrancyType)
-
         this.hostWindow.setOpacity(this.config.store.appearance.opacity)
+
+        if (isWindowsBuild(WIN_BUILD_WINDOW_MATERIAL_SUPPORTED)) {
+            this.electron.ipcRenderer.send(
+                'window-set-material',
+                this.config.store.appearance.vibrancy
+                    ? this.config.store.appearance.vibrancyType === 'fluent'
+                        ? 'mica'
+                        : 'acrylic'
+                    : 'none',
+            )
+            return
+        }
+
+        if (this.hostApp.platform === Platform.macOS) {
+            this.electron.ipcRenderer.send('window-set-vibrancy', this.config.store.appearance.vibrancy)
+        }
     }
 
     private updateDarkMode () {
