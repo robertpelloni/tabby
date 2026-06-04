@@ -1,17 +1,10 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { Injectable } from '@angular/core'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
-<<<<<<< HEAD
 import { Subscription } from 'rxjs'
 import { AppService } from './services/app.service'
 import { BaseTabComponent } from './components/baseTab.component'
 import { TabHeaderComponent } from './components/tabHeader.component'
-=======
-import { TranslateService } from '@ngx-translate/core'
-import { Subscription } from 'rxjs'
-import { AppService } from './services/app.service'
-import { BaseTabComponent } from './components/baseTab.component'
->>>>>>> upstream/master
 import { SplitTabComponent, SplitDirection } from './components/splitTab.component'
 import { TabContextMenuItemProvider } from './api/tabContextMenuProvider'
 import { MenuItemOptions } from './api/menu'
@@ -21,10 +14,7 @@ import { HotkeysService } from './services/hotkeys.service'
 import { PromptModalComponent } from './components/promptModal.component'
 import { SplitLayoutProfilesService } from './profiles'
 import { TAB_COLORS } from './utils'
-<<<<<<< HEAD
 import { TranslateService } from '@ngx-translate/core'
-=======
->>>>>>> upstream/master
 
 /** @hidden */
 @Injectable()
@@ -38,18 +28,10 @@ export class TabManagementContextMenu extends TabContextMenuItemProvider {
         super()
     }
 
-<<<<<<< HEAD
     async getItems (tab: BaseTabComponent, tabHeader?: TabHeaderComponent): Promise<MenuItemOptions[]> {
         let items: MenuItemOptions[] = [
             {
                 label: this.translate.instant('Close'),
-=======
-    async getItems (tab: BaseTabComponent): Promise<MenuItemOptions[]> {
-        let items: MenuItemOptions[] = [
-            {
-                label: this.translate.instant('Close'),
-                commandLabel: this.translate.instant('Close tab'),
->>>>>>> upstream/master
                 click: () => {
                     if (this.app.tabs.includes(tab)) {
                         this.app.closeTab(tab, true)
@@ -59,11 +41,7 @@ export class TabManagementContextMenu extends TabContextMenuItemProvider {
                 },
             },
         ]
-<<<<<<< HEAD
         if (tabHeader) {
-=======
-        if (!tab.parent) {
->>>>>>> upstream/master
             items = [
                 ...items,
                 {
@@ -91,7 +69,6 @@ export class TabManagementContextMenu extends TabContextMenuItemProvider {
                     },
                 },
             ]
-<<<<<<< HEAD
         } else {
             if (tab.parent instanceof SplitTabComponent) {
                 const directions: SplitDirection[] = ['r', 'b', 'l', 't']
@@ -110,30 +87,6 @@ export class TabManagementContextMenu extends TabContextMenuItemProvider {
                     })) as MenuItemOptions[],
                 })
             }
-=======
-        } else if (tab.parent instanceof SplitTabComponent) {
-            const directions: SplitDirection[] = ['r', 'b', 'l', 't']
-            items.push({
-                label: this.translate.instant('Split'),
-                submenu: directions.map(dir => ({
-                    label: {
-                        r: this.translate.instant('Right'),
-                        b: this.translate.instant('Down'),
-                        l: this.translate.instant('Left'),
-                        t: this.translate.instant('Up'),
-                    }[dir],
-                    commandLabel: {
-                        r: this.translate.instant('Split to the right'),
-                        b: this.translate.instant('Split to the down'),
-                        l: this.translate.instant('Split to the left'),
-                        t: this.translate.instant('Split to the up'),
-                    }[dir],
-                    click: () => {
-                        (tab.parent as SplitTabComponent).splitTab(tab, dir)
-                    },
-                })) as MenuItemOptions[],
-            })
->>>>>>> upstream/master
         }
         return items
     }
@@ -153,49 +106,24 @@ export class CommonOptionsContextMenu extends TabContextMenuItemProvider {
         super()
     }
 
-<<<<<<< HEAD
     async getItems (tab: BaseTabComponent, tabHeader?: TabHeaderComponent): Promise<MenuItemOptions[]> {
         let items: MenuItemOptions[] = []
         if (tabHeader) {
-=======
-    async getItems (tab: BaseTabComponent, tabHeader?: boolean): Promise<MenuItemOptions[]> {
-        let items: MenuItemOptions[] = []
-        if (tabHeader) {
-            const currentColor = TAB_COLORS.find(x => x.value === tab.color)?.name
->>>>>>> upstream/master
             items = [
                 ...items,
                 {
                     label: this.translate.instant('Rename'),
-<<<<<<< HEAD
                     click: () => tabHeader.showRenameTabModal(),
                 },
                 {
                     label: this.translate.instant('Duplicate'),
-=======
-                    commandLabel: this.translate.instant('Rename tab'),
-                    click: () => {
-                        this.app.renameTab(tab)
-                    },
-                },
-                {
-                    label: this.translate.instant('Duplicate'),
-                    commandLabel: this.translate.instant('Duplicate tab'),
->>>>>>> upstream/master
                     click: () => this.app.duplicateTab(tab),
                 },
                 {
                     label: this.translate.instant('Color'),
-<<<<<<< HEAD
                     sublabel: TAB_COLORS.find(x => x.value === tab.color)?.name,
                     submenu: TAB_COLORS.map(color => ({
                         label: this.translate.instant(color.name),
-=======
-                    commandLabel: this.translate.instant('Change tab color'),
-                    sublabel: currentColor ? this.translate.instant(currentColor) : undefined,
-                    submenu: TAB_COLORS.map(color => ({
-                        label: this.translate.instant(color.name) ?? color.name,
->>>>>>> upstream/master
                         type: 'radio',
                         checked: tab.color === color.value,
                         click: () => {
@@ -211,11 +139,7 @@ export class CommonOptionsContextMenu extends TabContextMenuItemProvider {
                     click: async () => {
                         const modal = this.ngbModal.open(PromptModalComponent)
                         modal.componentInstance.prompt = this.translate.instant('Profile name')
-<<<<<<< HEAD
                         const name = (await modal.result)?.value
-=======
-                        const name = (await modal.result.catch(() => null))?.value
->>>>>>> upstream/master
                         if (!name) {
                             return
                         }
@@ -247,11 +171,7 @@ export class TaskCompletionContextMenu extends TabContextMenuItemProvider {
         if (process) {
             items.push({
                 enabled: false,
-<<<<<<< HEAD
                 label: this.translate.instant('Current process: ' + process.name),
-=======
-                label: this.translate.instant('Current process: {name}', process),
->>>>>>> upstream/master
             })
             items.push({
                 label: this.translate.instant('Notify when done'),
@@ -280,11 +200,6 @@ export class TaskCompletionContextMenu extends TabContextMenuItemProvider {
             type: 'checkbox',
             checked: !!extTab.__outputNotificationSubscription,
             click: () => {
-<<<<<<< HEAD
-=======
-                tab.clearActivity()
-
->>>>>>> upstream/master
                 if (extTab.__outputNotificationSubscription) {
                     extTab.__outputNotificationSubscription.unsubscribe()
                     extTab.__outputNotificationSubscription = null
@@ -317,10 +232,6 @@ export class ProfilesContextMenu extends TabContextMenuItemProvider {
         private profilesService: ProfilesService,
         private tabsService: TabsService,
         private app: AppService,
-<<<<<<< HEAD
-=======
-        private translate: TranslateService,
->>>>>>> upstream/master
         hotkeys: HotkeysService,
     ) {
         super()
@@ -338,11 +249,7 @@ export class ProfilesContextMenu extends TabContextMenuItemProvider {
     }
 
     async switchTabProfile (tab: BaseTabComponent) {
-<<<<<<< HEAD
         const profile = await this.profilesService.showProfileSelector()
-=======
-        const profile = await this.profilesService.showProfileSelector().catch(() => null)
->>>>>>> upstream/master
         if (!profile) {
             return
         }
@@ -362,21 +269,12 @@ export class ProfilesContextMenu extends TabContextMenuItemProvider {
         tab.destroy()
     }
 
-<<<<<<< HEAD
     async getItems (tab: BaseTabComponent, tabHeader?: TabHeaderComponent): Promise<MenuItemOptions[]> {
 
         if (!tabHeader && tab.parent instanceof SplitTabComponent && tab.parent.getAllTabs().length > 1) {
             return [
                 {
                     label: 'Switch profile',
-=======
-    async getItems (tab: BaseTabComponent): Promise<MenuItemOptions[]> {
-
-        if (tab.parent instanceof SplitTabComponent && tab.parent.getAllTabs().length > 1) {
-            return [
-                {
-                    label: this.translate.instant('Switch profile'),
->>>>>>> upstream/master
                     click: () => this.switchTabProfile(tab),
                 },
             ]

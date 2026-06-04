@@ -22,10 +22,7 @@ import { ToggleComponent } from './components/toggle.component'
 import { WindowControlsComponent } from './components/windowControls.component'
 import { RenameTabModalComponent } from './components/renameTabModal.component'
 import { SelectorModalComponent } from './components/selectorModal.component'
-<<<<<<< HEAD
 import { CommandCatalogModalComponent } from './components/commandCatalogModal.component'
-=======
->>>>>>> upstream/master
 import { SplitTabComponent, SplitTabRecoveryProvider } from './components/splitTab.component'
 import { SplitTabSpannerComponent } from './components/splitTabSpanner.component'
 import { SplitTabDropZoneComponent } from './components/splitTabDropZone.component'
@@ -34,10 +31,7 @@ import { UnlockVaultModalComponent } from './components/unlockVaultModal.compone
 import { WelcomeTabComponent } from './components/welcomeTab.component'
 import { TransfersMenuComponent } from './components/transfersMenu.component'
 import { ProfileIconComponent } from './components/profileIcon.component'
-<<<<<<< HEAD
 import { AgentStatusComponent } from './components/agentStatus.component'
-=======
->>>>>>> upstream/master
 
 import { AutofocusDirective } from './directives/autofocus.directive'
 import { AlwaysVisibleTypeaheadDirective } from './directives/alwaysVisibleTypeahead.directive'
@@ -53,16 +47,12 @@ import { VaultFileProvider } from './services/vault.service'
 import { HotkeysService } from './services/hotkeys.service'
 import { CustomMissingTranslationHandler, LocaleService, TabbyFormatedDatePipe } from './services/locale.service'
 import { CommandService } from './services/commands.service'
-<<<<<<< HEAD
 import { AgentService } from './services/agent.service'
 import { SyncService } from './services/sync.service'
-=======
->>>>>>> upstream/master
 
 import { NewTheme } from './theme'
 import { CoreConfigProvider } from './config'
 import { AppHotkeyProvider } from './hotkeys'
-<<<<<<< HEAD
 import { LastCLIHandler, ProfileCLIHandler } from './cli'
 import { SplitLayoutProfilesService } from './profiles'
 import { CoreCommandProvider, TaskCompletionCommandProvider } from './commands'
@@ -70,12 +60,6 @@ import { CoreCommandProvider, TaskCompletionCommandProvider } from './commands'
 export function TranslateMessageFormatCompilerFactory (): TranslateMessageFormatCompiler {
     return new TranslateMessageFormatCompiler()
 }
-=======
-import { TaskCompletionContextMenu, CommonOptionsContextMenu, TabManagementContextMenu, ProfilesContextMenu } from './tabContextMenu'
-import { LastCLIHandler, ProfileCLIHandler } from './cli'
-import { SplitLayoutProfilesService } from './profiles'
-import { CoreCommandProvider } from './commands'
->>>>>>> upstream/master
 
 export function TranslateMessageFormatCompilerFactory (): TranslateMessageFormatCompiler {
     return new TranslateMessageFormatCompiler()
@@ -85,24 +69,14 @@ const PROVIDERS = [
     { provide: HotkeyProvider, useClass: AppHotkeyProvider, multi: true },
     { provide: Theme, useClass: NewTheme, multi: true },
     { provide: ConfigProvider, useClass: CoreConfigProvider, multi: true },
-<<<<<<< HEAD
-=======
-    { provide: TabContextMenuItemProvider, useClass: CommonOptionsContextMenu, multi: true },
-    { provide: TabContextMenuItemProvider, useClass: TabManagementContextMenu, multi: true },
-    { provide: TabContextMenuItemProvider, useClass: TaskCompletionContextMenu, multi: true },
-    { provide: TabContextMenuItemProvider, useClass: ProfilesContextMenu, multi: true },
->>>>>>> upstream/master
     { provide: TabRecoveryProvider, useExisting: SplitTabRecoveryProvider, multi: true },
     { provide: CLIHandler, useClass: ProfileCLIHandler, multi: true },
     { provide: CLIHandler, useClass: LastCLIHandler, multi: true },
     { provide: FileProvider, useClass: VaultFileProvider, multi: true },
     { provide: ProfileProvider, useExisting: SplitLayoutProfilesService, multi: true },
     { provide: CommandProvider, useExisting: CoreCommandProvider, multi: true },
-<<<<<<< HEAD
     AgentService,
     SyncService,
-=======
->>>>>>> upstream/master
     {
         provide: LOCALE_ID,
         deps: [LocaleService],
@@ -151,10 +125,7 @@ const PROVIDERS = [
         FastHtmlBindDirective,
         AlwaysVisibleTypeaheadDirective,
         SelectorModalComponent,
-<<<<<<< HEAD
         CommandCatalogModalComponent,
-=======
->>>>>>> upstream/master
         SplitTabComponent,
         SplitTabSpannerComponent,
         SplitTabDropZoneComponent,
@@ -165,10 +136,7 @@ const PROVIDERS = [
         DropZoneDirective,
         CdkAutoDropGroup,
         ProfileIconComponent,
-<<<<<<< HEAD
         AgentStatusComponent,
-=======
->>>>>>> upstream/master
         TabbyFormatedDatePipe,
     ],
     exports: [
@@ -295,7 +263,6 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
     }
 
     static forRoot (): ModuleWithProviders<AppModule> {
-<<<<<<< HEAD
         const translateModule = TranslateModule.forRoot({
             defaultLanguage: 'en',
             compiler: {
@@ -303,8 +270,6 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
                 useFactory: TranslateMessageFormatCompilerFactory,
             },
         })
-=======
->>>>>>> upstream/master
         return {
             ngModule: AppModule,
             providers: [
@@ -317,10 +282,7 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
 export { AppRootComponent as bootstrap }
 export * from './api'
 export { AppHotkeyProvider }
-<<<<<<< HEAD
 export { CommandCatalogModalComponent } from './components/commandCatalogModal.component'
-=======
->>>>>>> upstream/master
 
 // Deprecations
 export { ToolbarButton as IToolbarButton } from './api'

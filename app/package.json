@@ -8,17 +8,10 @@
     "email": "e@ajenti.org"
   },
   "main": "dist/main.js",
-<<<<<<< HEAD
   "version": "1.0.231-nightly.19",
   "scripts": {
     "postinstall": "patch-package",
     "build": "webpack --progress --color ",
-=======
-  "version": "1.0.0-alpha.1",
-  "scripts": {
-    "postinstall": "patch-package",
-    "build": "webpack --progress --color --display-modules",
->>>>>>> upstream/master
     "watch": "webpack --progress --color --watch"
   },
   "dependencies": {
@@ -29,14 +22,8 @@
     "electron-config": "2.0.0",
     "electron-debug": "^3.2.0",
     "electron-promise-ipc": "^2.2.4",
-<<<<<<< HEAD
     "electron-updater": "^6.1.4",
     "fontmanager-redux": "1.1.0",
-=======
-    "electron-updater": "^5.2.1",
-    "fontmanager-redux": "1.1.0",
-    "glasstron": "0.1.1",
->>>>>>> upstream/master
     "js-yaml": "4.1.0",
     "keytar": "^7.9.0",
     "mz": "^2.7.0",
@@ -46,11 +33,7 @@
     "russh": "0.1.37",
     "rxjs": "^7.5.7",
     "source-map-support": "^0.5.20",
-<<<<<<< HEAD
     "v8-compile-cache": "^2.4.0",
-=======
-    "v8-compile-cache": "^2.3.0",
->>>>>>> upstream/master
     "yargs": "^17.7.2"
   },
   "optionalDependencies": {

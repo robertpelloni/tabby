@@ -1,32 +1,24 @@
-# Session Handoff - Ultimate LLM Harness Integration
+# Handoff Document
 
-## Accomplishments
-- **Upstream Sync**: Reconciled the repository with `Eugeny/tabby` (upstream), resolving all conflicts while preserving Go backend and Agentic features.
-- **Documentation Governance**: Established the vision for the "Ultimate LLM Harness" by updating `VISION.md`, `ROADMAP.md`, `TODO.md`, `IDEAS.md`, `DEPLOY.md`, `CHANGELOG.md`, `VERSION.md`, and `MEMORY.md`.
-- **Warp Integration (Backend)**:
-    - Implemented `tabby-go/pkg/blocks` which detects command boundaries using OSC 133 sequences and heuristic prompt detection.
-    - Implemented `tabby-go/pkg/mux` to manage terminal sessions and emit `agent.blockEvent` notifications.
-    - Implemented `tabby-go/pkg/agent/input.go` for managing the pinned IDE-like input box state.
-    - Wired new JSON-RPC methods (`agent.updateInput`, `agent.getInput`) and notifications to the Go server.
-- **Hyper Integration (Analysis)**:
-    - Analyzed Hyper's plugin architecture and configuration strategy.
-    - Documented implementation plans in `hyper-analysis.md`.
-- **Testing & Verification**:
-    - Verified the `blocks` package with Go unit tests.
-    - Verified end-to-end functionality via targeted integration tests using the JSON-RPC bridge.
-    - Fixed Go vendoring issues caused by the upstream merge.
+## Current Status
+The project is currently at version **v1.0.231-nightly.19**.
 
-## Structural Shifts
-- The repository now follows an aggressive "Port and Integrate" strategy targeting 14 modern development and AI tools.
-- `tabby-go` has been expanded with a state-machine based terminal stream parser for block detection.
-- A new `mux` layer in Go facilitates the distribution of terminal data to both the raw stream and the block parser.
-
-## System Memories
-- Use `git merge -X ours` when merging upstream to protect the core `tabby-go` and Agentic architectural modifications.
-- The Go backend requires strict vendoring (`go mod vendor`).
-- All terminal state (including the pinned input buffer) must be synchronized via the Go backend to ensure consistency across future frontends.
+## Recent Work
+*   **Agent Driver (Go Backend):** Implemented the core `agent` package in `tabby-go` for autonomous task orchestration. This provides task status tracking, progress indicators, and async execution within the Go daemon.
+*   **Agent RPC Integration:** Registered `agent.runTask`, `agent.listTasks`, and `agent.getTaskStatus` JSON-RPC 2.0 methods in the Go server, enabling the Electron frontend to drive backend-level automation.
+*   **Block Output Parsing:** Implemented heuristic shell prompt detection in `BlockFrontend` to automatically partition terminal output into discrete, actionable blocks.
+*   **Agent Management UI:** Integrated `AgentService` and `AgentStatusComponent` into the frontend, providing a real-time status tracker and progress indicator for autonomous backend tasks in the main toolbar.
+*   **Block Actions:** Enhanced `BlockFrontend` with a comprehensive set of block-level actions: copy command, copy output, integrated search/filtering, and shareable link generation. Implemented `Ctrl+Arrow` navigation for cycling through blocks.
+*   **Command Catalog:** Built the `CommandCatalogModalComponent` UI to allow users to search and apply parameterized workflows synced from the cloud backend.
+*   **Warp Drive Parity (Cloud Sync):** Built out the Angular frontend service `SyncService` in `tabby-core`. This service exposes `push()` and `pull()` commands which forward payloads across the `ipcRenderer` border to the `tabby-go` daemon's `sync.push` and `sync.pull` JSON-RPC targets.
+*   **API Export:** Exposed the `SyncService` cleanly via `tabby-core/src/index.ts` so plugins (like the upcoming Workflow catalog) can depend on it natively.
+*   **Build Verification:** Successfully ran the memory-intensive `yarn build` using the 8GB node limit constraint to prevent OOMs. The Go tests and builds completed without regressions.
 
 ## Next Steps
-- Implement the `ReactPluginDecorator` in the Angular frontend to enable Hyper-style UI extensions.
-- Implement hot-reloading for the Tabby configuration in `tabby-go`.
-- Continue the 14-repo integration sequence, focusing next on **Wave Integration** (Rich Widgets).
+*   **Command Catalog UI:** Now that the `SyncService` exists, build out the `CommandCatalogModalComponent` (or similar overlay). It needs to pull Workflows from the sync service, render them in a searchable list, and inject the selected command back into the `baseTerminalTab`'s Monaco IDE input editor.
+*   **Hyper-Style Extensibility (Phase 5):** The next major target is implementing the React Web Component API wrapper. Developers should be able to push raw `.tsx` functional components into the configuration directory, and the Angular app should render them seamlessly as terminal overlays.
+
+## Relevant Notes
+*   If `yarn build` fails with `Allocation failed - JavaScript heap out of memory`, ensure you run it with `export NODE_OPTIONS=--max-old-space-size=8192`.
+*   Remember to update `SUBMODULE_INVENTORY.md` and `VERSION.md` systematically after completing tasks.
+*   Do not kill `node` processes blindly, as it terminates the underlying LLM agent environment.

@@ -48,7 +48,6 @@ export class CommonSFTPContextMenu extends SFTPContextMenuItemProvider {
 
         items.push({
             click: async () => {
-<<<<<<< HEAD
                 const newName = window.prompt('New name', item.name)
                 if (newName && newName !== item.name) {
                     const newPath = item.fullPath.substring(0, item.fullPath.length - item.name.length) + newName
@@ -61,8 +60,6 @@ export class CommonSFTPContextMenu extends SFTPContextMenuItemProvider {
 
         items.push({
             click: async () => {
-=======
->>>>>>> upstream/master
                 if ((await this.platform.showMessageBox({
                     type: 'warning',
                     message: this.translate.instant('Delete {fullPath}?', item),

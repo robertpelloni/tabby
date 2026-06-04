@@ -44,10 +44,6 @@ const config = {
         'electron-promise-ipc': 'commonjs electron-promise-ipc',
         'electron-updater': 'commonjs electron-updater',
         fs: 'commonjs fs',
-<<<<<<< HEAD
-=======
-        glasstron: 'commonjs glasstron',
->>>>>>> upstream/master
         mz: 'commonjs mz',
         npm: 'commonjs npm',
         'node:os': 'commonjs os',
@@ -57,10 +53,6 @@ const config = {
         'source-map-support': 'commonjs source-map-support',
         'windows-swca': 'commonjs windows-swca',
         'windows-native-registry': 'commonjs windows-native-registry',
-<<<<<<< HEAD
-=======
-        '@tabby-gang/windows-blurbehind': 'commonjs @tabby-gang/windows-blurbehind',
->>>>>>> upstream/master
         'yargs/yargs': 'commonjs yargs/yargs',
     },
     plugins: [

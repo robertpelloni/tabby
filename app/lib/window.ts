@@ -1,16 +1,8 @@
-<<<<<<< HEAD
-=======
-import * as glasstron from 'glasstron'
->>>>>>> upstream/master
 import { autoUpdater } from 'electron-updater'
 import { Subject, Observable, debounceTime } from 'rxjs'
 import { BrowserWindow, app, ipcMain, Rectangle, Menu, screen, BrowserWindowConstructorOptions, TouchBar, nativeImage, WebContents, nativeTheme } from 'electron'
 import ElectronConfig = require('electron-config')
 import { enable as enableRemote } from '@electron/remote/main'
-<<<<<<< HEAD
-=======
-import * as os from 'os'
->>>>>>> upstream/master
 import * as path from 'path'
 import macOSRelease from 'macos-release'
 import { compare as compareVersions } from 'compare-versions'
@@ -19,14 +11,6 @@ import type { Application } from './app'
 import { parseArgs } from './cli'
 import { parseTabbyURL, isTabbyURL } from './urlHandler'
 
-<<<<<<< HEAD
-=======
-let DwmEnableBlurBehindWindow: any = null
-if (process.platform === 'win32') {
-    DwmEnableBlurBehindWindow = require('@tabby-gang/windows-blurbehind').DwmEnableBlurBehindWindow
-}
-
->>>>>>> upstream/master
 export interface WindowOptions {
     hidden?: boolean
 }
@@ -46,22 +30,11 @@ export class Window {
     webContents: WebContents
     private visible = new Subject<boolean>()
     private closed = new Subject<void>()
-<<<<<<< HEAD
     private window?: BrowserWindow
     private windowConfig: ElectronConfig
     private windowBounds?: Rectangle
     private closing = false
     private touchBarControl: any
-=======
-    private window?: GlasstronWindow
-    private windowConfig: ElectronConfig
-    private windowBounds?: Rectangle
-    private closing = false
-    private lastVibrancy: { enabled: boolean, type?: string } | null = null
-    private disableVibrancyWhileDragging = false
-    private touchBarControl: any
-    private isFluentVibrancy = false
->>>>>>> upstream/master
     private dockHidden = false
 
     get visible$ (): Observable<boolean> { return this.visible }
@@ -89,10 +62,7 @@ export class Window {
             },
             maximizable: true,
             frame: false,
-<<<<<<< HEAD
             transparent: true,
-=======
->>>>>>> upstream/master
             show: false,
             backgroundColor: '#00000000',
             acceptFirstMouse: true,
@@ -206,35 +176,12 @@ export class Window {
         this.window.webContents.send('host:became-main-window')
     }
 
-<<<<<<< HEAD
     setMaterial (material: 'mica'|'acrylic'|'auto'): void {
         this.window.setBackgroundMaterial(material)
     }
 
     setVibrancy (enabled: boolean): void {
         if (process.platform === 'darwin') {
-=======
-    setVibrancy (enabled: boolean, type?: string, userRequested?: boolean): void {
-        if (userRequested ?? true) {
-            this.lastVibrancy = { enabled, type }
-        }
-        if (process.platform === 'win32') {
-            if (parseFloat(os.release()) >= 10) {
-                this.window.blurType = enabled ? type === 'fluent' ? 'acrylic' : 'blurbehind' : null
-                try {
-                    this.window.setBlur(enabled)
-                    this.isFluentVibrancy = enabled && type === 'fluent'
-                } catch (error) {
-                    console.error('Failed to set window blur', error)
-                }
-            } else {
-                DwmEnableBlurBehindWindow(this.window.getNativeWindowHandle(), enabled)
-            }
-        } else if (process.platform === 'linux') {
-            this.window.setBackgroundColor(enabled ? '#00000000' : '#131d27')
-            this.window.setBlur(enabled)
-        } else {
->>>>>>> upstream/master
             this.window.setVibrancy(enabled ? macOSVibrancyType : null)
         }
     }
@@ -428,17 +375,12 @@ export class Window {
             this.window?.setAlwaysOnTop(flag)
         })
 
-<<<<<<< HEAD
         this.on('window-set-vibrancy', (_, enabled) => {
             this.setVibrancy(enabled)
         })
 
         this.on('window-set-material', (_, material) => {
             this.setMaterial(material)
-=======
-        this.on('window-set-vibrancy', (_, enabled, type) => {
-            this.setVibrancy(enabled, type)
->>>>>>> upstream/master
         })
 
         this.on('window-set-dark-mode', (_, mode) => {
@@ -485,29 +427,6 @@ export class Window {
             return { action: 'deny' }
         })
 
-<<<<<<< HEAD
-=======
-        ipcMain.on('window-set-disable-vibrancy-while-dragging', (_event, value) => {
-            this.disableVibrancyWhileDragging = value && this.configStore.hacks?.disableVibrancyWhileDragging
-        })
-
-        let moveEndedTimeout: any = null
-        const onBoundsChange = () => {
-            if (!this.lastVibrancy?.enabled || !this.disableVibrancyWhileDragging || !this.isFluentVibrancy) {
-                return
-            }
-            this.setVibrancy(false, undefined, false)
-            if (moveEndedTimeout) {
-                clearTimeout(moveEndedTimeout)
-            }
-            moveEndedTimeout = setTimeout(() => {
-                this.setVibrancy(this.lastVibrancy.enabled, this.lastVibrancy.type)
-            }, 50)
-        }
-        this.window.on('move', onBoundsChange)
-        this.window.on('resize', onBoundsChange)
-
->>>>>>> upstream/master
         ipcMain.on('window-set-traffic-light-position', (_event, x, y) => {
             this.window.setWindowButtonPosition({ x, y })
         })

@@ -1,10 +1,6 @@
 import { NgModule } from '@angular/core'
 import { PlatformService, LogService, UpdaterService, DockingService, HostAppService, ThemesService, Platform, AppService, ConfigService, WIN_BUILD_FLUENT_BG_SUPPORTED, isWindowsBuild, HostWindowService, HotkeyProvider, ConfigProvider, FileProvider } from 'tabby-core'
-<<<<<<< HEAD
 import { TerminalColorSchemeProvider, TerminalDecorator } from 'tabby-terminal'
-=======
-import { TerminalColorSchemeProvider, TerminalContextMenuItemProvider, TerminalDecorator } from 'tabby-terminal'
->>>>>>> upstream/master
 import { SFTPContextMenuItemProvider, SSHProfileImporter, AutoPrivateKeyLocator } from 'tabby-ssh'
 import { PTYInterface, ShellProvider, UACService } from 'tabby-local'
 import { auditTime } from 'rxjs'
@@ -25,10 +21,6 @@ import { ElectronUACService } from './services/uac.service'
 import { ElectronHotkeyProvider } from './hotkeys'
 import { ElectronConfigProvider } from './config'
 import { EditSFTPContextMenu } from './sftpContextMenu'
-<<<<<<< HEAD
-=======
-import { ExportTerminalContextMenu } from './terminalContextMenu'
->>>>>>> upstream/master
 import { OpenSSHImporter, PrivateKeyLocator, StaticFileImporter } from './sshImporters'
 import { ElectronPTYInterface } from './pty'
 import { PathDropDecorator } from './pathDrop'
@@ -84,11 +76,6 @@ import { VSDevToolsProvider } from './shells/vs'
 
         { provide: TerminalDecorator, useClass: PathDropDecorator, multi: true },
 
-<<<<<<< HEAD
-=======
-        { provide: TerminalContextMenuItemProvider, useClass: ExportTerminalContextMenu, multi: true },
-
->>>>>>> upstream/master
         // For WindowsDefaultShellProvider
         PowerShellCoreShellProvider,
         WSLShellProvider,
@@ -183,7 +170,6 @@ export default class ElectronModule {
     }
 
     private updateVibrancy () {
-<<<<<<< HEAD
         this.hostWindow.setOpacity(this.config.store.appearance.opacity)
 
         if (isWindowsBuild(WIN_BUILD_WINDOW_MATERIAL_SUPPORTED)) {
@@ -201,15 +187,6 @@ export default class ElectronModule {
         if (this.hostApp.platform === Platform.macOS) {
             this.electron.ipcRenderer.send('window-set-vibrancy', this.config.store.appearance.vibrancy)
         }
-=======
-        let vibrancyType = this.config.store.appearance.vibrancyType
-        if (this.hostApp.platform === Platform.Windows && !isWindowsBuild(WIN_BUILD_FLUENT_BG_SUPPORTED)) {
-            vibrancyType = null
-        }
-        this.electron.ipcRenderer.send('window-set-vibrancy', this.config.store.appearance.vibrancy, vibrancyType)
-
-        this.hostWindow.setOpacity(this.config.store.appearance.opacity)
->>>>>>> upstream/master
     }
 
     private updateDarkMode () {

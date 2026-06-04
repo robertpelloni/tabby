@@ -28,7 +28,6 @@ jobs:
     - name: Build typings
       run: yarn run build:typings
 
-<<<<<<< HEAD
     - name: Run Go tests
       run: yarn run test:go
 
@@ -37,8 +36,6 @@ jobs:
         yarn run build:go
         yarn run test:integration
 
-=======
->>>>>>> upstream/master
     - name: Lint
       run: yarn run lint
 
@@ -310,11 +307,7 @@ jobs:
 
   Windows-Build:
     runs-on: windows-latest
-<<<<<<< HEAD
     # needs: Lint
-=======
-    needs: Lint
->>>>>>> upstream/master
     strategy:
       matrix:
         include:

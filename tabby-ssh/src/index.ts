@@ -4,11 +4,7 @@ import { FormsModule } from '@angular/forms'
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
 import { ToastrModule } from 'ngx-toastr'
 import { NgxFilesizeModule } from 'ngx-filesize'
-<<<<<<< HEAD
 import TabbyCoreModule, { ConfigProvider, TabRecoveryProvider, HotkeyProvider, ProfileProvider, CommandProvider } from 'tabby-core'
-=======
-import TabbyCoreModule, { ConfigProvider, TabRecoveryProvider, HotkeyProvider, TabContextMenuItemProvider, ProfileProvider } from 'tabby-core'
->>>>>>> upstream/master
 import { SettingsTabProvider } from 'tabby-settings'
 import TabbyTerminalModule from 'tabby-terminal'
 
@@ -19,29 +15,18 @@ import { SSHSettingsTabComponent } from './components/sshSettingsTab.component'
 import { SSHTabComponent } from './components/sshTab.component'
 import { SFTPPanelComponent } from './components/sftpPanel.component'
 import { SFTPDeleteModalComponent } from './components/sftpDeleteModal.component'
-<<<<<<< HEAD
 import { KeyboardInteractiveAuthPanelComponent } from './components/keyboardInteractiveAuthPanel.component'
-=======
-import { KeyboardInteractiveAuthComponent } from './components/keyboardInteractiveAuthPanel.component'
->>>>>>> upstream/master
 import { HostKeyPromptModalComponent } from './components/hostKeyPromptModal.component'
 
 import { SSHConfigProvider } from './config'
 import { SSHSettingsTabProvider } from './settings'
 import { RecoveryProvider } from './recoveryProvider'
 import { SSHHotkeyProvider } from './hotkeys'
-<<<<<<< HEAD
-=======
-import { SFTPContextMenu } from './tabContextMenu'
->>>>>>> upstream/master
 import { SSHProfilesService } from './profiles'
 import { SFTPContextMenuItemProvider } from './api/contextMenu'
 import { CommonSFTPContextMenu } from './sftpContextMenu'
 import { SFTPCreateDirectoryModalComponent } from './components/sftpCreateDirectoryModal.component'
-<<<<<<< HEAD
 import { SSHCommandProvider } from './commands'
-=======
->>>>>>> upstream/master
 
 /** @hidden */
 @NgModule({
@@ -59,11 +44,7 @@ import { SSHCommandProvider } from './commands'
         { provide: SettingsTabProvider, useClass: SSHSettingsTabProvider, multi: true },
         { provide: TabRecoveryProvider, useClass: RecoveryProvider, multi: true },
         { provide: HotkeyProvider, useClass: SSHHotkeyProvider, multi: true },
-<<<<<<< HEAD
         { provide: CommandProvider, useExisting: SSHCommandProvider, multi: true },
-=======
-        { provide: TabContextMenuItemProvider, useClass: SFTPContextMenu, multi: true },
->>>>>>> upstream/master
         { provide: ProfileProvider, useExisting: SSHProfilesService, multi: true },
         { provide: SFTPContextMenuItemProvider, useClass: CommonSFTPContextMenu, multi: true },
     ],
@@ -76,11 +57,7 @@ import { SSHCommandProvider } from './commands'
         SSHSettingsTabComponent,
         SSHTabComponent,
         SFTPPanelComponent,
-<<<<<<< HEAD
         KeyboardInteractiveAuthPanelComponent,
-=======
-        KeyboardInteractiveAuthComponent,
->>>>>>> upstream/master
         HostKeyPromptModalComponent,
     ],
 })

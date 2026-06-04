@@ -2,10 +2,7 @@ import * as nodePTY from 'node-pty'
 import { v4 as uuidv4 } from 'uuid'
 import { ipcMain } from 'electron'
 import { Application } from './app'
-<<<<<<< HEAD
 import { goBackend } from './goBackend'
-=======
->>>>>>> upstream/master
 import { UTF8Splitter } from './utfSplitter'
 import { Subject, debounceTime } from 'rxjs'
 
@@ -91,7 +88,6 @@ class PTYDataQueue {
     }
 }
 
-<<<<<<< HEAD
 
 
 
@@ -149,54 +145,18 @@ export class PTY {
             goBackend.request('pty.resize', { id: this.goBackendId, columns, rows }).catch(err => {
                 console.error('Failed to resize PTY via Go Backend', err);
             });
-=======
-export class PTY {
-    private pty: nodePTY.IPty
-    private outputQueue: PTYDataQueue
-    exited = false
-
-    constructor (private id: string, private app: Application, ...args: any[]) {
-        this.pty = (nodePTY as any).spawn(...args)
-        for (const key of ['close', 'exit']) {
-            (this.pty as any).on(key, (...eventArgs) => this.emit(key, ...eventArgs))
-        }
-
-        this.outputQueue = new PTYDataQueue(this.pty, data => {
-            setImmediate(() => this.emit('data', data))
-        })
-
-        this.pty.onData(data => this.outputQueue.push(Buffer.from(data)))
-        this.pty.onExit(() => {
-            this.exited = true
-        })
-    }
-
-    getPID (): number {
-        return this.pty.pid
-    }
-
-    resize (columns: number, rows: number): void {
-        if ((this.pty as any)._writable) {
-            this.pty.resize(columns, rows)
->>>>>>> upstream/master
         }
     }
 
     write (buffer: Buffer): void {
-<<<<<<< HEAD
         if (this.goBackendId) {
             goBackend.request('pty.write', { id: this.goBackendId, data: buffer.toString('base64') }).catch(err => {
                 console.error('Failed to write PTY via Go Backend', err);
             });
-=======
-        if ((this.pty as any)._writable) {
-            this.pty.write(buffer as any)
->>>>>>> upstream/master
         }
     }
 
     ackData (length: number): void {
-<<<<<<< HEAD
         this.outputQueue.ack(length);
     }
 
@@ -219,22 +179,10 @@ export class PTY {
     handleExit(code: number) {
         this.exited = true;
         this.emit('exit', code);
-=======
-        this.outputQueue.ack(length)
-    }
-
-    kill (signal?: string): void {
-        this.pty.kill(signal)
-    }
-
-    private emit (event: string, ...args: any[]) {
-        this.app.broadcast(`pty:${this.id}:${event}`, ...args)
->>>>>>> upstream/master
     }
 }
 
 export class PTYManager {
-<<<<<<< HEAD
     private ptys: Record<string, PTY|undefined> = {};
     private static goIdToLocalId: Record<string, string> = {};
 
@@ -287,39 +235,5 @@ export class PTYManager {
         ipcMain.on('pty:ack-data', (_event, id, length) => {
             this.ptys[id]?.ackData(length);
         });
-=======
-    private ptys: Record<string, PTY|undefined> = {}
-
-    init (app: Application): void {
-        ipcMain.on('pty:spawn', (event, ...options) => {
-            const id = uuidv4().toString()
-            event.returnValue = id
-            this.ptys[id] = new PTY(id, app, ...options)
-        })
-
-        ipcMain.on('pty:exists', (event, id) => {
-            event.returnValue = this.ptys[id] && !this.ptys[id].exited
-        })
-
-        ipcMain.on('pty:get-pid', (event, id) => {
-            event.returnValue = this.ptys[id]?.getPID()
-        })
-
-        ipcMain.on('pty:resize', (_event, id, columns, rows) => {
-            this.ptys[id]?.resize(columns, rows)
-        })
-
-        ipcMain.on('pty:write', (_event, id, data) => {
-            this.ptys[id]?.write(Buffer.from(data))
-        })
-
-        ipcMain.on('pty:kill', (_event, id, signal) => {
-            this.ptys[id]?.kill(signal)
-        })
-
-        ipcMain.on('pty:ack-data', (_event, id, length) => {
-            this.ptys[id]?.ackData(length)
-        })
->>>>>>> upstream/master
     }
 }

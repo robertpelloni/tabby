@@ -91,11 +91,7 @@ msgstr "Agent 类型"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:169
 msgid "Allows opening .bat files in tabs, but breaks some shells"
-<<<<<<< HEAD
 msgstr "允许在标签页中打开.bat文件，但会中断某些shell"
-=======
-msgstr "允许在标签页中打开 .bat 文件，但可能导致某些 Shell 异常"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:60
 msgid "Allows quickly opening a terminal in the selected folder"
@@ -126,11 +122,7 @@ msgstr "应用程序设置"
 
 #: tabby-web/src/services/hostWindow.service.ts:19
 msgid "Are you sure you want to close Tabby? You can disable this prompt in Settings -> Window."
-<<<<<<< HEAD
 msgstr "您确定要关闭 Tabby 吗？您可以在 设置 -> 窗口 中关闭此提示。"
-=======
-msgstr "确定要关闭 Tabby 吗？可以在“设置 -> 窗口”中关闭此提示。"
->>>>>>> upstream/master
 
 #: tabby-core/src/services/config.service.ts:440
 msgid "Are you sure?"
@@ -424,11 +416,7 @@ msgstr "连接"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:26
 msgid "Connection failed: {error}"
-<<<<<<< HEAD
 msgstr "连接失败: {error}"
-=======
-msgstr "连接失败：{error}"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:40
 msgid "Connection name will be used instead"
@@ -542,11 +530,7 @@ msgstr "默认“连接到”类型"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:93
 msgid "Default connection type used by quick connect feature (ex. SSH, Telnet)"
-<<<<<<< HEAD
 msgstr "快速连接功能使用的默认连接类型 (例如SSH, Telnet)"
-=======
-msgstr "快速连接功能使用的默认连接类型（例如 SSH、Telnet）"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:8
 msgid "Default profile for new tabs"
@@ -590,19 +574,11 @@ msgstr "删除"
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:213
 #: tabby-terminal/src/components/colorSchemeSettingsForMode.component.ts:90
 msgid "Delete \"{name}\"?"
-<<<<<<< HEAD
 msgstr "删除\"{name}\"？"
 
 #: tabby-ssh/src/sftpContextMenu.ts:35
 msgid "Delete {fullPath}?"
 msgstr "是否删除 {fullPath} ？"
-=======
-msgstr "删除“{name}”？"
-
-#: tabby-ssh/src/sftpContextMenu.ts:35
-msgid "Delete {fullPath}?"
-msgstr "是否删除 {fullPath}？"
->>>>>>> upstream/master
 
 #: tabby-terminal/src/hotkeys.ts:42
 msgid "Delete entire line"
@@ -675,11 +651,7 @@ msgstr "断开连接"
 
 #: tabby-terminal/src/hotkeys.ts:106
 msgid "Disconnect current tab (Serial/Telnet/SSH)"
-<<<<<<< HEAD
 msgstr "断开当前标签页 (Serial/Telnet/SSH)"
-=======
-msgstr "断开当前标签页（串口/Telnet/SSH）"
->>>>>>> upstream/master
 
 #: tabby-ssh/src/components/sshTab.component.ts:198
 #: tabby-telnet/src/components/telnetTab.component.ts:81
@@ -688,11 +660,7 @@ msgstr "断开与 {host} 的连接？"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:30
 msgid "Display images via Sixel escape sequences"
-<<<<<<< HEAD
 msgstr "由六像素转义序列显示图像"
-=======
-msgstr "通过 Sixel 转义序列显示图像"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:85
 msgid "Display on"
@@ -785,19 +753,11 @@ msgstr "开启动画效果"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:74
 msgid "Enable automatic installation of updates when they become available."
-<<<<<<< HEAD
 msgstr "当更新可用时，启用自动安装"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:211
 msgid "Enable fluent background option"
 msgstr "启用Fluent背景"
-=======
-msgstr "有可用更新时自动安装。"
-
-#: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:211
-msgid "Enable fluent background option"
-msgstr "启用 Fluent 背景选项"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-terminal/src/components/appearanceSettingsTab.component.html:16
 msgid "Enable font ligatures"
@@ -846,11 +806,7 @@ msgstr "示例："
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:212
 msgid "Experimental Windows 10 background style known to cause issues"
-<<<<<<< HEAD
 msgstr "实验性Windows 10 背景风格已知会导致问题"
-=======
-msgstr "实验性 Windows 10 背景样式，已知可能导致问题"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:28
 msgid "Export"
@@ -914,11 +870,7 @@ msgstr "聚焦下一个窗格"
 #: tabby-core/src/hotkeys.ts:228
 #: tabby-core/src/hotkeys.ts:232
 msgid "Focus pane {number}"
-<<<<<<< HEAD
 msgstr "焦点窗格 {number}"
-=======
-msgstr "聚焦窗格 {number}"
->>>>>>> upstream/master
 
 #: tabby-core/src/hotkeys.ts:192
 msgid "Focus previous pane"
@@ -950,11 +902,7 @@ msgstr "字体"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:190
 msgid "For keyboard shortcuts"
-<<<<<<< HEAD
 msgstr "对于键盘快捷键"
-=======
-msgstr "用于键盘快捷键"
->>>>>>> upstream/master
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:53
 msgid "Force CR"
@@ -1049,11 +997,7 @@ msgstr "帮助追踪 Tabby 在世界各地的安装次数！"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:50
 msgid "Help translate Tabby"
-<<<<<<< HEAD
 msgstr "帮助翻译Tabby"
-=======
-msgstr "帮助翻译 Tabby"
->>>>>>> upstream/master
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:32
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:45
@@ -1072,24 +1016,10 @@ msgstr "隐藏标签页关闭按钮"
 msgid "Hide tab index"
 msgstr "隐藏标签页索引"
 
-<<<<<<< HEAD
-=======
-#: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:127
-msgid "Hide Tabby from tray or menu bar."
-msgstr "从托盘或菜单栏中隐藏 Tabby。"
-
->>>>>>> upstream/master
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:170
 msgid "Hide tab options button"
 msgstr "隐藏标签页选项按钮"
 
-<<<<<<< HEAD
-=======
-#: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:126
-msgid "Hide tray icon"
-msgstr "隐藏托盘图标"
-
->>>>>>> upstream/master
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:118
 msgid "Hide window on focus loss"
 msgstr "失去聚焦时隐藏窗口"
@@ -1122,11 +1052,7 @@ msgstr "快捷键"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:83
 msgid "How Tabby presents itself through environment vars"
-<<<<<<< HEAD
 msgstr "Tabby如何通过环境变量呈现自己"
-=======
-msgstr "Tabby 如何通过环境变量标识自身"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:24
 msgid "HTTP proxy"
@@ -1172,11 +1098,7 @@ msgstr "输入"
 
 #: tabby-terminal/src/components/streamProcessingSettings.component.ts:18
 msgid "Input is sent as you type"
-<<<<<<< HEAD
 msgstr "按您输入时发送"
-=======
-msgstr "输入时立即发送"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-terminal/src/components/streamProcessingSettings.component.html:4
 msgid "Input mode"
@@ -1336,11 +1258,7 @@ msgstr "登录脚本"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:57
 msgid "Long-click for context menu"
-<<<<<<< HEAD
 msgstr "长按右键菜单"
-=======
-msgstr "长按打开右键菜单"
->>>>>>> upstream/master
 
 #: tabby-core/src/services/profiles.service.ts:279
 msgid "Manage profiles"
@@ -1377,11 +1295,7 @@ msgstr "将标签页移至右侧"
 
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:228
 msgid "Move to \"Ungrouped\""
-<<<<<<< HEAD
 msgstr "移动到 “未分组”"
-=======
-msgstr "移动到“未分组”"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:197
 msgid "Moving the mouse over an inactive pane will cause it to activate"
@@ -1411,11 +1325,7 @@ msgstr "新建"
 
 #: tabby-local/src/tabContextMenu.ts:53
 msgid "New admin tab"
-<<<<<<< HEAD
 msgstr "新的管理标签页"
-=======
-msgstr "新建管理标签页"
->>>>>>> upstream/master
 
 #: tabby-settings/src/components/configSyncSettingsTab.component.ts:58
 msgid "New config on {platform}"
@@ -1439,11 +1349,7 @@ msgstr "新配置"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:24
 msgid "New profile Group"
-<<<<<<< HEAD
 msgstr "新建配置文件组"
-=======
-msgstr "新建配置分组"
->>>>>>> upstream/master
 
 #: tabby-terminal/src/tabContextMenu.ts:176
 msgid "New profile name"
@@ -1484,11 +1390,7 @@ msgstr "无色"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:85
 msgid "No modifier"
-<<<<<<< HEAD
 msgstr "关闭"
-=======
-msgstr "无修饰键"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:41
 msgid "None"
@@ -1617,11 +1519,7 @@ msgstr "覆盖本地配置并开始同步？"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:189
 msgid "Pane resize step"
-<<<<<<< HEAD
 msgstr "窗格大小调整阶梯"
-=======
-msgstr "窗格大小调整步长"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:186
 msgid "Panes"
@@ -1645,11 +1543,7 @@ msgstr "穿透模式"
 
 #: tabby-settings/src/components/vaultSettingsTab.component.ts:92
 msgid "Passphrase for a private key with hash {hash}..."
-<<<<<<< HEAD
 msgstr "带哈希值 {hash} 的私钥口令..."
-=======
-msgstr "哈希值为 {hash} 的私钥口令..."
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:100
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:82
@@ -1819,11 +1713,7 @@ msgstr "更新日志"
 
 #: locale/tmp-html/tabby-core/src/components/unlockVaultModal.component.html:6
 msgid "Remember for {time}"
-<<<<<<< HEAD
 msgstr "记住密码 {time}"
-=======
-msgstr "记住 {time}"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:41
 #: locale/tmp-html/tabby-ssh/src/components/sshPortForwardingConfig.component.html:5
@@ -1892,19 +1782,11 @@ msgstr "重新启动应用以使更改生效"
 
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:316
 msgid "Restore settings to defaults ?"
-<<<<<<< HEAD
 msgstr "还原为默认设置"
 
 #: tabby-settings/src/components/editProfileGroupModal.component.ts:36
 msgid "Restore settings to inherited defaults ?"
 msgstr "还原为默认设置"
-=======
-msgstr "要还原为默认设置吗？"
-
-#: tabby-settings/src/components/editProfileGroupModal.component.ts:36
-msgid "Restore settings to inherited defaults ?"
-msgstr "要还原为继承的默认设置吗？"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:159
 msgid "Restore terminal tabs on app start"
@@ -1949,11 +1831,7 @@ msgstr "另存为配置"
 
 #: tabby-core/src/tabContextMenu.ts:148
 msgid "Save layout as profile"
-<<<<<<< HEAD
 msgstr "保存布局为配置"
-=======
-msgstr "将布局保存为配置"
->>>>>>> upstream/master
 
 #: tabby-terminal/src/tabContextMenu.ts:210
 msgid "Saved"
@@ -1969,19 +1847,11 @@ msgstr "输入时滚动"
 
 #: tabby-terminal/src/hotkeys.ts:94
 msgid "Scroll terminal one page down"
-<<<<<<< HEAD
 msgstr "向下滑动终端一页"
 
 #: tabby-terminal/src/hotkeys.ts:90
 msgid "Scroll terminal one page up"
 msgstr "向上滑动终端一页"
-=======
-msgstr "终端向下滚动一页"
-
-#: tabby-terminal/src/hotkeys.ts:90
-msgid "Scroll terminal one page up"
-msgstr "终端向上滚动一页"
->>>>>>> upstream/master
 
 #: tabby-terminal/src/hotkeys.ts:98
 msgid "Scroll terminal to bottom"
@@ -1989,11 +1859,7 @@ msgstr "滚动终端到底部"
 
 #: tabby-terminal/src/hotkeys.ts:86
 msgid "Scroll terminal to top"
-<<<<<<< HEAD
 msgstr "滑动终端到顶端"
-=======
-msgstr "滚动终端到顶部"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:16
 msgid "Scrollback"
@@ -2022,11 +1888,7 @@ msgstr "搜索插件"
 
 #: locale/tmp-html/tabby-settings/src/components/configSyncSettingsTab.component.html:17
 msgid "Secret sync token"
-<<<<<<< HEAD
 msgstr "加密同步令牌"
-=======
-msgstr "同步密钥令牌"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:45
 #: tabby-electron/src/services/platform.service.ts:200
@@ -2156,11 +2018,7 @@ msgstr "显示窗格标签（用于重新排列）"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:164
 msgid "Show profile icon on tab"
-<<<<<<< HEAD
 msgstr "在标签上显示配置文件图标"
-=======
-msgstr "在标签页上显示配置图标"
->>>>>>> upstream/master
 
 #: tabby-core/src/hotkeys.ts:16
 msgid "Show profile selector"
@@ -2192,11 +2050,7 @@ msgstr "显示保险库内容"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:29
 msgid "Sixel graphics support (experimental)"
-<<<<<<< HEAD
 msgstr "六像素图形支持 (实验)"
-=======
-msgstr "Sixel 图形支持（实验性）"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:140
 msgid "Skip MoTD/banner"
@@ -2204,11 +2058,7 @@ msgstr "跳过 MoTD/横幅消息"
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:74
 msgid "Slow feed"
-<<<<<<< HEAD
 msgstr "逐字节接收"
-=======
-msgstr "慢速发送"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:68
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:86
@@ -2277,11 +2127,7 @@ msgstr "SSH 连接"
 
 #: locale/tmp-html/tabby-ssh/src/components/sshSettingsTab.component.html:47
 msgid "SSH connection management is now done through the \"Profiles & connections\" tab"
-<<<<<<< HEAD
 msgstr "现在，通过“配置和连接”选项对 SSH 连接进行管理"
-=======
-msgstr "SSH 连接现在通过“配置和连接”标签页管理"
->>>>>>> upstream/master
 
 #: tabby-settings/src/components/vaultSettingsTab.component.ts:89
 msgid "SSH password for {user}@{host}:{port}"
@@ -2293,11 +2139,7 @@ msgstr "标准模式（旧版）"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:150
 msgid "Startup"
-<<<<<<< HEAD
 msgstr "启动时"
-=======
-msgstr "启动"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-serial/src/components/serialProfileSettings.component.html:32
 msgid "Stop bits"
@@ -2313,11 +2155,7 @@ msgstr "订阅更新"
 
 #: locale/tmp-html/tabby-local/src/components/environmentEditor.component.html:13
 msgid "Substitutions allowed."
-<<<<<<< HEAD
 msgstr "允许替换"
-=======
-msgstr "允许使用变量替换。"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-core/src/components/welcomeTab.component.html:19
 #: locale/tmp-html/tabby-terminal/src/components/colorSchemeSettingsTab.component.html:5
@@ -2389,19 +2227,11 @@ msgstr "标签页活动"
 
 #: locale/tmp-html/tabby-core/src/components/safeModeModal.component.html:3
 msgid "Tabby could not start with your plugins, so all third party plugins have been disabled in this session. The error was:"
-<<<<<<< HEAD
 msgstr "Tabby 不能使用您的插件启动，因此本次会话中禁用了所有第三方插件。错误信息："
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:41
 msgid "Tabby news and updates on Twitter"
 msgstr "Tabby 在 Twitter 的新闻和更新"
-=======
-msgstr "Tabby 无法在加载插件后启动，因此本次会话已禁用所有第三方插件。错误信息："
-
-#: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:41
-msgid "Tabby news and updates on Twitter"
-msgstr "Tabby 在 Twitter 上的新闻和更新"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:123
 msgid "Tabs"
@@ -2454,19 +2284,11 @@ msgstr "此连接已保存密码"
 
 #: locale/tmp-html/tabby-settings/src/components/profilesSettingsTab.component.html:102
 msgid "These apply to all profiles of a given type"
-<<<<<<< HEAD
 msgstr "应用于给定类型的所有配置文件"
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileGroupModal.component.html:17
 msgid "These apply to all profiles of a given type in this group"
 msgstr "这些适用于此组中给定类型的所有配置文件"
-=======
-msgstr "这些设置会应用到指定类型的所有配置"
-
-#: locale/tmp-html/tabby-settings/src/components/editProfileGroupModal.component.html:17
-msgid "These apply to all profiles of a given type in this group"
-msgstr "这些设置会应用到此分组中指定类型的所有配置"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:59
 msgid "Thin"
@@ -2499,11 +2321,7 @@ msgstr "顶部"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:123
 msgid "Trim whitespace and newlines"
-<<<<<<< HEAD
 msgstr "缩减空格和换行"
-=======
-msgstr "去除空格和换行"
->>>>>>> upstream/master
 
 #: tabby-core/src/services/config.service.ts:428
 msgid "Try again"
@@ -2515,11 +2333,7 @@ msgstr "尝试已保存的密码"
 
 #: tabby-core/src/hotkeys.ts:68
 msgid "Turn current tab's panes into separate tabs"
-<<<<<<< HEAD
 msgstr "将当前标签所在的窗格更改为单独的标签页"
-=======
-msgstr "将当前标签页的窗格拆成独立标签页"
->>>>>>> upstream/master
 
 #: tabby-core/src/services/profiles.service.ts:418
 #: tabby-settings/src/components/profilesSettingsTab.component.ts:10
@@ -2595,11 +2409,7 @@ msgstr "保险库"
 
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:4
 msgid "Vault is an always-encrypted container for secrets such as SSH passwords and private key passphrases."
-<<<<<<< HEAD
 msgstr "保险库是一个始终加密的容器，用于存放SSH密码和私钥。"
-=======
-msgstr "保险库是一个始终加密的容器，用于存放 SSH 密码和私钥口令等敏感信息。"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-settings/src/components/vaultSettingsTab.component.html:17
 msgid "Vault is empty"
@@ -2616,11 +2426,7 @@ msgstr "保险库未配置"
 
 #: tabby-core/src/services/fileProviders.service.ts:40
 msgid "Vault master passphrase needs to be set to allow storing secrets"
-<<<<<<< HEAD
 msgstr "为允许存储密钥，您必须设置保险库的主密码"
-=======
-msgstr "需要先设置保险库主密码，才能存储敏感信息"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-ssh/src/components/sshSettingsTab.component.html:11
 msgid "Verify host keys when connecting"
@@ -2636,11 +2442,7 @@ msgstr "版本：{version}"
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:28
 msgid "Vibrancy"
-<<<<<<< HEAD
 msgstr "鲜明"
-=======
-msgstr "毛玻璃"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:139
 msgid "Visual"
@@ -2668,11 +2470,7 @@ msgstr "欢迎"
 
 #: locale/tmp-html/tabby-settings/src/components/settingsTab.component.html:36
 msgid "What's new"
-<<<<<<< HEAD
 msgstr "最近更新"
-=======
-msgstr "更新内容"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-settings/src/components/editProfileModal.component.html:46
 msgid "When a session ends"
@@ -2680,11 +2478,7 @@ msgstr "在会话结束时"
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:82
 msgid "When enabled, links are only clickable while holding this key"
-<<<<<<< HEAD
 msgstr "如果启用，链接只有在按住此键时可被点击"
-=======
-msgstr "启用后，只有按住此键时才能点击链接"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-ssh/src/components/sshSettingsTab.component.html:18
 msgid "When WinSCP is detected, you can launch an SCP session from the context menu."
@@ -2692,11 +2486,7 @@ msgstr "检测到 WinSCP 时，您可以从右键菜单中启动一个 SCP 会�
 
 #: locale/tmp-html/tabby-settings/src/components/windowSettingsTab.component.html:53
 msgid "Whether a custom window or an OS native window should be used"
-<<<<<<< HEAD
 msgstr "使用自定义窗口或操作系统原生窗口"
-=======
-msgstr "选择使用自定义窗口还是系统原生窗口"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-ssh/src/components/sshProfileSettings.component.html:141
 msgid "Will prevent the SSH greeting from showing up"
@@ -2742,11 +2532,7 @@ msgstr "工作目录"
 #: locale/tmp-html/tabby-ssh/src/components/sftpPanel.component.html:15
 #: locale/tmp-html/tabby-ssh/src/components/sshTab.component.html:6
 msgid "Working directory detection"
-<<<<<<< HEAD
 msgstr "查找工作目录"
-=======
-msgstr "工作目录检测"
->>>>>>> upstream/master
 
 #: locale/tmp-html/tabby-terminal/src/components/terminalSettingsTab.component.html:145
 msgid "WSL terminal bell can only be muted via Volume Mixer"
@@ -2766,19 +2552,11 @@ msgstr "黄色"
 
 #: locale/tmp-html/tabby-settings/src/components/setVaultPassphraseModal.component.html:4
 msgid "You can change it later, but it's unrecoverable if forgotten."
-<<<<<<< HEAD
 msgstr "您可以稍后更改，但在忘记时无法恢复"
 
 #: locale/tmp-html/tabby-ssh/src/components/hostKeyPromptModal.component.html:7
 msgid "You could be under a man-in-the-middle attack right now, or the host key could have just been changed."
 msgstr "您可能正在遭受中间人攻击，或您的主机密钥已经被更改。"
-=======
-msgstr "之后可以更改，但忘记后无法恢复。"
-
-#: locale/tmp-html/tabby-ssh/src/components/hostKeyPromptModal.component.html:7
-msgid "You could be under a man-in-the-middle attack right now, or the host key could have just been changed."
-msgstr "你可能正在遭受中间人攻击，或者该主机的密钥刚刚发生了变化。"
->>>>>>> upstream/master
 
 #: tabby-terminal/src/hotkeys.ts:54
 msgid "Zoom in"

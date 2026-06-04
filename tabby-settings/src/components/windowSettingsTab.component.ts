@@ -8,17 +8,10 @@ import {
     HostAppService,
     Platform,
     isWindowsBuild,
-<<<<<<< HEAD
     BaseComponent,
     Screen,
     PlatformService,
     WIN_BUILD_WINDOW_MATERIAL_SUPPORTED,
-=======
-    WIN_BUILD_FLUENT_BG_SUPPORTED,
-    BaseComponent,
-    Screen,
-    PlatformService,
->>>>>>> upstream/master
 } from 'tabby-core'
 
 
@@ -30,11 +23,7 @@ import {
 export class WindowSettingsTabComponent extends BaseComponent {
     screens: Screen[]
     Platform = Platform
-<<<<<<< HEAD
     isWindowMaterialSupported = false
-=======
-    isFluentVibrancySupported = false
->>>>>>> upstream/master
 
     @HostBinding('class.content-box') true
 
@@ -58,11 +47,7 @@ export class WindowSettingsTabComponent extends BaseComponent {
             this.screens = dockingService.getScreens()
         }
 
-<<<<<<< HEAD
         this.isWindowMaterialSupported = isWindowsBuild(WIN_BUILD_WINDOW_MATERIAL_SUPPORTED)
-=======
-        this.isFluentVibrancySupported = isWindowsBuild(WIN_BUILD_FLUENT_BG_SUPPORTED)
->>>>>>> upstream/master
     }
 
     @debounce(500)

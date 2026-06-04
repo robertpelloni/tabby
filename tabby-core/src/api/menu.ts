@@ -1,10 +1,4 @@
-<<<<<<< HEAD
 export type MenuItemOptions = {
-=======
-export interface MenuItemOptions {
-    type?: 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio'
-    label?: string
->>>>>>> upstream/master
     sublabel?: string
     enabled?: boolean
     checked?: boolean
@@ -13,7 +7,6 @@ export interface MenuItemOptions {
 
     /** @hidden */
     commandLabel?: string
-<<<<<<< HEAD
 } & ({
     type: 'separator',
     label?: string,
@@ -21,6 +14,3 @@ export interface MenuItemOptions {
     type?: 'normal' | 'submenu' | 'checkbox' | 'radio',
     label: string,
 })
-=======
-}
->>>>>>> upstream/master

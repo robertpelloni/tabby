@@ -36,10 +36,6 @@ export class POSIXShellsProvider extends ShellProvider {
                 command: x,
                 args: ['-l'],
                 env: {},
-<<<<<<< HEAD
-=======
-                shellType: 'unix',
->>>>>>> upstream/master
             }))
     }
 }

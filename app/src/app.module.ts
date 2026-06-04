@@ -3,13 +3,8 @@ import { ApplicationRef, NgModule } from '@angular/core'
 import { BrowserModule } from '@angular/platform-browser'
 import { ToastrModule } from 'ngx-toastr'
 
-<<<<<<< HEAD
 @NgModule({
     imports: [
-=======
-export function getRootModule (plugins: any[]) {
-    const imports = [
->>>>>>> upstream/master
         BrowserModule,
         ...plugins,
         ToastrModule.forRoot({

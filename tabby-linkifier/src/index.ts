@@ -24,9 +24,6 @@ import { ClickableLinksConfigProvider } from './config'
 })
 export default class LinkifierModule { }
 
-<<<<<<< HEAD
 import './reactDummyPlugin'
 
-=======
->>>>>>> upstream/master
 export * from './api'

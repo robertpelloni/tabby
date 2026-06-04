@@ -5,11 +5,7 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap'
 import { ToastrModule } from 'ngx-toastr'
 import { NgxColorsModule } from 'ngx-colors'
 
-<<<<<<< HEAD
 import TabbyCorePlugin, { ConfigProvider, HotkeyProvider, CLIHandler, CommandProvider } from 'tabby-core'
-=======
-import TabbyCorePlugin, { ConfigProvider, HotkeyProvider, TabContextMenuItemProvider, CLIHandler } from 'tabby-core'
->>>>>>> upstream/master
 import { SettingsTabProvider } from 'tabby-settings'
 
 import { AppearanceSettingsTabComponent } from './components/appearanceSettingsTab.component'
@@ -30,18 +26,11 @@ import { TerminalContextMenuItemProvider } from './api/contextMenuProvider'
 import { TerminalColorSchemeProvider } from './api/colorSchemeProvider'
 import { TerminalSettingsTabProvider, AppearanceSettingsTabProvider, ColorSchemeSettingsTabProvider } from './settings'
 import { DebugDecorator } from './features/debug'
-<<<<<<< HEAD
 import { ReactPluginDecorator } from './api/reactPlugin'
 import { ZModemDecorator } from './features/zmodem'
 import { TerminalConfigProvider } from './config'
 import { TerminalHotkeyProvider } from './hotkeys'
 import { TerminalCommandProvider } from './commands'
-=======
-import { ZModemDecorator } from './features/zmodem'
-import { TerminalConfigProvider } from './config'
-import { TerminalHotkeyProvider } from './hotkeys'
-import { CopyPasteContextMenu, MiscContextMenu, LegacyContextMenu, ReconnectContextMenu, SaveAsProfileContextMenu } from './tabContextMenu'
->>>>>>> upstream/master
 
 import { Frontend } from './frontends/frontend'
 import { XTermFrontend, XTermWebGLFrontend } from './frontends/xtermFrontend'
@@ -65,22 +54,11 @@ import { DefaultColorSchemes } from './colorSchemes'
 
         { provide: ConfigProvider, useClass: TerminalConfigProvider, multi: true },
         { provide: HotkeyProvider, useClass: TerminalHotkeyProvider, multi: true },
-<<<<<<< HEAD
         { provide: TerminalDecorator, useClass: ReactPluginDecorator, multi: true },
         { provide: TerminalDecorator, useClass: ZModemDecorator, multi: true },
         { provide: TerminalDecorator, useClass: DebugDecorator, multi: true },
 
         { provide: CommandProvider, useExisting: TerminalCommandProvider, multi: true },
-=======
-        { provide: TerminalDecorator, useClass: ZModemDecorator, multi: true },
-        { provide: TerminalDecorator, useClass: DebugDecorator, multi: true },
-
-        { provide: TabContextMenuItemProvider, useClass: CopyPasteContextMenu, multi: true },
-        { provide: TabContextMenuItemProvider, useClass: MiscContextMenu, multi: true },
-        { provide: TabContextMenuItemProvider, useClass: LegacyContextMenu, multi: true },
-        { provide: TabContextMenuItemProvider, useClass: ReconnectContextMenu, multi: true },
-        { provide: TabContextMenuItemProvider, useClass: SaveAsProfileContextMenu, multi: true },
->>>>>>> upstream/master
 
         { provide: CLIHandler, useClass: TerminalCLIHandler, multi: true },
         { provide: TerminalColorSchemeProvider, useClass: DefaultColorSchemes, multi: true },

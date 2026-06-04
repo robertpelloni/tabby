@@ -1399,15 +1399,12 @@
       "profile": "https://github.com/ToastyTheBot",
       "contributions": [
         "code"
-<<<<<<< HEAD
       "login": "0x07E5",
       "name": "0x07E5",
       "avatar_url": "https://avatars.githubusercontent.com/u/120720697?v=4",
       "profile": "https://github.com/0x07E5",
       "contributions": [
         "security"
-=======
->>>>>>> upstream/master
       ]
     },
     {
@@ -1418,11 +1415,8 @@
       "contributions": [
         "code"
       ]
-<<<<<<< HEAD
 =======
 >>>>>>> origin/feat/real-pty-serial-17133914354864152103
-=======
->>>>>>> upstream/master
     }
   ],
   "contributorsPerLine": 7,

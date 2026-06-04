@@ -1,8 +1,5 @@
 import { Observable, Subject, first, auditTime, debounce, interval } from 'rxjs'
-<<<<<<< HEAD
 import * as monaco from 'monaco-editor'
-=======
->>>>>>> upstream/master
 import { Spinner } from 'cli-spinner'
 import colors from 'ansi-colors'
 import { NgZone, OnInit, OnDestroy, Injector, ViewChild, HostBinding, Input, ElementRef, InjectFlags, Component } from '@angular/core'
@@ -10,18 +7,12 @@ import { trigger, transition, style, animate, AnimationTriggerMetadata } from '@
 import { AppService, ConfigService, BaseTabComponent, HostAppService, HotkeysService, NotificationsService, Platform, LogService, Logger, TabContextMenuItemProvider, SplitTabComponent, SubscriptionContainer, MenuItemOptions, PlatformService, HostWindowService, ResettableTimeout, TranslateService, ThemesService, FullyDefined } from 'tabby-core'
 
 import { BaseSession } from '../session'
-<<<<<<< HEAD
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { CommandCatalogModalComponent } from 'tabby-core'
 
 import { Frontend } from '../frontends/frontend'
 import { XTermFrontend, XTermWebGLFrontend } from '../frontends/xtermFrontend'
 import { BlockFrontend } from '../frontends/blockFrontend'
-=======
-
-import { Frontend } from '../frontends/frontend'
-import { XTermFrontend, XTermWebGLFrontend } from '../frontends/xtermFrontend'
->>>>>>> upstream/master
 import { ResizeEvent, BaseTerminalProfile } from './interfaces'
 import { TerminalDecorator } from './decorator'
 import { SearchPanelComponent } from '../components/searchPanel.component'
@@ -89,10 +80,7 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
 
     /** @hidden */
     @ViewChild('content') content
-<<<<<<< HEAD
     @ViewChild('ideInput') ideInput?: ElementRef<HTMLElement>
-=======
->>>>>>> upstream/master
 
     /** @hidden */
     @HostBinding('style.background-color') backgroundColor: string|null = null
@@ -141,18 +129,11 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
     protected notifications: NotificationsService
     protected log: LogService
     protected decorators: TerminalDecorator[] = []
-<<<<<<< HEAD
-=======
-    protected contextMenuProviders: TabContextMenuItemProvider[]
->>>>>>> upstream/master
     protected hostWindow: HostWindowService
     protected translate: TranslateService
     protected multifocus: MultifocusService
     protected themes: ThemesService
-<<<<<<< HEAD
     protected commands: CommandService
-=======
->>>>>>> upstream/master
     // Deps end
 
     protected logger: Logger
@@ -227,18 +208,11 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         this.notifications = injector.get(NotificationsService)
         this.log = injector.get(LogService)
         this.decorators = injector.get<any>(TerminalDecorator, null, InjectFlags.Optional) as TerminalDecorator[]
-<<<<<<< HEAD
-=======
-        this.contextMenuProviders = injector.get<any>(TabContextMenuItemProvider, null, InjectFlags.Optional) as TabContextMenuItemProvider[]
->>>>>>> upstream/master
         this.hostWindow = injector.get(HostWindowService)
         this.translate = injector.get(TranslateService)
         this.multifocus = injector.get(MultifocusService)
         this.themes = injector.get(ThemesService)
-<<<<<<< HEAD
         this.commands = injector.get(CommandService)
-=======
->>>>>>> upstream/master
 
         this.logger = this.log.create('baseTerminalTab')
         this.setTitle(this.translate.instant('Terminal'))
@@ -363,11 +337,6 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         this.bellPlayer = document.createElement('audio')
         this.bellPlayer.src = require('../bell.ogg')
         this.bellPlayer.load()
-<<<<<<< HEAD
-=======
-
-        this.contextMenuProviders.sort((a, b) => a.weight - b.weight)
->>>>>>> upstream/master
     }
 
     /** @hidden */
@@ -405,16 +374,12 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         const cls: new (..._) => Frontend = enable8884Workarround ? XTermFrontend : {
             xterm: XTermFrontend,
             'xterm-webgl': XTermWebGLFrontend,
-<<<<<<< HEAD
             'block': BlockFrontend,
         }[this.config.store.terminal.frontend] ?? XTermFrontend
 
         if (this.config.store.terminal.frontend === 'block') {
             this.config.store.terminal.useBlockFrontend = true
         }
-=======
-        }[this.config.store.terminal.frontend] ?? XTermFrontend
->>>>>>> upstream/master
         this.frontend = new cls(this.injector)
 
         this.frontendReady$.pipe(first()).subscribe(() => {
@@ -522,7 +487,6 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
     }
 
     async buildContextMenu (): Promise<MenuItemOptions[]> {
-<<<<<<< HEAD
         const contexts: CommandContext[] = [{ tab: this }]
 
         // Top-level tab menu
@@ -531,15 +495,6 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
         }
 
         return this.commands.buildContextMenu(contexts, CommandLocation.TabBodyMenu)
-=======
-        let items: MenuItemOptions[] = []
-        for (const section of await Promise.all(this.contextMenuProviders.map(x => x.getItems(this)))) {
-            items = items.concat(section)
-            items.push({ type: 'separator' })
-        }
-        items.splice(items.length - 1, 1)
-        return items
->>>>>>> upstream/master
     }
 
     /**
@@ -976,7 +931,6 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
     protected isSessionExplicitlyTerminated (): boolean {
         return false
     }
-<<<<<<< HEAD
 
 
     private monacoEditor?: any
@@ -1173,6 +1127,4 @@ export class BaseTerminalTabComponent<P extends BaseTerminalProfile> extends Bas
             this.agentMessages[loadingIndex].content = `Error connecting to AI backend: ${e.toString()}`;
         }
     }
-=======
->>>>>>> upstream/master
 }
