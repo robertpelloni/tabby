@@ -28,7 +28,7 @@ export class TabManagementContextMenu extends TabContextMenuItemProvider {
         super()
     }
 
-    async getItems (tab: BaseTabComponent, tabHeader?: TabHeaderComponent): Promise<MenuItemOptions[]> {
+    async getItems (tab: BaseTabComponent, tabHeader?: boolean): Promise<MenuItemOptions[]> {
         let items: MenuItemOptions[] = [
             {
                 label: this.translate.instant('Close'),
@@ -106,14 +106,14 @@ export class CommonOptionsContextMenu extends TabContextMenuItemProvider {
         super()
     }
 
-    async getItems (tab: BaseTabComponent, tabHeader?: TabHeaderComponent): Promise<MenuItemOptions[]> {
+    async getItems (tab: BaseTabComponent, tabHeader?: boolean): Promise<MenuItemOptions[]> {
         let items: MenuItemOptions[] = []
         if (tabHeader) {
             items = [
                 ...items,
                 {
                     label: this.translate.instant('Rename'),
-                    click: () => tabHeader.showRenameTabModal(),
+                    click: () => this.app.renameTab(tab),
                 },
                 {
                     label: this.translate.instant('Duplicate'),
@@ -269,7 +269,7 @@ export class ProfilesContextMenu extends TabContextMenuItemProvider {
         tab.destroy()
     }
 
-    async getItems (tab: BaseTabComponent, tabHeader?: TabHeaderComponent): Promise<MenuItemOptions[]> {
+    async getItems (tab: BaseTabComponent, tabHeader?: boolean): Promise<MenuItemOptions[]> {
 
         if (!tabHeader && tab.parent instanceof SplitTabComponent && tab.parent.getAllTabs().length > 1) {
             return [

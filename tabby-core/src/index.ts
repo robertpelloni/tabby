@@ -39,7 +39,7 @@ import { FastHtmlBindDirective } from './directives/fastHtmlBind.directive'
 import { DropZoneDirective } from './directives/dropZone.directive'
 import { CdkAutoDropGroup } from './directives/cdkAutoDropGroup.directive'
 
-import { Theme, CLIHandler, TabContextMenuItemProvider, TabRecoveryProvider, HotkeyProvider, ConfigProvider, PlatformService, FileProvider, ProfilesService, ProfileProvider, QuickConnectProfileProvider, SelectorOption, Profile, SelectorService, CommandProvider, PartialProfileGroup, ProfileGroup } from './api'
+import { Theme, CLIHandler, TabRecoveryProvider, HotkeyProvider, ConfigProvider, PlatformService, FileProvider, ProfilesService, ProfileProvider, QuickConnectProfileProvider, SelectorOption, Profile, SelectorService, CommandProvider, PartialProfileGroup, ProfileGroup } from './api'
 
 import { AppService } from './services/app.service'
 import { ConfigService } from './services/config.service'
@@ -55,15 +55,12 @@ import { CoreConfigProvider } from './config'
 import { AppHotkeyProvider } from './hotkeys'
 import { LastCLIHandler, ProfileCLIHandler } from './cli'
 import { SplitLayoutProfilesService } from './profiles'
-import { CoreCommandProvider, TaskCompletionCommandProvider } from './commands'
+import { CoreCommandProvider } from './commands'
 
 export function TranslateMessageFormatCompilerFactory (): TranslateMessageFormatCompiler {
     return new TranslateMessageFormatCompiler()
 }
 
-export function TranslateMessageFormatCompilerFactory (): TranslateMessageFormatCompiler {
-    return new TranslateMessageFormatCompiler()
-}
 
 const PROVIDERS = [
     { provide: HotkeyProvider, useClass: AppHotkeyProvider, multi: true },
@@ -263,7 +260,7 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
     }
 
     static forRoot (): ModuleWithProviders<AppModule> {
-        const translateModule = TranslateModule.forRoot({
+        TranslateModule.forRoot({
             defaultLanguage: 'en',
             compiler: {
                 provide: TranslateCompiler,
