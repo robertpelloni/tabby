@@ -1,6 +1,10 @@
 {
   "name": "tabby-settings",
+<<<<<<< HEAD
   "version": "1.0.231-nightly.19",
+=======
+  "version": "1.0.231-nightly.0",
+>>>>>>> upstream/master
   "description": "Tabby terminal settings page",
   "keywords": [
     "tabby-builtin-plugin"
@@ -19,7 +23,11 @@
   "license": "MIT",
   "devDependencies": {
     "@types/marked": "^5.0.1",
+<<<<<<< HEAD
     "marked": "^9.1.4",
+=======
+    "marked": "^5.1.2",
+>>>>>>> upstream/master
     "ngx-infinite-scroll": "^16"
   },
   "peerDependencies": {

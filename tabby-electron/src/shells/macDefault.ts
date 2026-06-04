@@ -27,6 +27,10 @@ export class MacOSDefaultShellProvider extends ShellProvider {
             args: ['--login'],
             hidden: true,
             env: {},
+<<<<<<< HEAD
+=======
+            shellType: 'unix',
+>>>>>>> upstream/master
         }]
     }
 

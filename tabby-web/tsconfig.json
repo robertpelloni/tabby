@@ -2,9 +2,13 @@
   "extends": "../tsconfig.json",
   "exclude": ["node_modules", "dist"],
   "compilerOptions": {
+<<<<<<< HEAD
     "baseUrl": "src",
     "paths": {
       "*": ["../../app/node_modules/*"]
     }
+=======
+    "baseUrl": "src"
+>>>>>>> upstream/master
   }
 }

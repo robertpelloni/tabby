@@ -1,6 +1,10 @@
 {
   "name": "tabby-local",
+<<<<<<< HEAD
   "version": "1.0.231-nightly.19",
+=======
+  "version": "1.0.231-nightly.0",
+>>>>>>> upstream/master
   "description": "Tabby's local shell plugin",
   "keywords": [
     "tabby-builtin-plugin"

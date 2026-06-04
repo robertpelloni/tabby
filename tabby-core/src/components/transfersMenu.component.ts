@@ -1,5 +1,11 @@
+<<<<<<< HEAD
 import { Component, Input, Output, EventEmitter } from '@angular/core'
 import { TranslateService } from '@ngx-translate/core'
+=======
+import { Component, Input, Output, EventEmitter, HostBinding } from '@angular/core'
+import { TranslateService } from '@ngx-translate/core'
+import { ConfigService } from '../services/config.service'
+>>>>>>> upstream/master
 import { FileDownload, FileTransfer, PlatformService } from '../api/platform'
 
 /** @hidden */
@@ -11,8 +17,17 @@ import { FileDownload, FileTransfer, PlatformService } from '../api/platform'
 export class TransfersMenuComponent {
     @Input() transfers: FileTransfer[]
     @Output() transfersChange = new EventEmitter<FileTransfer[]>()
+<<<<<<< HEAD
 
     constructor (
+=======
+    @HostBinding('class.vibrant') get isVibrant (): boolean {
+        return this.config.store.appearance.vibrancy
+    }
+
+    constructor (
+        private config: ConfigService,
+>>>>>>> upstream/master
         private platform: PlatformService,
         private translate: TranslateService,
     ) { }

@@ -1,6 +1,10 @@
 {
   "name": "tabby-core",
+<<<<<<< HEAD
   "version": "1.0.231-nightly.19",
+=======
+  "version": "1.0.231-nightly.0",
+>>>>>>> upstream/master
   "description": "Tabby core",
   "keywords": [
     "tabby-builtin-plugin"
@@ -24,9 +28,15 @@
     "fuzzy-search": "^3.2.1",
     "js-yaml": "^4.0.0",
     "messageformat": "^2.3.0",
+<<<<<<< HEAD
     "mixpanel": "^0.18.0",
     "ngx-translate-messageformat-compiler": "^4.11.0",
     "readable-stream": "4.4.2",
+=======
+    "mixpanel": "^0.17.0",
+    "ngx-translate-messageformat-compiler": "^4.11.0",
+    "readable-stream": "4.4.0",
+>>>>>>> upstream/master
     "uuid": "^9.0.0"
   },
   "peerDependencies": {

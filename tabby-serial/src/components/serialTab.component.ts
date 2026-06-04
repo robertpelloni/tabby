@@ -61,8 +61,13 @@ export class SerialTabComponent extends ConnectableTerminalTabComponent<SerialPr
 
         try {
             await this.session!.start()
+<<<<<<< HEAD
             this.stopSpinner();
             (session as any).serviceMessage.next(this.translate.instant(_('Port opened')))
+=======
+            this.stopSpinner()
+            session.emitServiceMessage(this.translate.instant(_('Port opened')))
+>>>>>>> upstream/master
         } catch (e) {
             this.stopSpinner()
             this.write(colors.black.bgRed(' X ') + ' ' + colors.red(e.message) + '\r\n')
@@ -95,7 +100,11 @@ export class SerialTabComponent extends ConnectableTerminalTabComponent<SerialPr
                 name: x.toString(), result: x, weight: x,
             })),
         )
+<<<<<<< HEAD
         // Go backend handles baud rate changes by reconnecting or not supported dynamically yet
+=======
+        this.session?.serial?.update({ baudRate: rate })
+>>>>>>> upstream/master
         this.profile.options.baudrate = rate
     }
 

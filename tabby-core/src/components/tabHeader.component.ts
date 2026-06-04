@@ -1,12 +1,21 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+<<<<<<< HEAD
 import { Component, Input, HostBinding, HostListener, NgZone } from '@angular/core'
 import { auditTime } from 'rxjs'
 
 import { BaseTabComponent } from './baseTab.component'
+=======
+import { Component, Input, Optional, Inject, HostBinding, HostListener, NgZone } from '@angular/core'
+import { auditTime } from 'rxjs'
+import { TabContextMenuItemProvider } from '../api/tabContextMenuProvider'
+import { BaseTabComponent } from './baseTab.component'
+import { SplitTabComponent } from './splitTab.component'
+>>>>>>> upstream/master
 import { HotkeysService } from '../services/hotkeys.service'
 import { AppService } from '../services/app.service'
 import { HostAppService, Platform } from '../api/hostApp'
 import { ConfigService } from '../services/config.service'
+<<<<<<< HEAD
 import { CommandService } from '../services/commands.service'
 import { MenuItemOptions } from '../api/menu'
 import { PlatformService } from '../api/platform'
@@ -14,6 +23,11 @@ import { CommandContext, CommandLocation } from '../api/commands'
 
 import { BaseComponent } from './base.component'
 import { SplitTabComponent } from './splitTab.component'
+=======
+import { BaseComponent } from './base.component'
+import { MenuItemOptions } from '../api/menu'
+import { PlatformService } from '../api/platform'
+>>>>>>> upstream/master
 
 /** @hidden */
 @Component({
@@ -34,8 +48,13 @@ export class TabHeaderComponent extends BaseComponent {
         public hostApp: HostAppService,
         private hotkeys: HotkeysService,
         private platform: PlatformService,
+<<<<<<< HEAD
         private commands: CommandService,
         private zone: NgZone,
+=======
+        private zone: NgZone,
+        @Optional() @Inject(TabContextMenuItemProvider) protected contextMenuProviders: TabContextMenuItemProvider[],
+>>>>>>> upstream/master
     ) {
         super()
         this.subscribeUntilDestroyed(this.hotkeys.hotkey$, (hotkey) => {
@@ -45,6 +64,10 @@ export class TabHeaderComponent extends BaseComponent {
                 }
             }
         })
+<<<<<<< HEAD
+=======
+        this.contextMenuProviders.sort((a, b) => a.weight - b.weight)
+>>>>>>> upstream/master
     }
 
     ngOnInit () {
@@ -58,6 +81,7 @@ export class TabHeaderComponent extends BaseComponent {
     }
 
     async buildContextMenu (): Promise<MenuItemOptions[]> {
+<<<<<<< HEAD
         const contexts: CommandContext[] = [{ tab: this.tab }]
 
         // Top-level tab menu
@@ -69,6 +93,28 @@ export class TabHeaderComponent extends BaseComponent {
         }
 
         return this.commands.buildContextMenu(contexts, CommandLocation.TabHeaderMenu)
+=======
+        let items: MenuItemOptions[] = []
+        // Top-level tab menu
+        for (const section of await Promise.all(this.contextMenuProviders.map(x => x.getItems(this.tab, true)))) {
+            items.push({ type: 'separator' })
+            items = items.concat(section)
+        }
+        if (this.tab instanceof SplitTabComponent) {
+            const tab = this.tab.getFocusedTab()
+            if (tab) {
+                for (let section of await Promise.all(this.contextMenuProviders.map(x => x.getItems(tab, true)))) {
+                    // eslint-disable-next-line @typescript-eslint/no-loop-func
+                    section = section.filter(item => !items.some(ex => ex.label === item.label))
+                    if (section.length) {
+                        items.push({ type: 'separator' })
+                        items = items.concat(section)
+                    }
+                }
+            }
+        }
+        return items.slice(1)
+>>>>>>> upstream/master
     }
 
     onTabDragStart (tab: BaseTabComponent) {

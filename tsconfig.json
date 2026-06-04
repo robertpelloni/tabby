@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "module": "es2015",
+<<<<<<< HEAD
     "target": "es5",
+=======
+    "target": "es2016",
+>>>>>>> upstream/master
     "moduleResolution": "node",
     "noImplicitAny": false,
     "removeComments": false,

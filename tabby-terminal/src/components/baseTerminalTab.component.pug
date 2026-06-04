@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .main-container(style='display: flex; flex-direction: row; height: 100%; width: 100%;')
     .terminal-container(style='flex: 1; display: flex; flex-direction: column; min-width: 0;')
         .terminal-toolbar-spacer
@@ -41,3 +42,22 @@
                 div([innerHTML]='msg.content')
         .chat-input(style='padding: 10px; border-top: 1px solid #444;')
             input.form-control.form-control-sm(type='text', placeholder='Ask the agent...', [(ngModel)]='agentInput', (keydown.enter)='sendAgentMessage()', style='background: #1e1e1e; border: 1px solid #444; color: #f8f8f2;')
+=======
+.terminal-toolbar-spacer
+.content(#content, [style.opacity]='frontendIsReady ? 1 : 0')
+search-panel(
+    *ngIf='showSearchPanel && hasFocus && frontend',
+    @toolbarSlide,
+    [@.disabled]='!config.store.accessibility.animations',
+    [frontend]='frontend',
+    (close)='showSearchPanel = false; frontend.cancelSearch()'
+)
+
+button.btn.btn-sm.btn-link.toolbar-pin-button(
+    *ngIf='enableToolbar && !pinToolbar',
+    (click)='togglePinToolbar()',
+    (mouseenter)='showToolbar()',
+    (mouseleave)='hideToolbar()'
+)
+    i.fas.fa-wrench
+>>>>>>> upstream/master

@@ -1,6 +1,9 @@
 import 'v8-compile-cache'
 import '../lib/lru'
+<<<<<<< HEAD
 import 'core-js/proposals/reflect-metadata'
+=======
+>>>>>>> upstream/master
 import 'source-sans-pro/source-sans-pro.css'
 import 'source-code-pro/source-code-pro.css'
 import '@fortawesome/fontawesome-free/css/solid.css'
@@ -8,6 +11,7 @@ import '@fortawesome/fontawesome-free/css/brands.css'
 import '@fortawesome/fontawesome-free/css/regular.css'
 import '@fortawesome/fontawesome-free/css/fontawesome.css'
 import './preload.scss'
+<<<<<<< HEAD
 import * as path from 'path'
 
 const nodeModule = require('module') // eslint-disable-line @typescript-eslint/no-var-requires
@@ -76,3 +80,5 @@ builtinModules.forEach(m => {
     }
     console.timeEnd(label)
 })
+=======
+>>>>>>> upstream/master

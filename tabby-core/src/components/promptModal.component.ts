@@ -6,7 +6,10 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
     templateUrl: './promptModal.component.pug',
 })
 export class PromptModalComponent {
+<<<<<<< HEAD
     @Input() prompt: string
+=======
+>>>>>>> upstream/master
     @Input() value: string
     @Input() prompt: string|undefined
     @Input() password: boolean

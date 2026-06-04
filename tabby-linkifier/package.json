@@ -1,6 +1,10 @@
 {
   "name": "tabby-linkifier",
+<<<<<<< HEAD
   "version": "1.0.231-nightly.19",
+=======
+  "version": "1.0.231-nightly.0",
+>>>>>>> upstream/master
   "description": "Makes URLs, IPs and file paths clickable in Tabby",
   "keywords": [
     "tabby-builtin-plugin"

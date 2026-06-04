@@ -11,7 +11,10 @@ import { saveConfig } from './config'
 import { Window, WindowOptions } from './window'
 import { pluginManager } from './pluginManager'
 import { PTYManager } from './pty'
+<<<<<<< HEAD
 import { goBackend } from './goBackend'
+=======
+>>>>>>> upstream/master
 
 /* eslint-disable block-scoped-var */
 
@@ -110,6 +113,7 @@ export class Application {
     }
 
     init (): void {
+<<<<<<< HEAD
 
         goBackend.start(__dirname)
 
@@ -139,6 +143,8 @@ export class Application {
             goBackend.request('serial.close', { id })
         })
 
+=======
+>>>>>>> upstream/master
         screen.on('display-metrics-changed', () => this.broadcast('host:display-metrics-changed'))
         screen.on('display-added', () => this.broadcast('host:displays-changed'))
         screen.on('display-removed', () => this.broadcast('host:displays-changed'))

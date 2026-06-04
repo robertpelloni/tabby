@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { Injectable } from '@angular/core'
 import { TranslateService } from '@ngx-translate/core'
+<<<<<<< HEAD
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 
 import { HostAppService, Platform } from './api/hostApp'
@@ -15,6 +16,12 @@ import { TabsService } from './services/tabs.service'
 import { SplitLayoutProfilesService } from './profiles'
 import { TAB_COLORS } from './utils'
 import { Subscription } from 'rxjs'
+=======
+
+import { HostAppService, Platform } from './api/hostApp'
+import { ProfilesService } from './services/profiles.service'
+import { CommandProvider, Command, CommandLocation } from './api/commands'
+>>>>>>> upstream/master
 
 /** @hidden */
 @Injectable({ providedIn: 'root' })
@@ -23,6 +30,7 @@ export class CoreCommandProvider extends CommandProvider {
         private hostApp: HostAppService,
         private profilesService: ProfilesService,
         private translate: TranslateService,
+<<<<<<< HEAD
         private app: AppService,
         private splitLayoutProfilesService: SplitLayoutProfilesService,
         private ngbModal: NgbModal,
@@ -65,36 +73,59 @@ export class CoreCommandProvider extends CommandProvider {
     }
 
     async showProfileSelector () {
+=======
+    ) {
+        super()
+    }
+
+    async activate () {
+>>>>>>> upstream/master
         const profile = await this.profilesService.showProfileSelector().catch(() => null)
         if (profile) {
             this.profilesService.launchProfile(profile)
         }
     }
 
+<<<<<<< HEAD
     async provide (context: CommandContext): Promise<Command[]> {
         const commands: Command[] = [
+=======
+    async provide (): Promise<Command[]> {
+        return [
+>>>>>>> upstream/master
             {
                 id: 'core:profile-selector',
                 locations: [CommandLocation.LeftToolbar, CommandLocation.StartPage],
                 label: this.translate.instant('Profiles & connections'),
+<<<<<<< HEAD
                 weight: 12,
                 icon: this.hostApp.platform === Platform.Web
                     ? require('./icons/plus.svg')
                     : require('./icons/profiles.svg'),
                 run: async () => this.showProfileSelector(),
+=======
+                icon: this.hostApp.platform === Platform.Web
+                    ? require('./icons/plus.svg')
+                    : require('./icons/profiles.svg'),
+                run: async () => this.activate(),
+>>>>>>> upstream/master
             },
             ...this.profilesService.getRecentProfiles().map((profile, index) => ({
                 id: `core:recent-profile-${index}`,
                 label: profile.name,
                 locations: [CommandLocation.StartPage],
                 icon: require('./icons/history.svg'),
+<<<<<<< HEAD
                 weight: 20,
+=======
+>>>>>>> upstream/master
                 run: async () => {
                     const p = (await this.profilesService.getProfiles()).find(x => x.id === profile.id) ?? profile
                     this.profilesService.launchProfile(p)
                 },
             })),
         ]
+<<<<<<< HEAD
 
         if (context.tab) {
             const tab = context.tab
@@ -345,5 +376,7 @@ export class TaskCompletionCommandProvider extends CommandProvider {
             },
         })
         return items
+=======
+>>>>>>> upstream/master
     }
 }

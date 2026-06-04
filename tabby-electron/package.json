@@ -1,6 +1,10 @@
 {
   "name": "tabby-electron",
+<<<<<<< HEAD
   "version": "1.0.231-nightly.19",
+=======
+  "version": "1.0.231-nightly.0",
+>>>>>>> upstream/master
   "description": "Electron-specific bindings",
   "keywords": [
     "tabby-builtin-plugin"
@@ -26,7 +30,11 @@
     "ps-node": "^0.1.6",
     "ssh-config": "^5.0.0",
     "tmp-promise": "^3.0.2",
+<<<<<<< HEAD
     "which": "^4.0.0",
+=======
+    "which": "^3.0.0",
+>>>>>>> upstream/master
     "winston": "^3.3.3"
   }
 }

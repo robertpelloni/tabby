@@ -1,10 +1,15 @@
 import { Inject, Injectable, Optional } from '@angular/core'
+<<<<<<< HEAD
 import { TranslateService } from '@ngx-translate/core'
 import { Command, CommandContext, CommandLocation, CommandProvider, MenuItemOptions, SplitTabComponent, TabContextMenuItemProvider, ToolbarButton, ToolbarButtonProvider } from '../api'
 import { AppService } from './app.service'
 import { ConfigService } from './config.service'
 import { SelectorService } from './selector.service'
 import { firstBy } from 'thenby'
+=======
+import { AppService, Command, CommandContext, CommandProvider, ConfigService, MenuItemOptions, SplitTabComponent, TabContextMenuItemProvider, ToolbarButton, ToolbarButtonProvider, TranslateService } from '../api'
+import { SelectorService } from './selector.service'
+>>>>>>> upstream/master
 
 @Injectable({ providedIn: 'root' })
 export class CommandService {
@@ -15,11 +20,19 @@ export class CommandService {
         private config: ConfigService,
         private app: AppService,
         private translate: TranslateService,
+<<<<<<< HEAD
         @Optional() @Inject(TabContextMenuItemProvider) protected contextMenuProviders: TabContextMenuItemProvider[]|null,
         @Optional() @Inject(ToolbarButtonProvider) private toolbarButtonProviders: ToolbarButtonProvider[],
         @Inject(CommandProvider) private commandProviders: CommandProvider[],
     ) {
         this.contextMenuProviders?.sort((a, b) => a.weight - b.weight)
+=======
+        @Optional() @Inject(TabContextMenuItemProvider) protected contextMenuProviders: TabContextMenuItemProvider[],
+        @Optional() @Inject(ToolbarButtonProvider) private toolbarButtonProviders: ToolbarButtonProvider[],
+        @Inject(CommandProvider) private commandProviders: CommandProvider[],
+    ) {
+        this.contextMenuProviders.sort((a, b) => a.weight - b.weight)
+>>>>>>> upstream/master
     }
 
     async getCommands (context: CommandContext): Promise<Command[]> {
@@ -33,8 +46,13 @@ export class CommandService {
         let items: MenuItemOptions[] = []
         if (context.tab) {
             for (const tabHeader of [false, true]) {
+<<<<<<< HEAD
                 // Top-level tab menu
                 for (let section of await Promise.all(this.contextMenuProviders?.map(x => x.getItems(context.tab!, tabHeader)) ?? [])) {
+=======
+            // Top-level tab menu
+                for (let section of await Promise.all(this.contextMenuProviders.map(x => x.getItems(context.tab!, tabHeader)))) {
+>>>>>>> upstream/master
                     // eslint-disable-next-line @typescript-eslint/no-loop-func
                     section = section.filter(item => !items.some(ex => ex.label === item.label))
                     items = items.concat(section)
@@ -42,7 +60,11 @@ export class CommandService {
                 if (context.tab instanceof SplitTabComponent) {
                     const tab = context.tab.getFocusedTab()
                     if (tab) {
+<<<<<<< HEAD
                         for (let section of await Promise.all(this.contextMenuProviders?.map(x => x.getItems(tab, tabHeader)) ?? [])) {
+=======
+                        for (let section of await Promise.all(this.contextMenuProviders.map(x => x.getItems(tab, tabHeader)))) {
+>>>>>>> upstream/master
                             // eslint-disable-next-line @typescript-eslint/no-loop-func
                             section = section.filter(item => !items.some(ex => ex.label === item.label))
                             items = items.concat(section)
@@ -54,10 +76,28 @@ export class CommandService {
 
         items = items.filter(x => (x.enabled ?? true) && x.type !== 'separator')
 
+<<<<<<< HEAD
         const commands = [
             ...buttons.map(x => Command.fromToolbarButton(x)),
             ...items.map(x => Command.fromMenuItem(x)).flat(),
         ]
+=======
+        const flatItems: MenuItemOptions[] = []
+        function flattenItem (item: MenuItemOptions, prefix?: string): void {
+            if (item.submenu) {
+                item.submenu.forEach(x => flattenItem(x, (prefix ? `${prefix} > ` : '') + (item.commandLabel ?? item.label)))
+            } else {
+                flatItems.push({
+                    ...item,
+                    label: (prefix ? `${prefix} > ` : '') + (item.commandLabel ?? item.label),
+                })
+            }
+        }
+        items.forEach(x => flattenItem(x))
+
+        const commands = buttons.map(x => Command.fromToolbarButton(x))
+        commands.push(...flatItems.map(x => Command.fromMenuItem(x)))
+>>>>>>> upstream/master
 
         for (const provider of this.config.enabledServices(this.commandProviders)) {
             commands.push(...await provider.provide(context))
@@ -67,6 +107,7 @@ export class CommandService {
             .filter(c => !this.config.store.commandBlacklist.includes(c.id))
             .sort((a, b) => (a.weight ?? 0) - (b.weight ?? 0))
             .map(command => {
+<<<<<<< HEAD
                 if (command.run) {
                     const run = command.run
                     command.run = async () => {
@@ -74,11 +115,19 @@ export class CommandService {
                         this.lastCommand = this.lastCommand.finally(run)
                         await this.lastCommand
                     }
+=======
+                const run = command.run
+                command.run = async () => {
+                    // Serialize execution
+                    this.lastCommand = this.lastCommand.finally(run)
+                    await this.lastCommand
+>>>>>>> upstream/master
                 }
                 return command
             })
     }
 
+<<<<<<< HEAD
     async getCommandsWithContexts (context: CommandContext[]): Promise<Command[]> {
         let commands: Command[] = []
 
@@ -97,6 +146,12 @@ export class CommandService {
         const commands = await this.getCommands(context)
         const command = commands.find(x => x.id === id)
         await command?.run?.()
+=======
+    async run (id: string, context: CommandContext): Promise<void> {
+        const commands = await this.getCommands(context)
+        const command = commands.find(x => x.id === id)
+        await command?.run()
+>>>>>>> upstream/master
     }
 
     async showSelector (): Promise<void> {
@@ -104,6 +159,7 @@ export class CommandService {
             return
         }
 
+<<<<<<< HEAD
         const contexts: CommandContext[] = [{}]
         if (this.app.activeTab) {
             contexts.push({ tab: this.app.activeTab })
@@ -124,10 +180,25 @@ export class CommandService {
             commands.map(c => ({
                 name: c.fullLabel ?? c.label,
                 callback: c.run,
+=======
+        const context: CommandContext = {}
+        const tab = this.app.activeTab
+        if (tab instanceof SplitTabComponent) {
+            context.tab = tab.getFocusedTab() ?? undefined
+        }
+        const commands = await this.getCommands(context)
+        return this.selector.show(
+            this.translate.instant('Commands'),
+            commands.map(c => ({
+                name: c.label,
+                callback: c.run,
+                description: c.sublabel,
+>>>>>>> upstream/master
                 icon: c.icon,
             })),
         )
     }
+<<<<<<< HEAD
 
     /** @hidden */
     async buildContextMenu (contexts: CommandContext[], location: CommandLocation): Promise<MenuItemOptions[]> {
@@ -180,4 +251,6 @@ export class CommandService {
 
         return items.slice(1)
     }
+=======
+>>>>>>> upstream/master
 }
