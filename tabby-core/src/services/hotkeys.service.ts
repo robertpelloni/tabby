@@ -130,7 +130,7 @@ export class HotkeysService {
             registrationTime: performance.now(),
         }
 
-        for (const [key, time] of this.pressedKeyTimestamps.entries()) {
+        for (const [key, time] of Array.from(this.pressedKeyTimestamps.entries())) {
             if (time < performance.now() - 2000) {
                 this.removePressedKey(key)
             }

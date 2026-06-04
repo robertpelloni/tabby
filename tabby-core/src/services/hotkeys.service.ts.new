@@ -1,0 +1,10 @@
+            registrationTime: performance.now(),
+        }
+
+        for (const [key, time] of this.pressedKeyTimestamps.entries()) {
+            if (time < performance.now() - 2000) {
+                this.removePressedKey(key)
+            }
+        }
+
+        const keyName = getKeyName(eventData)
