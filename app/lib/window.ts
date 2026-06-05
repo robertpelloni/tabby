@@ -1,7 +1,7 @@
 import { autoUpdater } from 'electron-updater'
 import { Subject, Observable, debounceTime } from 'rxjs'
 import { BrowserWindow, app, ipcMain, Rectangle, Menu, screen, BrowserWindowConstructorOptions, TouchBar, nativeImage, WebContents, nativeTheme } from 'electron'
-import ElectronConfig = require('electron-config')
+import * as ElectronConfig from 'electron-config'
 import { enable as enableRemote } from '@electron/remote/main'
 import * as path from 'path'
 import macOSRelease from 'macos-release'
@@ -15,9 +15,9 @@ export interface WindowOptions {
     hidden?: boolean
 }
 
-abstract class GlasstronWindow extends BrowserWindow {
-    blurType: string
-    abstract setBlur (_: boolean)
+ {
+
+
 }
 
 const macOSVibrancyType: any = process.platform === 'darwin' ? compareVersions(macOSRelease().version || '0.0', '10.14', '>=') ? 'fullscreen-ui' : 'dark' : null
@@ -96,11 +96,7 @@ export class Window {
             bwOptions.visualEffectState = 'active'
         }
 
-        if (process.platform === 'darwin') {
-            this.window = new BrowserWindow(bwOptions) as GlasstronWindow
-        } else {
-            this.window = new glasstron.BrowserWindow(bwOptions)
-        }
+        this.window = new BrowserWindow(bwOptions)
 
         this.webContents = this.window.webContents
 

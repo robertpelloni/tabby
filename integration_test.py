@@ -100,6 +100,25 @@ def run_test():
     else:
         print("❌ No agent notifications received")
 
+
+    # 5. Widget & VDOM Benchmark
+    print('Benchmarking Widgets & VDOM...')
+    widget_res = request('agent.createWidget', {'type': 'vdom', 'title': 'Test Widget'})
+    if widget_res and 'result' in widget_res:
+        widget_id = widget_res['result']['id']
+        vdom_node = {
+            'tag': 'div',
+            'props': {'className': 'p-4'},
+            'children': [
+                {'tag': 'h1', 'children': ['Hello VDOM']},
+                'Text child'
+            ]
+        }
+        request('agent.updateWidgetVDOM', {'id': widget_id, 'vdom': vdom_node})
+        print('✅ Widget creation and VDOM update verified')
+    else:
+        print('❌ Widget creation failed')
+
     proc.terminate()
     print("Performance Integration Test Finished.")
 

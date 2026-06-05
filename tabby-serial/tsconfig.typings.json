@@ -3,7 +3,6 @@
   "exclude": ["node_modules", "dist", "typings"],
   "include": ["src"],
   "compilerOptions": {
-    "downlevelIteration": true,
     "baseUrl": "src",
     "emitDeclarationOnly": true,
     "declaration": true,

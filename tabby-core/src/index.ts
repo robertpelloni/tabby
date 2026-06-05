@@ -61,7 +61,6 @@ export function TranslateMessageFormatCompilerFactory (): TranslateMessageFormat
     return new TranslateMessageFormatCompiler()
 }
 
-
 const PROVIDERS = [
     { provide: HotkeyProvider, useClass: AppHotkeyProvider, multi: true },
     { provide: Theme, useClass: NewTheme, multi: true },
@@ -284,3 +283,4 @@ export { CommandCatalogModalComponent } from './components/commandCatalogModal.c
 // Deprecations
 export { ToolbarButton as IToolbarButton } from './api'
 export { HotkeyDescription as IHotkeyDescription } from './api'
+export { CommandService } from './services/commands.service'

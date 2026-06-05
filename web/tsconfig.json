@@ -1,6 +1,5 @@
 {
     "compilerOptions": {
-    "downlevelIteration": true,
         "baseUrl": "./src",
         "module": "commonjs",
         "target": "es2015",

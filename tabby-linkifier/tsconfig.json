@@ -2,7 +2,6 @@
   "extends": "../tsconfig.json",
   "exclude": ["node_modules", "dist"],
   "compilerOptions": {
-    "downlevelIteration": true,
     "baseUrl": "src",
   }
 }

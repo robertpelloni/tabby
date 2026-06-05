@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "downlevelIteration": true,
     "module": "es2015",
     "target": "es5",
     "moduleResolution": "node",
@@ -17,6 +16,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "importHelpers": true,
+    "downlevelIteration": true,
     "strictNullChecks": true,
     "lib": [
       "DOM",

@@ -1,38 +1,38 @@
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { ApplicationRef, NgModule } from '@angular/core'
+import { ApplicationRef, NgModule, ComponentFactoryResolver } from '@angular/core'
 import { BrowserModule } from '@angular/platform-browser'
 import { ToastrModule } from 'ngx-toastr'
 
-@NgModule({
-    imports: [
-        BrowserModule,
-        ...plugins,
-        ToastrModule.forRoot({
-            positionClass: 'toast-bottom-center',
-            toastClass: 'toast',
-            preventDuplicates: true,
-            extendedTimeOut: 1000,
-        }),
-    ]
-
-    const bootstrap = [
-        ...plugins.filter(x => x.bootstrap).map(x => x.bootstrap),
-    ]
-
-    if (bootstrap.length === 0) {
-        throw new Error('Did not find any bootstrap components. Are there any plugins installed?')
-    }
-
+export function getRootModule (plugins: any[]) {
     @NgModule({
-        imports,
+        imports: [
+            BrowserModule,
+            ...plugins,
+            ToastrModule.forRoot({
+                positionClass: 'toast-bottom-center',
+                toastClass: 'toast',
+                preventDuplicates: true,
+                extendedTimeOut: 1000,
+            }),
+        ],
     }) class RootModule {
-        ngDoBootstrap (appRef: ApplicationRef) {
+        constructor (
+            private appRef: ApplicationRef,
+            private componentFactoryResolver: ComponentFactoryResolver,
+        ) { }
+
+        ngDoBootstrap () {
+            const bootstrapComponents = (window as any)['bootstrapComponents'] || []
+            if (bootstrapComponents.length === 0) {
+                console.error('No bootstrap components found!')
+                return
+            }
+
             (window as any)['requestAnimationFrame'] = window[window['Zone'].__symbol__('requestAnimationFrame')]
 
-            const componentDef = bootstrap[0]
-            appRef.bootstrap(componentDef)
+            const componentDef = bootstrapComponents[0]
+            const factory = this.componentFactoryResolver.resolveComponentFactory(componentDef)
+            this.appRef.bootstrap(factory)
         }
     }
-
     return RootModule
 }
