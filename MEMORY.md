@@ -2,73 +2,33 @@
 
 ## Architecture Observations
 
-### General Architecture
-- Tabby is a **monorepo** with 15+ internal packages, all managed via yarn workspaces
-- Each internal package is both an Angular module and an npm package
-- The `app/` directory is the Electron shell that loads all plugins
-- Build uses webpack 5 with a custom multi-config setup (`webpack.config.mjs`, `webpack.plugin.config.mjs`)
-- TypeScript 4.9 (not 5.x yet) — Angular 15 compatibility constraint
+### The Go Migration (Rebuild Phase)
+- Tabby is transitioning from a Node.js/Rust backend to a native **Go backend daemon** (`tabby-go`).
+- The Go backend communicates with the Electron frontend via **JSON-RPC 2.0** over stdin/stdout.
+- Core protocols (PTY, SSH, SFTP, Serial, Telnet) are now handled by Go packages in `tabby-go/pkg`.
+- Frontend services (e.g., `SSHSession`, `SFTPSession`, `AgentService`) act as thin IPC proxies routing logic to Go.
 
-### Plugin System
-- Plugins are discovered by scanning for `package.json` files with `tabby-plugin` or `tabby-builtin-plugin` keywords
-- Legacy `terminus-plugin` keyword still supported for backwards compatibility
-- Plugin loading order matters: built-in plugins first, then user plugins
-- Plugins communicate via Angular DI providers (multi-provider pattern)
-- The `TABBY_PLUGINS` env var allows loading plugins from arbitrary paths during development
+### Agentic Workflow Engine (Phase 8)
+- Implemented a **7-phase stateful workflow engine** in `tabby-go/pkg/agent` (Discovery, Exploration, Clarification, Design, Implementation, Review, Summary).
+- Supports **Blocking Clarification**: The workflow pauses and waits for user input via `agent.submitWorkflowResponse`.
+- **VDOM Protocol**: A Virtual DOM system in Go (`pkg/vdom`) allows agents to push interactive UI trees to the frontend.
+- **Context Management**: `ContextManager` tracks codebase symbols and file access history to provide agents with persistent memory.
 
-### SSH Implementation
-- Uses `russh` (v0.1.36), a Rust SSH library, loaded via N-API native bindings
-- The `origin/russh` branch was the development branch for the russh migration
-- SSH features: shell sessions, SFTP, X11 forwarding, port forwarding (local/remote/dynamic), jump hosts, agent forwarding
-- Password storage via keytar (system keychain)
-- Known hosts management with host key verification prompts
+### Frontend Integration
+- **Widget System**: `AgentWidgetsComponent` and `WidgetVDOMComponent` in `tabby-core` render agent-driven rich media (Markdown, Dashboards).
+- **Workflow Visualization**: `WorkflowProgressComponent` provides real-time feedback on the agent's reasoning process.
+- **AOT Compatibility**: The project strictly adheres to Angular 15 AOT compilation. `AppModule` must maintain its class-based decorator structure for dynamic plugin loading.
 
-### Terminal Layer
-- xterm.js v6 as the terminal frontend
-- Middleware pipeline: input processing → login scripts → OSC processing → stream processing → UTF8 splitting
-- Features layered on top: Zmodem file transfer, debug mode
-- Color scheme management is extensive (community-contributed schemes as a plugin)
+### Build & Environment
+- **Heap Limits**: Webpack builds for large packages (e.g., `tabby-terminal`) require `NODE_OPTIONS="--max-old-space-size=8192"`.
+- **TSLib Versioning**: Due to multi-package hoisting issues, `tslib` (v2.5+) must be manually symlinked from the root `node_modules` into each sub-package's `node_modules` to ensure `__spreadArray` availability.
+- **BrowserWindow instantiation**: In Electron environments, `BrowserWindow` must be cast to `any` or required directly to avoid TypeScript naming conflicts.
 
-### Configuration
-- YAML-based configuration with platform-specific defaults (`configDefaults.{linux,macos,windows,web}.yaml`)
-- Config merging uses deepmerge via `configMerge()` in ConfigService
-- Hotkeys are configurable with multi-chord support
-- Profiles are stored as arrays in config, with group support
+## Testing & Verification
+- **Go Test Suite**: Core backend logic is verified via `go test ./...`.
+- **Integration Benchmark**: `integration_test.py` validates the full stack, ensuring <1.1ms RPC latency and stable agent/widget lifecycles.
 
-### Build System
-- `electron-builder` for packaging (Windows: NSIS/portable, macOS: DMG, Linux: deb/rpm/pacman/snap)
-- Build scripts in `scripts/` directory (per-platform build scripts)
-- Native modules compiled via `node-gyp` (keytar, serialport, node-pty, etc.)
-- `patch-package` for patching node_modules (see `patches/` directory)
-
-### Localization
-- 25+ language translations in `locale/` directory (`.po` files)
-- Uses `@ngx-translate/core` for i18n
-- Crowdin integration for translation management (`crowdin.yml` might exist)
-
-### Security
-- Encrypted vault for SSH secrets (`VaultService`)
-- Keytar integration for OS-level credential storage
-- Windows UAC helper (`tabby-uac/` - C# project)
-- SSH host key verification with user prompts
-
-## Code Style Observations
-- TypeScript with strict-ish settings but some `any` usage in IPC boundaries
-- Angular components use Pug templates (`.pug`) and SCSS (`.scss`)
-- Services follow Angular patterns with `@Injectable()` decorators
-- IPC between main and renderer process uses `ipcRenderer.sendSync` in some places (could be improved)
-- Some `var` usage in try/catch blocks for conditional requires (Node.js native modules)
-
-## Known Technical Debt
-- `app/package.json` version is `1.0.0-alpha.1` while all plugins are `1.0.231-nightly.0` — version mismatch
-- No unit tests visible in the repository
-- Some `eslint-disable` comments suggest style inconsistencies
-- IPC uses synchronous calls in some places (performance bottleneck)
-- The `tabby-uac/` module is a separate C# project with no build integration
-
-## Design Preferences (robertpelloni)
-- Preference for comprehensive documentation
-- Single source of truth for version numbers (VERSION.md)
-- Preference for Go as a backend language (porting initiative)
-- Automated git workflow with version bumps tied to commits
-- Cross-model development (Claude, Gemini, GPT working on same codebase)
+## Design Preferences
+- Single source of truth for versions in `VERSION.md`.
+- Comprehensive documentation in `VISION.md`, `ROADMAP.md`, and individual tool analysis files.
+- Automated submodule analysis and porting workflow.

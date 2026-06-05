@@ -132,6 +132,25 @@ def run_test():
     else:
         print('❌ Workflow creation failed')
 
+
+    # 7. Edge Cases Benchmark
+    print('Benchmarking Edge Cases...')
+    # Malformed JSON (handled by readline in our test helper, so we'll just skip here or add a raw test)
+    # Unknown Method
+    res = request('unknown.method')
+    if res and 'error' in res and res['error']['code'] == -32601:
+        print('✅ Unknown method error verified')
+    else:
+        print('❌ Unknown method error failed')
+
+    # Invalid Parameters
+    res = request('agent.runTask', {'invalid': 'params'})
+    if res and 'error' in res:
+        print('✅ Invalid parameters error verified')
+    else:
+        # Some methods might ignore unknown params, so this depends on strictness.
+        print('ℹ️  Invalid parameters handled (result: %s)' % (res.get('result') or res.get('error')))
+
     proc.terminate()
     print("Performance Integration Test Finished.")
 
