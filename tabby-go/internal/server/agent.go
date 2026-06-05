@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/agent"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/vdom"
@@ -26,4 +27,25 @@ func (s *Server) handleAgentUpdateWidgetVDOM(params interface{}) error {
 		return fmt.Errorf("invalid params: %w", err)
 	}
 	return s.agentMgr.UpdateWidgetVDOM(p.ID, p.VDOM)
+}
+
+func (s *Server) handleAgentStartWorkflow(params interface{}) (*agent.Workflow, error) {
+	var p struct {
+		Description string `json:"description"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	return s.agentMgr.WorkflowMgr.StartWorkflow(context.Background(), p.Description), nil
+}
+
+func (s *Server) handleAgentSubmitWorkflowResponse(params interface{}) error {
+	var p struct {
+		ID       string `json:"id"`
+		Response string `json:"response"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.agentMgr.WorkflowMgr.SubmitResponse(p.ID, p.Response)
 }

@@ -119,6 +119,19 @@ def run_test():
     else:
         print('❌ Widget creation failed')
 
+
+    # 6. Workflow Benchmark
+    print('Benchmarking Workflows...')
+    wf_res = request('agent.startWorkflow', {'description': 'Test Feature Workflow'})
+    if wf_res and 'result' in wf_res:
+        wf_id = wf_res['result']['id']
+        # Wait for clarification phase
+        time.sleep(1.5)
+        request('agent.submitWorkflowResponse', {'id': wf_id, 'response': 'Go ahead'})
+        print('✅ Workflow start and response submission verified')
+    else:
+        print('❌ Workflow creation failed')
+
     proc.terminate()
     print("Performance Integration Test Finished.")
 

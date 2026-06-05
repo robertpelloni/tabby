@@ -49,18 +49,22 @@ type NotifyFunc func(method string, params interface{})
 
 // Manager orchestrates agent tasks and widgets
 type Manager struct {
-	tasks   map[string]*Task
-	widgets map[string]*Widget
-	mu      sync.RWMutex
-	notify  NotifyFunc
+	WorkflowMgr *WorkflowManager
+	ContextMgr  *ContextManager
+	tasks       map[string]*Task
+	widgets     map[string]*Widget
+	mu          sync.RWMutex
+	notify      NotifyFunc
 }
 
 // NewManager creates a new agent manager
 func NewManager(notify NotifyFunc) *Manager {
 	return &Manager{
-		tasks:   make(map[string]*Task),
-		widgets: make(map[string]*Widget),
-		notify:  notify,
+		WorkflowMgr: NewWorkflowManager(notify),
+		ContextMgr:  NewContextManager(),
+		tasks:       make(map[string]*Task),
+		widgets:     make(map[string]*Widget),
+		notify:      notify,
 	}
 }
 
