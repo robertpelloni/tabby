@@ -32,6 +32,9 @@ import { WelcomeTabComponent } from './components/welcomeTab.component'
 import { TransfersMenuComponent } from './components/transfersMenu.component'
 import { ProfileIconComponent } from './components/profileIcon.component'
 import { AgentStatusComponent } from './components/agentStatus.component'
+import { WidgetVDOMComponent } from './components/widgets/widgetVDOM.component'
+import { AgentWidgetsComponent } from './components/widgets/agentWidgets.component'
+import { WorkflowProgressComponent } from './components/widgets/workflowProgress.component'
 
 import { AutofocusDirective } from './directives/autofocus.directive'
 import { AlwaysVisibleTypeaheadDirective } from './directives/alwaysVisibleTypeahead.directive'
@@ -133,6 +136,15 @@ const PROVIDERS = [
         CdkAutoDropGroup,
         ProfileIconComponent,
         AgentStatusComponent,
+        WidgetVDOMComponent,
+        AgentWidgetsComponent,
+        WorkflowProgressComponent,
+
+
+
+
+
+
         TabbyFormatedDatePipe,
     ],
     exports: [

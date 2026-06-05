@@ -13,9 +13,16 @@ export interface VDOMNode {
             <ng-container *ngIf="isString(child)">
                 {{ child }}
             </ng-container>
-            <div *ngIf="!isString(child)" [ngClass]="child.props?.className" [ngStyle]="child.props?.style">
-                <widget-vdom [node]="child"></widget-vdom>
-            </div>
+            <ng-container *ngIf="!isString(child)">
+                <div [ngSwitch]="child.tag" [ngClass]="child.props?.className" [ngStyle]="child.props?.style">
+                    <h1 *ngSwitchCase="'h1'"><widget-vdom [node]="child"></widget-vdom></h1>
+                    <h2 *ngSwitchCase="'h2'"><widget-vdom [node]="child"></widget-vdom></h2>
+                    <h3 *ngSwitchCase="'h3'"><widget-vdom [node]="child"></widget-vdom></h3>
+                    <p *ngSwitchCase="'p'"><widget-vdom [node]="child"></widget-vdom></p>
+                    <button *ngSwitchCase="'button'" class="btn btn-sm btn-primary"><widget-vdom [node]="child"></widget-vdom></button>
+                    <div *ngSwitchDefault><widget-vdom [node]="child"></widget-vdom></div>
+                </div>
+            </ng-container>
         </ng-container>
     `,
 })
