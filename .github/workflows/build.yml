@@ -68,6 +68,8 @@ jobs:
 
     - run: rustup target add ${{matrix.rust_triple}}
 
+    - run: rustup target add ${{matrix.rust_triple}}
+
     - name: Install deps
       run: |
         yarn --network-timeout 1000000
@@ -181,6 +183,8 @@ jobs:
     - name: Install FPM
       run: |
         sudo gem install fpm
+
+    - run: rustup target add ${{matrix.rust_triple}}
 
     - run: rustup target add ${{matrix.rust_triple}}
 
