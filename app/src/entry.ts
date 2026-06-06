@@ -41,6 +41,7 @@ async function bootstrap (bootstrapData: BootstrapData, plugins: PluginInfo[], s
     })
 
     window['pluginModules'] = pluginModules
+    window['bootstrapComponents'] = pluginModules.map(x => x.bootstrap).filter(x => !!x)
 
     const module = AppModule
     const moduleRef = await platformBrowserDynamic([
