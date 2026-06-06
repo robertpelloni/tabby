@@ -130,7 +130,7 @@ export class HotkeysService {
             registrationTime: performance.now(),
         }
 
-        for (const [key, time] of this.pressedKeyTimestamps.entries()) {
+        for (const [key, time] of Array.from(this.pressedKeyTimestamps.entries())) {
             if (time < performance.now() - 2000) {
                 this.removePressedKey(key)
             }
@@ -143,7 +143,7 @@ export class HotkeysService {
             this.updateModifiers(eventData)
         }
         if (eventName === 'keyup') {
-            const keystroke = getKeystrokeName([...this.pressedKeys])
+            const keystroke = getKeystrokeName(Array.from(this.pressedKeys))
             if (this.recognitionPhase) {
                 this._keystroke.next(keystroke)
                 this.lastKeystrokes.push({
@@ -158,7 +158,7 @@ export class HotkeysService {
         }
 
         if (this.pressedKeys.size) {
-            this.pressedKeystroke = getKeystrokeName([...this.pressedKeys])
+            this.pressedKeystroke = getKeystrokeName(Array.from(this.pressedKeys))
         } else {
             this.pressedKeystroke = null
         }

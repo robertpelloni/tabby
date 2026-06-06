@@ -371,6 +371,14 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 		result = s.agentMgr.ListTasks()
 	case "agent.getTaskStatus":
 		result, err = s.handleAgentGetTaskStatus(req.Params)
+	case "agent.createWidget":
+		result, err = s.handleAgentCreateWidget(req.Params)
+	case "agent.updateWidgetVDOM":
+		err = s.handleAgentUpdateWidgetVDOM(req.Params)
+	case "agent.startWorkflow":
+		result, err = s.handleAgentStartWorkflow(req.Params)
+	case "agent.submitWorkflowResponse":
+		err = s.handleAgentSubmitWorkflowResponse(req.Params)
 
 	default:
 		s.sendError(req.ID, api.ErrorMethodNotFound, fmt.Sprintf("Method not found: %s", req.Method), nil)

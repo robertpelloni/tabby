@@ -2,7 +2,8 @@ import { NgModule, ModuleWithProviders, LOCALE_ID } from '@angular/core'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
-import { NgbModule, NgbTooltipConfig } from '@ng-bootstrap/ng-bootstrap'
+import { NgbModule,
+        NgbTooltipModule, NgbTooltipConfig } from '@ng-bootstrap/ng-bootstrap'
 import { NgxFilesizeModule } from 'ngx-filesize'
 import { DragDropModule } from '@angular/cdk/drag-drop'
 import { TranslateModule, TranslateCompiler, TranslateService, MissingTranslationHandler } from '@ngx-translate/core'
@@ -32,6 +33,12 @@ import { WelcomeTabComponent } from './components/welcomeTab.component'
 import { TransfersMenuComponent } from './components/transfersMenu.component'
 import { ProfileIconComponent } from './components/profileIcon.component'
 import { AgentStatusComponent } from './components/agentStatus.component'
+<<<<<<< HEAD
+=======
+import { WidgetVDOMComponent } from './components/widgets/widgetVDOM.component'
+import { AgentWidgetsComponent } from './components/widgets/agentWidgets.component'
+import { WorkflowProgressComponent } from './components/widgets/workflowProgress.component'
+>>>>>>> jules-1407546259735951285-590dfa06
 
 import { AutofocusDirective } from './directives/autofocus.directive'
 import { AlwaysVisibleTypeaheadDirective } from './directives/alwaysVisibleTypeahead.directive'
@@ -39,7 +46,7 @@ import { FastHtmlBindDirective } from './directives/fastHtmlBind.directive'
 import { DropZoneDirective } from './directives/dropZone.directive'
 import { CdkAutoDropGroup } from './directives/cdkAutoDropGroup.directive'
 
-import { Theme, CLIHandler, TabContextMenuItemProvider, TabRecoveryProvider, HotkeyProvider, ConfigProvider, PlatformService, FileProvider, ProfilesService, ProfileProvider, QuickConnectProfileProvider, SelectorOption, Profile, SelectorService, CommandProvider, PartialProfileGroup, ProfileGroup } from './api'
+import { Theme, CLIHandler, TabRecoveryProvider, HotkeyProvider, ConfigProvider, PlatformService, FileProvider, ProfilesService, ProfileProvider, QuickConnectProfileProvider, SelectorOption, Profile, SelectorService, CommandProvider, PartialProfileGroup, ProfileGroup } from './api'
 
 import { AppService } from './services/app.service'
 import { ConfigService } from './services/config.service'
@@ -55,11 +62,15 @@ import { CoreConfigProvider } from './config'
 import { AppHotkeyProvider } from './hotkeys'
 import { LastCLIHandler, ProfileCLIHandler } from './cli'
 import { SplitLayoutProfilesService } from './profiles'
+<<<<<<< HEAD
 import { CoreCommandProvider, TaskCompletionCommandProvider } from './commands'
 
 export function TranslateMessageFormatCompilerFactory (): TranslateMessageFormatCompiler {
     return new TranslateMessageFormatCompiler()
 }
+=======
+import { CoreCommandProvider } from './commands'
+>>>>>>> jules-1407546259735951285-590dfa06
 
 export function TranslateMessageFormatCompilerFactory (): TranslateMessageFormatCompiler {
     return new TranslateMessageFormatCompiler()
@@ -95,6 +106,7 @@ const PROVIDERS = [
         CommonModule,
         FormsModule,
         NgbModule,
+        NgbTooltipModule,
         NgxFilesizeModule,
         DragDropModule,
         TranslateModule.forRoot({
@@ -137,6 +149,12 @@ const PROVIDERS = [
         CdkAutoDropGroup,
         ProfileIconComponent,
         AgentStatusComponent,
+<<<<<<< HEAD
+=======
+        WidgetVDOMComponent,
+        AgentWidgetsComponent,
+        WorkflowProgressComponent,
+>>>>>>> jules-1407546259735951285-590dfa06
         TabbyFormatedDatePipe,
     ],
     exports: [
@@ -263,7 +281,11 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
     }
 
     static forRoot (): ModuleWithProviders<AppModule> {
+<<<<<<< HEAD
         const translateModule = TranslateModule.forRoot({
+=======
+        TranslateModule.forRoot({
+>>>>>>> jules-1407546259735951285-590dfa06
             defaultLanguage: 'en',
             compiler: {
                 provide: TranslateCompiler,
@@ -287,3 +309,4 @@ export { CommandCatalogModalComponent } from './components/commandCatalogModal.c
 // Deprecations
 export { ToolbarButton as IToolbarButton } from './api'
 export { HotkeyDescription as IHotkeyDescription } from './api'
+export { CommandService } from './services/commands.service'

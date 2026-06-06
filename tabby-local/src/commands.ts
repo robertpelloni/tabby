@@ -54,7 +54,7 @@ export class LocalCommandProvider extends CommandProvider {
                 run: async () => {
                     let workingDirectory = profile.options.cwd
                     if (!workingDirectory && context.tab instanceof TerminalTabComponent) {
-                        workingDirectory = await context.tab.session?.getWorkingDirectory() ?? undefined
+                        workingDirectory = await context.tab.session?.getWorkingDirectory() ?? null
                     }
                     await this.terminal.openTab(profile, workingDirectory)
                 },

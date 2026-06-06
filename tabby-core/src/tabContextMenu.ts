@@ -4,7 +4,10 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { Subscription } from 'rxjs'
 import { AppService } from './services/app.service'
 import { BaseTabComponent } from './components/baseTab.component'
+<<<<<<< HEAD
 import { TabHeaderComponent } from './components/tabHeader.component'
+=======
+>>>>>>> jules-1407546259735951285-590dfa06
 import { SplitTabComponent, SplitDirection } from './components/splitTab.component'
 import { TabContextMenuItemProvider } from './api/tabContextMenuProvider'
 import { MenuItemOptions } from './api/menu'
@@ -28,7 +31,11 @@ export class TabManagementContextMenu extends TabContextMenuItemProvider {
         super()
     }
 
+<<<<<<< HEAD
     async getItems (tab: BaseTabComponent, tabHeader?: TabHeaderComponent): Promise<MenuItemOptions[]> {
+=======
+    async getItems (tab: BaseTabComponent, tabHeader?: boolean): Promise<MenuItemOptions[]> {
+>>>>>>> jules-1407546259735951285-590dfa06
         let items: MenuItemOptions[] = [
             {
                 label: this.translate.instant('Close'),
@@ -106,14 +113,22 @@ export class CommonOptionsContextMenu extends TabContextMenuItemProvider {
         super()
     }
 
+<<<<<<< HEAD
     async getItems (tab: BaseTabComponent, tabHeader?: TabHeaderComponent): Promise<MenuItemOptions[]> {
+=======
+    async getItems (tab: BaseTabComponent, tabHeader?: boolean): Promise<MenuItemOptions[]> {
+>>>>>>> jules-1407546259735951285-590dfa06
         let items: MenuItemOptions[] = []
         if (tabHeader) {
             items = [
                 ...items,
                 {
                     label: this.translate.instant('Rename'),
+<<<<<<< HEAD
                     click: () => tabHeader.showRenameTabModal(),
+=======
+                    click: () => this.app.renameTab(tab),
+>>>>>>> jules-1407546259735951285-590dfa06
                 },
                 {
                     label: this.translate.instant('Duplicate'),
@@ -269,7 +284,11 @@ export class ProfilesContextMenu extends TabContextMenuItemProvider {
         tab.destroy()
     }
 
+<<<<<<< HEAD
     async getItems (tab: BaseTabComponent, tabHeader?: TabHeaderComponent): Promise<MenuItemOptions[]> {
+=======
+    async getItems (tab: BaseTabComponent, tabHeader?: boolean): Promise<MenuItemOptions[]> {
+>>>>>>> jules-1407546259735951285-590dfa06
 
         if (!tabHeader && tab.parent instanceof SplitTabComponent && tab.parent.getAllTabs().length > 1) {
             return [

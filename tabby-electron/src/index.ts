@@ -1,5 +1,9 @@
 import { NgModule } from '@angular/core'
+<<<<<<< HEAD
 import { PlatformService, LogService, UpdaterService, DockingService, HostAppService, ThemesService, Platform, AppService, ConfigService, WIN_BUILD_FLUENT_BG_SUPPORTED, isWindowsBuild, HostWindowService, HotkeyProvider, ConfigProvider, FileProvider } from 'tabby-core'
+=======
+import { PlatformService, LogService, UpdaterService, DockingService, HostAppService, ThemesService, Platform, AppService, ConfigService,  isWindowsBuild, HostWindowService, HotkeyProvider, ConfigProvider, FileProvider } from 'tabby-core'
+>>>>>>> jules-1407546259735951285-590dfa06
 import { TerminalColorSchemeProvider, TerminalDecorator } from 'tabby-terminal'
 import { SFTPContextMenuItemProvider, SSHProfileImporter, AutoPrivateKeyLocator } from 'tabby-ssh'
 import { PTYInterface, ShellProvider, UACService } from 'tabby-local'
@@ -172,7 +176,7 @@ export default class ElectronModule {
     private updateVibrancy () {
         this.hostWindow.setOpacity(this.config.store.appearance.opacity)
 
-        if (isWindowsBuild(WIN_BUILD_WINDOW_MATERIAL_SUPPORTED)) {
+        if (isWindowsBuild(22621)) {
             this.electron.ipcRenderer.send(
                 'window-set-material',
                 this.config.store.appearance.vibrancy

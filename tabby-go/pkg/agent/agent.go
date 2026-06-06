@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/vdom"
 )
 
 // TaskStatus represents the current state of a task
@@ -34,21 +35,36 @@ type Task struct {
 	Progress    float64    `json:"progress"` // 0.0 to 1.0
 }
 
+// Widget represents a rich UI component managed by the agent
+type Widget struct {
+	ID        string    `json:"id"`
+	Type      string    `json:"type"` // term, preview, web, sysinfo, vdom
+	Title     string    `json:"title"`
+	CreatedAt time.Time `json:"createdAt"`
+	VDOM      *vdom.Node `json:"vdom,omitempty"`
+}
+
 // NotifyFunc is the callback for sending task updates to the client
 type NotifyFunc func(method string, params interface{})
 
-// Manager orchestrates agent tasks
+// Manager orchestrates agent tasks and widgets
 type Manager struct {
-	tasks  map[string]*Task
-	mu     sync.RWMutex
-	notify NotifyFunc
+	WorkflowMgr *WorkflowManager
+	ContextMgr  *ContextManager
+	tasks       map[string]*Task
+	widgets     map[string]*Widget
+	mu          sync.RWMutex
+	notify      NotifyFunc
 }
 
 // NewManager creates a new agent manager
 func NewManager(notify NotifyFunc) *Manager {
 	return &Manager{
-		tasks:  make(map[string]*Task),
-		notify: notify,
+		WorkflowMgr: NewWorkflowManager(notify),
+		ContextMgr:  NewContextManager(),
+		tasks:       make(map[string]*Task),
+		widgets:     make(map[string]*Widget),
+		notify:      notify,
 	}
 }
 
@@ -176,4 +192,42 @@ func (m *Manager) ListTasks() []*Task {
 		tasks = append(tasks, t)
 	}
 	return tasks
+}
+
+// CreateWidget creates a new rich UI widget
+func (m *Manager) CreateWidget(widgetType, title string) *Widget {
+	widget := &Widget{
+		ID:        uuid.New().String(),
+		Type:      widgetType,
+		Title:     title,
+		CreatedAt: time.Now(),
+	}
+
+	m.mu.Lock()
+	m.widgets[widget.ID] = widget
+	m.mu.Unlock()
+
+	if m.notify != nil {
+		m.notify("agent.widgetCreated", widget)
+	}
+
+	return widget
+}
+
+// UpdateWidgetVDOM updates the VDOM of a widget
+func (m *Manager) UpdateWidgetVDOM(id string, node *vdom.Node) error {
+	m.mu.Lock()
+	widget, ok := m.widgets[id]
+	if !ok {
+		m.mu.Unlock()
+		return fmt.Errorf("widget not found: %s", id)
+	}
+	widget.VDOM = node
+	m.mu.Unlock()
+
+	if m.notify != nil {
+		m.notify("agent.widgetUpdated", widget)
+	}
+
+	return nil
 }

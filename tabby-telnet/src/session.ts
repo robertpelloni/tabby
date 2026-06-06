@@ -141,7 +141,7 @@ export class TelnetSession extends BaseSession {
             TelnetCommands.IAC,
             TelnetCommands.SUBOPTION,
             option,
-            ...value,
+            ...Array.from(value),
             TelnetCommands.IAC,
             TelnetCommands.SUBOPTION_END,
         ]))
@@ -229,7 +229,7 @@ export class TelnetSession extends BaseSession {
                     this.logger.debug('<', commandName || command, optionName || option, optionValue)
 
                     if (option === TelnetOptions.TERMINAL_TYPE && optionValue[0] === TelnetCommands.SUBOPTION_SEND) {
-                        this.emitTelnetSuboption(option, Buffer.from([0, ...Buffer.from('XTERM-256COLOR')]))
+                        this.emitTelnetSuboption(option, Buffer.from([0, ...Array.from(Buffer.from('XTERM-256COLOR'))]))
                     }
 
                     data = data.slice(endIndex + 2)

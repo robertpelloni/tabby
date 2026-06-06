@@ -33,7 +33,7 @@ export interface SerialPortInfo {
 
 class SlowFeedMiddleware extends SessionMiddleware {
     feedFromTerminal (data: Buffer): void {
-        for (const byte of data) {
+        for (let i = 0; i < data.length; i++) { const byte = data[i]
             this.outputToSession.next(Buffer.from([byte]))
         }
     }

@@ -262,7 +262,7 @@ class ZModemMiddleware extends SessionMiddleware {
 /** @hidden */
 @Injectable()
 export class ZModemDecorator extends TerminalDecorator {
-    #injector = inject(EnvironmentInjector)
+    private injector = inject(EnvironmentInjector)
 
     attach (terminal: BaseTerminalTabComponent<any>): void {
         setTimeout(() => {
@@ -277,6 +277,6 @@ export class ZModemDecorator extends TerminalDecorator {
         if (!terminal.session) {
             return
         }
-        terminal.session.middleware.unshift(this.#injector.runInContext(() => new ZModemMiddleware()))
+        terminal.session.middleware.unshift(this.injector.runInContext(() => new ZModemMiddleware()))
     }
 }

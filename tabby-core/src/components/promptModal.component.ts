@@ -1,37 +1,68 @@
 import { Component, Input, ViewChild, ElementRef } from '@angular/core'
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
 
-/** @hidden */
 @Component({
-    templateUrl: './promptModal.component.pug',
+    template: `
+        <div class="modal-header">
+            <h4 class="modal-title">{{prompt}}</h4>
+        </div>
+        <div class="modal-body">
+            <input
+                #input
+                [type]="password ? 'password' : 'text'"
+                class="form-control"
+                [(ngModel)]="value"
+                (keyup.enter)="submit()"
+                (keyup.esc)="close()"
+                [placeholder]="placeholder || ''"
+                autofocus
+            >
+            <div class="form-group mt-3" *ngIf="showRememberCheckbox">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" [(ngModel)]="remember" id="rememberCheck">
+                    <label class="form-check-label" for="rememberCheck" translate>Remember</label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" (click)="submit()">OK</button>
+            <button class="btn btn-secondary" (click)="close()">Cancel</button>
+        </div>
+    `,
 })
 export class PromptModalComponent {
     @Input() prompt: string
+<<<<<<< HEAD
     @Input() value: string
     @Input() prompt: string|undefined
     @Input() password: boolean
     @Input() remember: boolean
     @Input() showRememberCheckbox: boolean
+=======
+    @Input() value = ''
+    @Input() password = false
+    @Input() placeholder = ''
+    @Input() showRememberCheckbox = false
+    @Input() remember = false
+
+>>>>>>> jules-1407546259735951285-590dfa06
     @ViewChild('input') input: ElementRef
 
     constructor (
-        private modalInstance: NgbActiveModal,
+        private modal: NgbActiveModal,
     ) { }
 
-    ngOnInit (): void {
+    ngAfterViewInit () {
         setTimeout(() => {
             this.input.nativeElement.focus()
         })
     }
 
-    ok (): void {
-        this.modalInstance.close({
-            value: this.value,
-            remember: this.remember,
-        })
+    submit () {
+        this.modal.close({ value: this.value, remember: this.remember })
     }
 
-    cancel (): void {
-        this.modalInstance.close(null)
+    close () {
+        this.modal.dismiss()
     }
 }

@@ -23,7 +23,7 @@ export class ColorSchemeSettingsForModeComponent {
     @Input() allColorSchemes: TerminalColorScheme[] = []
     @Input() filter = ''
     @Input() editing = false
-    colorIndexes = [...new Array(16).keys()]
+    colorIndexes = Array.from(new Array(16).keys())
 
     currentStockScheme: TerminalColorScheme|null = null
     currentCustomScheme: TerminalColorScheme|null = null

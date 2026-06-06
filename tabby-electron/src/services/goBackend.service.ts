@@ -438,7 +438,7 @@ export class GoBackendService implements OnDestroy {
 
     private handleNotification(notification: any): void {
         switch (notification.method) {
-            case 'ssh.data':
+                case 'ssh.data':
             case 'pty.data':
             case 'serial.data':
                 this.dataSubject.next(notification.params)

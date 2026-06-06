@@ -34,9 +34,11 @@ export class WinstonAndConsoleLogger extends ConsoleLogger {
         super(name)
     }
 
-    protected doLog (level: string, ...args: any[]): void {
-        super.doLog(level, ...args)
-        this.winstonLogger[level](...args)
+    protected doLog (level: string, args: any[]): void {
+        super.doLog(level, args)
+        if (typeof this.winstonLogger[level] === 'function') {
+            (this.winstonLogger[level] as any).apply(this.winstonLogger, args)
+        }
     }
 }
 

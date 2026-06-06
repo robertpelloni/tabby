@@ -39,9 +39,9 @@ const builtinModules = [
 const cachedBuiltinModules = {}
 
 if (process.env.TERMINUS_DEV) {
-    console.info(path.dirname(require('electron').remote.app.getAppPath()))
-    nodeModule.globalPaths.unshift(path.dirname(require('electron').remote.app.getAppPath()))
-    nodeModule.globalPaths.unshift(path.join(require('electron').remote.app.getAppPath(), 'node_modules'))
+    console.info(path.dirname(require('@electron/remote').app.getAppPath()))
+    nodeModule.globalPaths.unshift(path.dirname(require('@electron/remote').app.getAppPath()))
+    nodeModule.globalPaths.unshift(path.join(require('@electron/remote').app.getAppPath(), 'node_modules'))
 }
 
 const originalRequire = (global as any).require
