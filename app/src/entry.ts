@@ -13,7 +13,7 @@ import { enableDebugTools } from '@angular/platform-browser'
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic'
 import { ipcRenderer } from 'electron'
 
-import { AppModule } from './app.module'
+import { createRootModule } from './app.module'
 import { BootstrapData, BOOTSTRAP_DATA, PluginInfo } from '../../tabby-core/src/api/mainProcess'
 
 // Always land on the start view
@@ -43,7 +43,7 @@ async function bootstrap (bootstrapData: BootstrapData, plugins: PluginInfo[], s
     window['pluginModules'] = pluginModules
     window['bootstrapComponents'] = pluginModules.map(x => x.bootstrap).filter(x => !!x)
 
-    const module = AppModule
+    const module = createRootModule(pluginModules)
     const moduleRef = await platformBrowserDynamic([
         { provide: BOOTSTRAP_DATA, useValue: bootstrapData },
     ]).bootstrapModule(module)

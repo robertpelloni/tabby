@@ -13,7 +13,6 @@
 import { Injectable, OnDestroy } from '@angular/core'
 import { Subject, Observable } from 'rxjs'
 import { spawn, ChildProcess } from 'child_process'
-import { ipcMain } from 'electron'
 import * as path from 'path'
 
 // ---- SSH Types ----
@@ -439,18 +438,6 @@ export class GoBackendService implements OnDestroy {
 
     private handleNotification(notification: any): void {
         switch (notification.method) {
-                            case 'agent.taskUpdated':
-                    ipcMain.emit('agent:taskUpdated', notification.params)
-                    break
-                case 'agent.widgetCreated':
-                    ipcMain.emit('agent:widgetCreated', notification.params)
-                    break
-                case 'agent.widgetUpdated':
-                    ipcMain.emit('agent:widgetUpdated', notification.params)
-                    break
-                case 'agent.workflowUpdated':
-                    ipcMain.emit('agent:workflowUpdated', notification.params)
-                    break
                 case 'ssh.data':
             case 'pty.data':
             case 'serial.data':

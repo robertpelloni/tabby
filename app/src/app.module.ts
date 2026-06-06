@@ -1,35 +1,37 @@
-import { ApplicationRef, NgModule, ComponentFactoryResolver } from '@angular/core'
+import { ApplicationRef, NgModule } from '@angular/core'
 import { BrowserModule } from '@angular/platform-browser'
 import { ToastrModule } from 'ngx-toastr'
 
-@NgModule({
-    imports: [
+export function createRootModule (plugins: any[]) {
+    const imports = [
         BrowserModule,
+        ...plugins,
         ToastrModule.forRoot({
             positionClass: 'toast-bottom-center',
             toastClass: 'toast',
             preventDuplicates: true,
             extendedTimeOut: 1000,
         }),
-    ],
-})
-export class AppModule {
-    constructor (
-        private appRef: ApplicationRef,
-        private componentFactoryResolver: ComponentFactoryResolver,
-    ) { }
+    ]
 
-    ngDoBootstrap () {
-        const bootstrapComponents = (window as any)['bootstrapComponents'] || []
-        if (bootstrapComponents.length === 0) {
-            console.error('No bootstrap components found!')
-            return
-        }
+    const bootstrap = [
+        ...plugins.filter(x => x.bootstrap).map(x => x.bootstrap),
+    ]
 
-        (window as any)['requestAnimationFrame'] = window[window['Zone'].__symbol__('requestAnimationFrame')]
-
-        const componentDef = bootstrapComponents[0]
-        const factory = this.componentFactoryResolver.resolveComponentFactory(componentDef)
-        this.appRef.bootstrap(factory)
+    if (bootstrap.length === 0) {
+        throw new Error('Did not find any bootstrap components. Are there any plugins installed?')
     }
+
+    @NgModule({
+        imports,
+    }) class RootModule {
+        ngDoBootstrap (appRef: ApplicationRef) {
+            (window as any)['requestAnimationFrame'] = window[window['Zone'].__symbol__('requestAnimationFrame')]
+
+            const componentDef = bootstrap[0]
+            appRef.bootstrap(componentDef)
+        }
+    }
+
+    return RootModule
 }

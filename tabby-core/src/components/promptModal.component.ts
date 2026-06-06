@@ -17,6 +17,12 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
                 [placeholder]="placeholder || ''"
                 autofocus
             >
+            <div class="form-group mt-3" *ngIf="showRemember">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" [(ngModel)]="remember" id="rememberCheck">
+                    <label class="form-check-label" for="rememberCheck" translate>Remember</label>
+                </div>
+            </div>
         </div>
         <div class="modal-footer">
             <button class="btn btn-primary" (click)="submit()">OK</button>
@@ -29,6 +35,8 @@ export class PromptModalComponent {
     @Input() value = ''
     @Input() password = false
     @Input() placeholder = ''
+    @Input() showRemember = false
+    @Input() remember = false
 
     @ViewChild('input') input: ElementRef
 
@@ -43,7 +51,7 @@ export class PromptModalComponent {
     }
 
     submit () {
-        this.modal.close(this.value)
+        this.modal.close({ value: this.value, remember: this.remember })
     }
 
     close () {
