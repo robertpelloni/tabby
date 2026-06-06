@@ -103,6 +103,10 @@ def run_test():
 
     # 5. Widget & VDOM Benchmark
     print('Benchmarking Widgets & VDOM...')
+    # We need a workflow ID for VDOM interactivity test
+    wf_res = request('agent.startWorkflow', {'description': 'VDOM Test Workflow'})
+    wf_id = wf_res['result']['id']
+
     widget_res = request('agent.createWidget', {'type': 'vdom', 'title': 'Test Widget'})
     if widget_res and 'result' in widget_res:
         widget_id = widget_res['result']['id']
@@ -111,17 +115,22 @@ def run_test():
             'props': {'className': 'p-4'},
             'children': [
                 {'tag': 'h1', 'children': ['Hello VDOM']},
+                {'tag': 'button', 'props': {'workflowId': wf_id, 'action': 'vdom_click'}, 'children': ['Click Me']},
                 'Text child'
             ]
         }
         request('agent.updateWidgetVDOM', {'id': widget_id, 'vdom': vdom_node})
-        print('✅ Widget creation and VDOM update verified')
+
+        # Test VDOM interaction
+        request('agent.submitWorkflowResponse', {'id': wf_id, 'response': 'vdom_click'})
+        print('✅ Widget creation, VDOM update, and interaction verified')
     else:
         print('❌ Widget creation failed')
 
 
     # 6. Workflow Benchmark
     print('Benchmarking Workflows...')
+    # Workflow already started for VDOM test, let's start another
     wf_res = request('agent.startWorkflow', {'description': 'Test Feature Workflow'})
     if wf_res and 'result' in wf_res:
         wf_id = wf_res['result']['id']

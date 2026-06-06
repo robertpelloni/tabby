@@ -1,0 +1,506 @@
+yarn run v1.22.22
+$ npm run build:typings && npm run build:go && node scripts/build-modules.mjs
+npm WARN lifecycle The node binary used for scripts is /tmp/yarn--1780733885448-0.5615882178604648/node but npm is using /home/jules/.nvm/versions/node/v22.22.1/bin/node itself. Use the `--scripts-prepend-node-path` option to include the path for the node binary npm was executed with.
+
+> @ build:typings /app
+> node scripts/build-typings.mjs
+
+info typings tabby-core
+$ /app/node_modules/.bin/tsc --project tabby-core/tsconfig.typings.json
+info typings tabby-settings
+$ /app/node_modules/.bin/tsc --project tabby-settings/tsconfig.typings.json
+info typings tabby-terminal
+$ /app/node_modules/.bin/tsc --project tabby-terminal/tsconfig.typings.json
+info typings tabby-web
+$ /app/node_modules/.bin/tsc --project tabby-web/tsconfig.typings.json
+info typings tabby-community-color-schemes
+$ /app/node_modules/.bin/tsc --project tabby-community-color-schemes/tsconfig.typings.json
+info typings tabby-ssh
+$ /app/node_modules/.bin/tsc --project tabby-ssh/tsconfig.typings.json
+info typings tabby-serial
+$ /app/node_modules/.bin/tsc --project tabby-serial/tsconfig.typings.json
+info typings tabby-telnet
+$ /app/node_modules/.bin/tsc --project tabby-telnet/tsconfig.typings.json
+info typings tabby-local
+$ /app/node_modules/.bin/tsc --project tabby-local/tsconfig.typings.json
+info typings tabby-electron
+$ /app/node_modules/.bin/tsc --project tabby-electron/tsconfig.typings.json
+info typings tabby-plugin-manager
+$ /app/node_modules/.bin/tsc --project tabby-plugin-manager/tsconfig.typings.json
+info typings tabby-linkifier
+$ /app/node_modules/.bin/tsc --project tabby-linkifier/tsconfig.typings.json
+info typings tabby-auto-sudo-password
+$ /app/node_modules/.bin/tsc --project tabby-auto-sudo-password/tsconfig.typings.json
+npm WARN lifecycle The node binary used for scripts is /tmp/yarn--1780733885448-0.5615882178604648/node but npm is using /home/jules/.nvm/versions/node/v22.22.1/bin/node itself. Use the `--scripts-prepend-node-path` option to include the path for the node binary npm was executed with.
+
+> @ build:go /app
+> cd tabby-go && go build -ldflags="-s -w" -o ../build/tabby-backend ./cmd/tabby-backend/main.go
+
+info build ../app/webpack.config.main.mjs
+asset [1m[32mmain.js[39m[22m 632 KiB [1m[33m[compared for emit][39m[22m [1m[32m[minimized][39m[22m (name: main) 2 related assets
+orphan modules 675 KiB [1m[33m[orphan][39m[22m 106 modules
+runtime modules 1.11 KiB 5 modules
+modules by path [1m./[39m[22m 732 KiB 305 modules
+modules by path [1m../node_modules/[39m[22m 899 KiB
+  modules by path [1m../node_modules/@sentry/[39m[22m 881 KiB 70 modules
+  [1m../node_modules/split2/index.js[39m[22m 3.68 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m../node_modules/macos-release/index.js + 1 modules[39m[22m 897 bytes [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m../node_modules/compare-versions/lib/esm/index.js + 5 modules[39m[22m 7.6 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m../node_modules/shell-quote/index.js[39m[22m 4.99 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
++ 19 modules
+[1mtabby-main[39m[22m (webpack 5.104.1) compiled [1m[32msuccessfully[39m[22m in 13145 ms
+info build ../app/webpack.config.mjs
+assets by status 14 MiB [1m[32m[cached][39m[22m 110 assets
+assets by path [1m[32m.[39m[22m 6.1 MiB
+  asset [1m[32mbundle.js[39m[22m 4.57 MiB [1m[32m[emitted][39m[22m (name: bundle) 1 related asset
+  asset [1m[32msentry.js[39m[22m 952 KiB [1m[33m[compared for emit][39m[22m (name: sentry) 1 related asset
+  asset [1m[32mpreload.js[39m[22m 613 KiB [1m[33m[compared for emit][39m[22m (name: preload) 1 related asset
+  asset [1m[32mindex.ignore.js[39m[22m 2.51 KiB [1m[33m[compared for emit][39m[22m (name: index.ignore) 1 related asset
+  asset [1m[32mindex.html[39m[22m 569 bytes [1m[33m[compared for emit][39m[22m [from: index.pug] (auxiliary name: index.ignore)
+orphan modules 1.18 MiB [1m[33m[orphan][39m[22m 284 modules
+runtime modules 5.53 KiB 19 modules
+cacheable modules 5.5 MiB (javascript) 14 MiB (asset)
+  javascript modules 5.49 MiB
+    modules by path [1m../node_modules/[39m[22m 5.22 MiB 231 modules
+    modules by path [1m./[39m[22m 281 KiB 121 modules
+  asset modules 14 MiB (asset) 8.06 KiB (javascript) 111 modules
+modules by path [1m./src/*.ts[39m[22m 29.9 KiB
+  [1m./src/entry.preload.ts + 10 modules[39m[22m 10.9 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m./src/entry.ts + 9 modules[39m[22m 19 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
++ 9 modules
+
+[1m[33mWARNING[39m[22m in [1m./node_modules/any-promise/register.js[39m[22m [1m[32m24:14-37[39m[22m
+[1mCritical dependency: the request of a dependency is an expression[39m[22m
+ @ ./node_modules/any-promise/index.js 1:17-38
+ @ ./node_modules/mz/fs.js 1:14-36
+ @ ./src/plugins.ts 10:0-28 92:18-27 93:38-48 94:22-31 105:34-43 142:42-53
+ @ ./src/entry.ts 16:0-71 40:36-47 59:4-20 60:24-35
+
+[1m[33mWARNING[39m[22m in [1m/app/app/lib/agent.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/app/lib/ai.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/app/lib/app.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/app/lib/cli.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/app/lib/config.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/app/lib/goBackend.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/app/lib/index.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/app/lib/pluginManager.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/app/lib/portable.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/app/lib/pty.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/app/lib/ssh.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/app/lib/sync.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/app/lib/urlHandler.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/app/lib/utfSplitter.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/app/lib/window.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+1 warning has detailed information that is not shown.
+Use 'stats.errorDetails: true' resp. '--stats-error-details' to show it.
+
+[1mtabby[39m[22m (webpack 5.104.1) compiled with [1m[33m16 warnings[39m[22m in 17368 ms
+info build ../tabby-core/webpack.config.mjs
+asset [1m[32mindex.js[39m[22m 4.56 MiB [1m[32m[emitted][39m[22m (name: main) 1 related asset
+orphan modules 649 KiB [1m[33m[orphan][39m[22m 130 modules
+runtime modules 1.27 KiB 6 modules
+cacheable modules 3.8 MiB
+  javascript modules 3.79 MiB 240 modules
+  asset modules 8.03 KiB
+    [1mdata:image/svg+xml,%3csvg xmlns=%27..[39m[22m 281 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    + 22 modules
+  [1m./node_modules/mixpanel/package.json[39m[22m 608 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+modules by path [1mexternal "@angular/[39m[22m 336 bytes
+  [1mexternal "@angular/core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "@angular/platform-browser/animations"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "@angular/common"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "@angular/forms"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  + 4 modules
++ 18 modules
+
+[1m[33mWARNING[39m[22m in [1m./src/components/tabHeader.component.scss?ngResource[39m[22m (../node_modules/css-loader/dist/cjs.js!../node_modules/sass-loader/dist/cjs.js!./src/components/tabHeader.component.scss?ngResource)
+[1mModule Warning (from ../node_modules/sass-loader/dist/cjs.js):
+Deprecation Using / for division outside of calc() is [1m[33mdeprecated[39m[22m[1m and will be removed in Dart Sass 2.0.0.
+
+Recommendation: math.div($button-size, 6) or calc($button-size / 6)
+
+More info and automated migrator: https://sass-lang.com/d/slash-div
+
+tabby-core/src/components/tabHeader.component.scss 86:28  root stylesheet
+[39m[22m
+ @ ./src/components/tabHeader.component.scss?ngResource 2:21-162
+ @ ./src/components/tabHeader.component.ts 3:0-73 144:21-41
+ @ ./src/index.ts 18:0-70 265:16-34
+
+[1m[33mWARNING[39m[22m in [1m./src/theme.new.scss[39m[22m (../node_modules/css-loader/dist/cjs.js!../node_modules/sass-loader/dist/cjs.js!./src/theme.new.scss)
+[1mModule Warning (from ../node_modules/sass-loader/dist/cjs.js):
+Deprecation Using / for division is [1m[33mdeprecated[39m[22m[1m and will be removed in Dart Sass 2.0.0.
+
+Recommendation: math.div(14rem, 16)
+
+More info and automated migrator: https://sass-lang.com/d/slash-div
+
+tabby-core/src/theme.new.scss 2:18  root stylesheet
+[39m[22m
+ @ ./src/theme.new.scss 2:21-135
+ @ ./src/theme.ts 11:20-47
+ @ ./src/index.ts 51:0-35 62:32-40
+
+[1m[33mWARNING[39m[22m in [1m/app/tabby-core/src/tabContextMenu.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+webpack 5.104.1 compiled with [1m[33m3 warnings[39m[22m in 14934 ms
+info build ../tabby-settings/webpack.config.mjs
+asset [1m[32mindex.js[39m[22m 787 KiB [1m[33m[compared for emit][39m[22m (name: main) 1 related asset
+orphan modules 444 KiB [1m[33m[orphan][39m[22m 80 modules
+runtime modules 937 bytes 4 modules
+cacheable modules 281 KiB
+  modules by path [1m../[39m[22m 199 KiB 107 modules
+  modules by path [1m./src/[39m[22m 81.8 KiB
+    modules by path [1m./src/components/*.pug[39m[22m 70.3 KiB 26 modules
+    modules by path [1m./src/components/*.scss[39m[22m 9.45 KiB 10 modules
+    [1m./src/icons/cog.svg[39m[22m 2.01 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+modules by path [1mexternal "@angular/[39m[22m 168 bytes
+  [1mexternal "@angular/core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "@angular/common"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "@angular/forms"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "@angular/animations"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
++ 12 modules
+
+[1m[33mWARNING[39m[22m in [1m./src/components/releaseNotesTab.component.ts[39m[22m [1m[32m36:37-49[39m[22m
+[1mexport 'marked' (imported as 'marked') was [1m[31mnot found[39m[22m[1m in 'marked' [1m[31m(module has no exports)[39m[22m[1m[39m[22m
+ @ ./src/index.ts 19:0-79 84:16-37
+
+[1m[33mWARNING[39m[22m in [1m/app/tabby-settings/src/buttonProvider.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+webpack 5.104.1 compiled with [1m[33m2 warnings[39m[22m in 8196 ms
+info build ../tabby-terminal/webpack.config.mjs
+assets by chunk 14.6 MiB (id hint: vendors)
+  asset [1m[32m2284.index.js[39m[22m 11.4 MiB [1m[33m[compared for emit][39m[22m (id hint: vendors) 1 related asset
+  asset [1m[32m7222.index.js[39m[22m 1.15 MiB [1m[33m[compared for emit][39m[22m (id hint: vendors) 1 related asset
+  asset [1m[32m9416.index.js[39m[22m 785 KiB [1m[33m[compared for emit][39m[22m (id hint: vendors) 1 related asset
+  asset [1m[32m8308.index.js[39m[22m 704 KiB [1m[33m[compared for emit][39m[22m (id hint: vendors) 1 related asset
+  asset [1m[32m4669.index.js[39m[22m 315 KiB [1m[33m[compared for emit][39m[22m (id hint: vendors) 1 related asset
+  asset [1m[32m4737.index.js[39m[22m 92.9 KiB [1m[33m[compared for emit][39m[22m (id hint: vendors) 1 related asset
+  asset [1m[32m2156.index.js[39m[22m 70.7 KiB [1m[33m[compared for emit][39m[22m (id hint: vendors) 1 related asset
+  asset [1m[32m5969.index.js[39m[22m 57.7 KiB [1m[33m[compared for emit][39m[22m (id hint: vendors) 1 related asset
+  asset [1m[32m5583.index.js[39m[22m 54.1 KiB [1m[33m[compared for emit][39m[22m (id hint: vendors) 1 related asset
+  asset [1m[32m6934.index.js[39m[22m 28.2 KiB [1m[33m[compared for emit][39m[22m (id hint: vendors) 1 related asset
+  asset [1m[32m9697.index.js[39m[22m 21 KiB [1m[33m[compared for emit][39m[22m (id hint: vendors) 1 related asset
++ 82 assets
+orphan modules 18.1 MiB [1m[33m[orphan][39m[22m 772 modules
+runtime modules 15.9 KiB 39 modules
+cacheable modules 27.8 MiB 894 modules
+modules by path [1mexternal "@angular/[39m[22m 168 bytes
+  [1mexternal "@angular/core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "@angular/common"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "@angular/forms"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "@angular/animations"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
++ 12 modules
+
+[1m[33mWARNING[39m[22m in [1m/app/tabby-terminal/src/components/commandCatalogModal.component.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/tabby-terminal/src/tabContextMenu.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+webpack 5.104.1 compiled with [1m[33m2 warnings[39m[22m in 44206 ms
+info build ../tabby-web/webpack.config.mjs
+asset [1m[32mindex.js[39m[22m 696 KiB [1m[33m[compared for emit][39m[22m (name: main) 1 related asset
+orphan modules 629 KiB [1m[33m[orphan][39m[22m 95 modules
+runtime modules 972 bytes 5 modules
+built modules 691 KiB [1m[33m[built][39m[22m
+  cacheable modules 691 KiB
+    modules by path [1m../[39m[22m 15.4 KiB 9 modules
+    modules by path [1m./[39m[22m 676 KiB
+      modules by path [1m./src/components/[39m[22m 1.01 KiB 2 modules
+      + 3 modules
+  modules by path [1mexternal "@angular/[39m[22m 84 bytes
+    [1mexternal "@angular/core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1mexternal "@angular/common"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "tabby-core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "@ng-bootstrap/ng-bootstrap"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "fs"[39m[22m 42 bytes [1m[33m[optional][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+
+[1m[33mWARNING[39m[22m in [1m./src/styles.scss[39m[22m (../node_modules/css-loader/dist/cjs.js!../node_modules/sass-loader/dist/cjs.js!./src/styles.scss)
+[1mModule Warning (from ../node_modules/sass-loader/dist/cjs.js):
+Deprecation Using / for division is [1m[33mdeprecated[39m[22m[1m and will be removed in Dart Sass 2.0.0.
+
+Recommendation: math.div(14rem, 16)
+
+More info and automated migrator: https://sass-lang.com/d/slash-div
+
+tabby-core/src/theme.vars.scss 51:18  @import
+tabby-web/src/styles.scss 1:9         root stylesheet
+[39m[22m
+ @ ./src/styles.scss 8:6-147 22:17-24 27:22-29 27:33-47 27:50-64 26:0-117 26:0-117
+ @ ./src/index.ts 12:0-23
+
+webpack 5.104.1 compiled with [1m[33m1 warning[39m[22m in 3858 ms
+info build ../tabby-community-color-schemes/webpack.config.mjs
+asset [1m[32mindex.js[39m[22m 248 KiB [1m[33m[compared for emit][39m[22m (name: main) 1 related asset
+runtime modules 670 bytes 3 modules
+orphan modules 17.2 KiB [1m[33m[orphan][39m[22m 2 modules
+optional modules 130 KiB [1m[33m[optional][39m[22m
+  [1m./schemes/3024 Day[39m[22m 696 bytes [1m[33m[optional][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m./schemes/3024 Night[39m[22m 696 bytes [1m[33m[optional][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m./schemes/AdventureTime[39m[22m 696 bytes [1m[33m[optional][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m./schemes/Afterglow[39m[22m 696 bytes [1m[33m[optional][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m./schemes/AlienBlood[39m[22m 696 bytes [1m[33m[optional][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m./schemes/Argonaut[39m[22m 696 bytes [1m[33m[optional][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m./schemes/Arthur[39m[22m 696 bytes [1m[33m[optional][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  + 183 modules
+[1m./src/index.ts + 2 modules[39m[22m 17.9 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+[1mexternal "@angular/core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+[1mexternal "tabby-terminal"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+[1m./schemes/ sync nonrecursive .*[39m[22m 7.79 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+webpack 5.104.1 compiled [1m[32msuccessfully[39m[22m in 5371 ms
+info build ../tabby-ssh/webpack.config.mjs
+asset [1m[32mindex.js[39m[22m 395 KiB [1m[33m[compared for emit][39m[22m (name: main) 1 related asset
+orphan modules 183 KiB [1m[33m[orphan][39m[22m 40 modules
+runtime modules 937 bytes 4 modules
+built modules 370 KiB [1m[33m[built][39m[22m
+  cacheable modules 183 KiB
+    modules by path [1m./[39m[22m 166 KiB
+      modules by path [1m./src/[39m[22m 45.4 KiB 24 modules
+      modules by path [1m./node_modules/[39m[22m 121 KiB 19 modules
+    modules by path [1m../[39m[22m 16.7 KiB
+      modules by path [1m../node_modules/css-loader/dist/runtime/*.js[39m[22m 2.74 KiB 2 modules
+      + 4 modules
+  modules by path [1mexternal "@angular/[39m[22m 126 bytes
+    [1mexternal "@angular/core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1mexternal "@angular/common"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1mexternal "@angular/forms"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  + 17 modules
+
+[1m[33mWARNING[39m[22m in [1m/app/tabby-ssh/src/tabContextMenu.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+webpack 5.104.1 compiled with [1m[33m1 warning[39m[22m in 5664 ms
+info build ../tabby-serial/webpack.config.mjs
+asset [1m[32mindex.js[39m[22m 125 KiB [1m[33m[compared for emit][39m[22m (name: main) 1 related asset
+orphan modules 48.2 KiB [1m[33m[orphan][39m[22m 12 modules
+runtime modules 937 bytes 4 modules
+built modules 113 KiB [1m[33m[built][39m[22m
+  cacheable modules 112 KiB
+    modules by path [1m../[39m[22m 46.4 KiB 11 modules
+    modules by path [1m./[39m[22m 65.8 KiB
+      modules by path [1m./src/[39m[22m 58.4 KiB 7 modules
+      modules by path [1m./node_modules/ansi-colors/*.js[39m[22m 7.34 KiB 2 modules
+  modules by path [1mexternal "@angular/[39m[22m 126 bytes
+    [1mexternal "@angular/core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1mexternal "@angular/common"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1mexternal "@angular/forms"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  + 6 modules
+webpack 5.104.1 compiled [1m[32msuccessfully[39m[22m in 4395 ms
+info build ../tabby-telnet/webpack.config.mjs
+asset [1m[32mindex.js[39m[22m 84.9 KiB [1m[33m[compared for emit][39m[22m (name: main) 1 related asset
+orphan modules 45.1 KiB [1m[33m[orphan][39m[22m 12 modules
+runtime modules 937 bytes 4 modules
+built modules 73 KiB [1m[33m[built][39m[22m
+  cacheable modules 72.6 KiB
+    modules by path [1m./[39m[22m 58.3 KiB 9 modules
+    modules by path [1m../[39m[22m 14.3 KiB
+      modules by path [1m../node_modules/[39m[22m 13.9 KiB 4 modules
+      modules by path [1m../app/node_modules/[39m[22m 500 bytes 2 modules
+  modules by path [1mexternal "@angular/[39m[22m 126 bytes
+    [1mexternal "@angular/core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1mexternal "@angular/common"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1mexternal "@angular/forms"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  + 7 modules
+webpack 5.104.1 compiled [1m[32msuccessfully[39m[22m in 4225 ms
+info build ../tabby-local/webpack.config.mjs
+asset [1m[32mindex.js[39m[22m 166 KiB [1m[33m[compared for emit][39m[22m (name: main) 1 related asset
+orphan modules 82.9 KiB [1m[33m[orphan][39m[22m 19 modules
+runtime modules 937 bytes 4 modules
+built modules 149 KiB [1m[33m[built][39m[22m
+  cacheable modules 148 KiB
+    modules by path [1m../[39m[22m 51.9 KiB
+      modules by path [1m../node_modules/[39m[22m 22.1 KiB 10 modules
+      modules by path [1m../app/node_modules/[39m[22m 29.8 KiB 7 modules
+    modules by path [1m./src/[39m[22m 96.2 KiB
+      modules by path [1m./src/components/[39m[22m 9.28 KiB 10 modules
+      + 2 modules
+  modules by path [1mexternal "@angular/[39m[22m 126 bytes
+    [1mexternal "@angular/core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1mexternal "@angular/common"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1mexternal "@angular/forms"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  + 13 modules
+
+[1m[33mWARNING[39m[22m in [1m/app/tabby-local/src/buttonProvider.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/tabby-local/src/tabContextMenu.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+webpack 5.104.1 compiled with [1m[33m2 warnings[39m[22m in 4964 ms
+info build ../tabby-electron/webpack.config.mjs
+asset [1m[32mindex.js[39m[22m 1.49 MiB [1m[33m[compared for emit][39m[22m (name: main) 1 related asset
+orphan modules 446 KiB [1m[33m[orphan][39m[22m 112 modules
+runtime modules 937 bytes 4 modules
+cacheable modules 992 KiB
+  modules by path [1m./[39m[22m 871 KiB 183 modules
+  modules by path [1m../[39m[22m 121 KiB
+    modules by path [1m../app/node_modules/[39m[22m 75.7 KiB 51 modules
+    modules by path [1m../node_modules/[39m[22m 45.4 KiB 11 modules
+optional modules 168 bytes [1m[33m[optional][39m[22m
+  modules by path [1mexternal "@tabby-gang/[39m[22m 84 bytes
+    [1mexternal "@tabby-gang/windows-process-tree/build/Release/windows_proc...(truncated)[39m[22m 42 bytes [1m[33m[optional][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1mexternal "@tabby-gang/windows-process-tree"[39m[22m 42 bytes [1m[33m[optional][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "windows-native-registry"[39m[22m 42 bytes [1m[33m[optional][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "macos-native-processlist"[39m[22m 42 bytes [1m[33m[optional][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
++ 30 modules
+
+[1m[33mWARNING[39m[22m in [1m/app/tabby-electron/src/services/goBackend.service.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/tabby-electron/src/terminalContextMenu.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+webpack 5.104.1 compiled with [1m[33m2 warnings[39m[22m in 9087 ms
+info build ../tabby-plugin-manager/webpack.config.mjs
+asset [1m[32mindex.js[39m[22m 308 KiB [1m[33m[compared for emit][39m[22m (name: main) 1 related asset
+orphan modules 148 KiB [1m[33m[orphan][39m[22m 60 modules
+runtime modules 937 bytes 4 modules
+built modules 282 KiB [1m[33m[built][39m[22m
+  modules by path [1m./[39m[22m 235 KiB 52 modules
+  modules by path [1m../[39m[22m 47.1 KiB
+    modules by path [1m../node_modules/[39m[22m 31.6 KiB 6 modules
+    modules by path [1m../app/[39m[22m 15.5 KiB
+      modules by path [1m../app/node_modules/debug/src/*.js[39m[22m 12.4 KiB 2 modules
+      + 2 modules
+  modules by path [1mexternal "@angular/[39m[22m 126 bytes
+    [1mexternal "@angular/common"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1mexternal "@angular/core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1mexternal "@angular/forms"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  + 10 modules
+webpack 5.104.1 compiled [1m[32msuccessfully[39m[22m in 4508 ms
+info build ../tabby-linkifier/webpack.config.mjs
+asset [1m[32mindex.js[39m[22m 536 KiB [1m[33m[compared for emit][39m[22m (name: main) 1 related asset
+orphan modules 28.4 KiB [1m[33m[orphan][39m[22m 7 modules
+runtime modules 937 bytes 4 modules
+built modules 529 KiB [1m[33m[built][39m[22m
+  cacheable modules 499 KiB
+    modules by path [1m../node_modules/[39m[22m 494 KiB 8 modules
+    modules by path [1m./[39m[22m 5.39 KiB
+      [1m./node_modules/untildify/index.js[39m[22m 333 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+      [1m./node_modules/@xterm/addon-web-links/lib/addon-web-links.js[39m[22m 5.07 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m./src/index.ts + 7 modules[39m[22m 29.8 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "@angular/core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "ngx-toastr"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "tabby-core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "tabby-terminal"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "path"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "os"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+webpack 5.104.1 compiled [1m[32msuccessfully[39m[22m in 5454 ms
+info build ../tabby-auto-sudo-password/webpack.config.mjs
+asset [1m[32mindex.js[39m[22m 35.8 KiB [1m[33m[compared for emit][39m[22m (name: main) 1 related asset
+runtime modules 937 bytes 4 modules
+orphan modules 22.1 KiB [1m[33m[orphan][39m[22m 2 modules
+built modules 30.4 KiB [1m[33m[built][39m[22m
+  cacheable modules 30.3 KiB
+    [1m./src/index.ts + 2 modules[39m[22m 22.8 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1m./node_modules/ansi-colors/index.js[39m[22m 5.77 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1m./node_modules/ansi-colors/symbols.js[39m[22m 1.66 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "@angular/core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "ngx-toastr"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "tabby-terminal"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "tabby-ssh"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+webpack 5.104.1 compiled [1m[32msuccessfully[39m[22m in 5131 ms
+info build ../web/webpack.config.mjs
+assets by status 14 MiB [1m[32m[cached][39m[22m 110 assets
+assets by status 6.6 MiB [1m[33m[compared for emit][39m[22m
+  asset [1m[33mbundle.js[39m[22m [1m[33m6.08 MiB[39m[22m [1m[33m[compared for emit][39m[22m [1m[33m[big][39m[22m (name: bundle) 1 related asset
+  asset [1m[33mpreload.js[39m[22m [1m[33m537 KiB[39m[22m [1m[33m[compared for emit][39m[22m [1m[33m[big][39m[22m (name: preload) 1 related asset
+orphan modules 681 KiB [1m[33m[orphan][39m[22m 237 modules
+runtime modules 3.91 KiB 15 modules
+modules by path [1m../[39m[22m 5.3 MiB (javascript) 14 MiB (asset)
+  javascript modules 5.29 MiB 568 modules
+  asset modules 14 MiB (asset) 8.06 KiB (javascript) 111 modules
+modules by path [1m./[39m[22m 776 KiB
+  javascript modules 759 KiB 150 modules
+  json modules 16.4 KiB 7 modules
+optional modules 57 bytes [1m[33m[optional][39m[22m
+  [1mbuffer (ignored)[39m[22m 15 bytes [1m[33m[optional][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "crypto"[39m[22m 42 bytes [1m[33m[optional][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+[1mexternal "querystring"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+[1mutil (ignored)[39m[22m 15 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+[1mutil (ignored)[39m[22m 15 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+
+[1m[33mWARNING[39m[22m in [1masset size limit: The following asset(s) exceed the recommended size limit (244 KiB).
+This can impact web performance.
+Assets:
+  preload.js (537 KiB)
+  7d14038b9f0566ca8800.otf (289 KiB)
+  1ad4ee9ac5342aa9517b.otf (286 KiB)
+  a4e747b9a12a4dd24101.ttf (279 KiB)
+  e15ee88415532a1c43d2.ttf (280 KiB)
+  ffe4954a8c837444aecb.otf (284 KiB)
+  a865dc036728b0cb49ed.otf (276 KiB)
+  4a0ad4e3ea89dd9af350.ttf (283 KiB)
+  983e21420fc690c961e3.otf (289 KiB)
+  69040ef72f7672a1de84.otf (291 KiB)
+  5f784100ecc582db5544.ttf (282 KiB)
+  18626a93841302f40cd4.ttf (283 KiB)
+  0fb0dd0fab644ec3cc0f.ttf (282 KiB)
+  4a2cd718d7031b732e76.ttf (385 KiB)
+  bundle.js (6.08 MiB)[39m[22m
+
+[1m[33mWARNING[39m[22m in [1mentrypoint size limit: The following entrypoint(s) combined asset size exceeds the recommended limit (244 KiB). This can impact web performance.
+Entrypoints:
+  preload (537 KiB)
+      preload.js
+  bundle (6.08 MiB)
+      bundle.js
+[39m[22m
+
+[1m[33mWARNING[39m[22m in [1mwebpack performance recommendations:
+You can limit the size of your bundles by using import() or require.ensure to lazy load some parts of your application.
+For more info visit https://webpack.js.org/guides/code-splitting/[39m[22m
+
+[1mtabby-web-entry[39m[22m (webpack 5.104.1) compiled with [1m[33m3 warnings[39m[22m in 8115 ms
+info build ../tabby-web-demo/webpack.config.mjs
+asset [1m[32mindex.js[39m[22m 30.4 KiB [1m[33m[compared for emit][39m[22m (name: main) 1 related asset
+orphan modules 23.1 KiB [1m[33m[orphan][39m[22m 4 modules
+runtime modules 937 bytes 4 modules
+built modules 25 KiB [1m[33m[built][39m[22m
+  modules by path [1mexternal "@angular/[39m[22m 84 bytes
+    [1mexternal "@angular/core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1mexternal "@angular/forms"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m./src/index.ts + 4 modules[39m[22m 24.7 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "@ng-bootstrap/ng-bootstrap"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "tabby-core"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "tabby-terminal"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1mexternal "path"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+
+[1m[33mWARNING[39m[22m in [1m/app/tabby-web-demo/src/buttonProvider.ts is part of the TypeScript compilation but it's unused.
+Add only entry points to the 'files' or 'include' properties in your tsconfig.[39m[22m
+
+webpack 5.104.1 compiled with [1m[33m1 warning[39m[22m in 4748 ms
+Done in 212.81s.

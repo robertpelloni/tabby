@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core'
+import { AgentService } from '../../services/agent.service'
 
 export interface VDOMNode {
     tag: string
@@ -19,7 +20,11 @@ export interface VDOMNode {
                     <h2 *ngSwitchCase="'h2'"><widget-vdom [node]="child"></widget-vdom></h2>
                     <h3 *ngSwitchCase="'h3'"><widget-vdom [node]="child"></widget-vdom></h3>
                     <p *ngSwitchCase="'p'"><widget-vdom [node]="child"></widget-vdom></p>
-                    <button *ngSwitchCase="'button'" class="btn btn-sm btn-primary"><widget-vdom [node]="child"></widget-vdom></button>
+                    <button *ngSwitchCase="'button'"
+                            class="btn btn-sm btn-primary"
+                            (click)="onButtonClick(child)">
+                        <widget-vdom [node]="child"></widget-vdom>
+                    </button>
                     <div *ngSwitchDefault><widget-vdom [node]="child"></widget-vdom></div>
                 </div>
             </ng-container>
@@ -29,7 +34,15 @@ export interface VDOMNode {
 export class WidgetVDOMComponent {
     @Input() node: VDOMNode|null = null
 
+    constructor (private agent: AgentService) { }
+
     isString (v: any): v is string {
         return typeof v === 'string'
+    }
+
+    onButtonClick (node: VDOMNode) {
+        if (node.props?.action) {
+            this.agent.submitWorkflowResponse(node.props.workflowId, node.props.action)
+        }
     }
 }
