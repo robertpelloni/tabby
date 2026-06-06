@@ -12,7 +12,7 @@ import { enableProdMode, NgModuleRef, ApplicationRef } from '@angular/core'
 import { enableDebugTools } from '@angular/platform-browser'
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic'
 
-import { getRootModule } from '../app/src/app.module'
+import { AppModule } from '../app/src/app.module'
 import { BootstrapData, BOOTSTRAP_DATA } from '../tabby-core/src/api/mainProcess'
 
 interface BootstrapOptions {
@@ -40,7 +40,7 @@ window['bootstrapTabby'] = async function bootstrap (options: BootstrapOptions):
         enableProdMode()
     }
 
-    const module = getRootModule(pluginModules)
+    const module = AppModule
     window['rootModule'] = module
 
     const moduleRef = await platformBrowserDynamic([

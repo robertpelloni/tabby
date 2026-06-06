@@ -1,35 +1,52 @@
 import { Component, Input, ViewChild, ElementRef } from '@angular/core'
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
 
-/** @hidden */
 @Component({
-    templateUrl: './promptModal.component.pug',
+    template: `
+        <div class="modal-header">
+            <h4 class="modal-title">{{prompt}}</h4>
+        </div>
+        <div class="modal-body">
+            <input
+                #input
+                [type]="password ? 'password' : 'text'"
+                class="form-control"
+                [(ngModel)]="value"
+                (keyup.enter)="submit()"
+                (keyup.esc)="close()"
+                [placeholder]="placeholder || ''"
+                autofocus
+            >
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" (click)="submit()">OK</button>
+            <button class="btn btn-secondary" (click)="close()">Cancel</button>
+        </div>
+    `,
 })
 export class PromptModalComponent {
     @Input() prompt: string
-    @Input() value: string
-    @Input() remember: boolean
-    @Input() showRememberCheckbox: boolean
+    @Input() value = ''
+    @Input() password = false
+    @Input() placeholder = ''
+
     @ViewChild('input') input: ElementRef
 
     constructor (
-        private modalInstance: NgbActiveModal,
+        private modal: NgbActiveModal,
     ) { }
 
-    ngOnInit (): void {
+    ngAfterViewInit () {
         setTimeout(() => {
             this.input.nativeElement.focus()
         })
     }
 
-    ok (): void {
-        this.modalInstance.close({
-            value: this.value,
-            remember: this.remember,
-        })
+    submit () {
+        this.modal.close(this.value)
     }
 
-    cancel (): void {
-        this.modalInstance.close(null)
+    close () {
+        this.modal.dismiss()
     }
 }

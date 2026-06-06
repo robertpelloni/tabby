@@ -2,7 +2,8 @@ import { NgModule, ModuleWithProviders, LOCALE_ID } from '@angular/core'
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms'
-import { NgbModule, NgbTooltipConfig } from '@ng-bootstrap/ng-bootstrap'
+import { NgbModule,
+        NgbTooltipModule, NgbTooltipConfig } from '@ng-bootstrap/ng-bootstrap'
 import { NgxFilesizeModule } from 'ngx-filesize'
 import { DragDropModule } from '@angular/cdk/drag-drop'
 import { TranslateModule, TranslateCompiler, TranslateService, MissingTranslationHandler } from '@ngx-translate/core'
@@ -94,6 +95,7 @@ const PROVIDERS = [
         CommonModule,
         FormsModule,
         NgbModule,
+        NgbTooltipModule,
         NgxFilesizeModule,
         DragDropModule,
         TranslateModule.forRoot({
@@ -139,12 +141,6 @@ const PROVIDERS = [
         WidgetVDOMComponent,
         AgentWidgetsComponent,
         WorkflowProgressComponent,
-
-
-
-
-
-
         TabbyFormatedDatePipe,
     ],
     exports: [

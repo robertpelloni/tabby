@@ -15,11 +15,6 @@ export interface WindowOptions {
     hidden?: boolean
 }
 
- {
-
-
-}
-
 const macOSVibrancyType: any = process.platform === 'darwin' ? compareVersions(macOSRelease().version || '0.0', '10.14', '>=') ? 'fullscreen-ui' : 'dark' : null
 
 const activityIcon = nativeImage.createFromPath(`${app.getAppPath()}/assets/activity.png`)
