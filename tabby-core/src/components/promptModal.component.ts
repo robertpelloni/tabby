@@ -17,7 +17,7 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
                 [placeholder]="placeholder || ''"
                 autofocus
             >
-            <div class="form-group mt-3" *ngIf="showRemember">
+            <div class="form-group mt-3" *ngIf="showRememberCheckbox">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" [(ngModel)]="remember" id="rememberCheck">
                     <label class="form-check-label" for="rememberCheck" translate>Remember</label>
@@ -35,7 +35,7 @@ export class PromptModalComponent {
     @Input() value = ''
     @Input() password = false
     @Input() placeholder = ''
-    @Input() showRemember = false
+    @Input() showRememberCheckbox = false
     @Input() remember = false
 
     @ViewChild('input') input: ElementRef

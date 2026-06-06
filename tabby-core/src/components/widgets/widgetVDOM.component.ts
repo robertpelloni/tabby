@@ -41,7 +41,7 @@ export class WidgetVDOMComponent {
     }
 
     onButtonClick (node: VDOMNode) {
-        if (node.props?.action) {
+        if (node.props?.workflowId && node.props?.action) {
             this.agent.submitWorkflowResponse(node.props.workflowId, node.props.action)
         }
     }
