@@ -32,12 +32,20 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap'
 })
 export class PromptModalComponent {
     @Input() prompt: string
+<<<<<<< HEAD
+    @Input() value: string
+    @Input() prompt: string|undefined
+    @Input() password: boolean
+    @Input() remember: boolean
+    @Input() showRememberCheckbox: boolean
+=======
     @Input() value = ''
     @Input() password = false
     @Input() placeholder = ''
     @Input() showRememberCheckbox = false
     @Input() remember = false
 
+>>>>>>> jules-1407546259735951285-590dfa06
     @ViewChild('input') input: ElementRef
 
     constructor (
