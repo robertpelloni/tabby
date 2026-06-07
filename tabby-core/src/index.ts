@@ -33,12 +33,9 @@ import { WelcomeTabComponent } from './components/welcomeTab.component'
 import { TransfersMenuComponent } from './components/transfersMenu.component'
 import { ProfileIconComponent } from './components/profileIcon.component'
 import { AgentStatusComponent } from './components/agentStatus.component'
-<<<<<<< HEAD
-=======
 import { WidgetVDOMComponent } from './components/widgets/widgetVDOM.component'
 import { AgentWidgetsComponent } from './components/widgets/agentWidgets.component'
 import { WorkflowProgressComponent } from './components/widgets/workflowProgress.component'
->>>>>>> jules-1407546259735951285-590dfa06
 
 import { AutofocusDirective } from './directives/autofocus.directive'
 import { AlwaysVisibleTypeaheadDirective } from './directives/alwaysVisibleTypeahead.directive'
@@ -62,15 +59,7 @@ import { CoreConfigProvider } from './config'
 import { AppHotkeyProvider } from './hotkeys'
 import { LastCLIHandler, ProfileCLIHandler } from './cli'
 import { SplitLayoutProfilesService } from './profiles'
-<<<<<<< HEAD
-import { CoreCommandProvider, TaskCompletionCommandProvider } from './commands'
-
-export function TranslateMessageFormatCompilerFactory (): TranslateMessageFormatCompiler {
-    return new TranslateMessageFormatCompiler()
-}
-=======
 import { CoreCommandProvider } from './commands'
->>>>>>> jules-1407546259735951285-590dfa06
 
 export function TranslateMessageFormatCompilerFactory (): TranslateMessageFormatCompiler {
     return new TranslateMessageFormatCompiler()
@@ -149,12 +138,9 @@ const PROVIDERS = [
         CdkAutoDropGroup,
         ProfileIconComponent,
         AgentStatusComponent,
-<<<<<<< HEAD
-=======
         WidgetVDOMComponent,
         AgentWidgetsComponent,
         WorkflowProgressComponent,
->>>>>>> jules-1407546259735951285-590dfa06
         TabbyFormatedDatePipe,
     ],
     exports: [
@@ -281,11 +267,7 @@ export default class AppModule { // eslint-disable-line @typescript-eslint/no-ex
     }
 
     static forRoot (): ModuleWithProviders<AppModule> {
-<<<<<<< HEAD
-        const translateModule = TranslateModule.forRoot({
-=======
         TranslateModule.forRoot({
->>>>>>> jules-1407546259735951285-590dfa06
             defaultLanguage: 'en',
             compiler: {
                 provide: TranslateCompiler,
