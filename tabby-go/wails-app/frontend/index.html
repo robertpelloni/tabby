@@ -1,215 +1,213 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>tabby-wails</title>
-</head>
-<body>
-<div id="app"></div>
-
-<!-- SSH Connection Dialog -->
-<div id="ssh-dialog" class="modal-overlay">
-  <div class="modal-box">
-    <h3>🔐 SSH Connect</h3>
-    <div class="setting-group"><label>Host</label><input type="text" id="ssh-host" placeholder="example.com"></div>
-    <div class="setting-group"><label>Port</label><input type="number" id="ssh-port" value="22" min="1" max="65535"></div>
-    <div class="setting-group"><label>Username</label><input type="text" id="ssh-user" placeholder="root"></div>
-    <div class="setting-group"><label>Authentication</label>
-      <select id="ssh-auth">
-        <option value="agent">SSH Agent</option>
-        <option value="publicKey">Public Key</option>
-        <option value="password">Password</option>
-        <option value="keyboardInteractive">Keyboard Interactive</option>
-      </select>
-    </div>
-    <div class="setting-group" id="ssh-password-group" style="display:none;"><label>Password</label><input type="password" id="ssh-password"></div>
-    <div class="setting-group" id="ssh-key-group" style="display:none;"><label>Private Key Path</label><input type="text" id="ssh-key-path" placeholder="~/.ssh/id_ed25519"></div><div class="setting-group" id="ssh-passphrase-group" style="display:none;"><label>Key Passphrase</label><input type="password" id="ssh-key-passphrase" placeholder="Optional passphrase"></div>
-    <div class="setting-group"><label>Jump Host</label><input type="text" id="ssh-jump-host" placeholder="bastion.example.com (optional)"></div>
-  
-  <div class="setting-group"><label>Login Script</label><textarea id="ssh-login-script" rows="3" placeholder="Commands to run after connect (one per line)&#10;# This is a comment&#10;cd /var/log&#10;ls -la" style="width:100%;background:#1e1e1e;border:1px solid #3a3a3a;color:#ccc;padding:8px;border-radius:4px;font-family:monospace;font-size:12px;resize:vertical;"></textarea></div>
-  <div class="setting-group"><label>Keepalive Interval (seconds)</label><input type="number" id="ssh-keepalive" value="30" min="0" max="300" placeholder="30"></div><div class="setting-group"><label>Connection Timeout (seconds)</label><input type="number" id="ssh-timeout" value="15" min="1" max="120" placeholder="15"></div><div class="setting-group"><label>Agent Forwarding</label><div class="toggle-container"><input type="checkbox" id="ssh-agent-forward"><label for="ssh-agent-forward" class="toggle-label"></label></div></div><div class="setting-group"><label>Save as Profile</label><div class="toggle-container"><input type="checkbox" id="ssh-save-profile"><label for="ssh-save-profile" class="toggle-label"></label></div></div>
-    <div class="modal-actions">
-      <button class="btn-secondary" id="ssh-cancel">Cancel</button>
-      <button class="btn-primary" id="ssh-connect">Connect</button>
-    </div>
-  </div>
-</div>
-
-<!-- Serial Port Dialog -->
-<div id="serial-dialog" class="modal-overlay">
-  <div class="modal-box">
-    <h3>📡 Serial Port</h3>
-    <div class="setting-group"><label>Port</label>
-      <div style="display:flex;gap:4px;align-items:center;">
-        <select id="serial-port-select" style="flex:1;">
-          <option value="">-- Select Port --</option>
-        </select>
-        <button class="btn-icon" id="serial-refresh" title="Refresh ports">🔄</button>
-      </div>
-    </div>
-    <div class="setting-group"><label>Baud Rate</label>
-      <select id="serial-baud">
-        <option value="9600">9600</option><option value="19200">19200</option><option value="38400">38400</option>
-        <option value="57600">57600</option><option value="115200" selected>115200</option><option value="230400">230400</option>
-        <option value="460800">460800</option><option value="921600">921600</option>
-      </select>
-    </div>
-    <div class="setting-group"><label>Data Bits</label>
-      <select id="serial-data-bits"><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8" selected>8</option></select>
-    </div>
-    <div class="setting-group"><label>Stop Bits</label>
-      <select id="serial-stop-bits"><option value="1" selected>1</option><option value="2">2</option></select>
-    </div>
-    <div class="setting-group"><label>Parity</label>
-      <select id="serial-parity"><option value="none" selected>None</option><option value="even">Even</option><option value="odd">Odd</option></select>
-    </div>
-    
-  
-  <div class="setting-group"><label>Save as Profile</label><div class="toggle-container"><input type="checkbox" id="serial-save-profile"><label for="serial-save-profile" class="toggle-label"></label></div></div>
-    <div class="modal-actions">
-      <button class="btn-secondary" id="serial-cancel">Cancel</button>
-      <button class="btn-primary" id="serial-connect">Connect</button>
-    </div>
-  </div>
-</div>
-
-<!-- Telnet Dialog -->
-<div id="telnet-dialog" class="modal-overlay">
-  <div class="modal-box">
-    <h3>🌐 Telnet Connect</h3>
-    <div class="setting-group"><label>Host</label><input type="text" id="telnet-host" placeholder="example.com"></div>
-    <div class="setting-group"><label>Port</label><input type="number" id="telnet-port" value="23" min="1" max="65535"></div>
-    
-  
-  <div class="setting-group"><label>Save as Profile</label><div class="toggle-container"><input type="checkbox" id="telnet-save-profile"><label for="telnet-save-profile" class="toggle-label"></label></div></div>
-    <div class="modal-actions">
-      <button class="btn-secondary" id="telnet-cancel">Cancel</button>
-      <button class="btn-primary" id="telnet-connect">Connect</button>
-    </div>
-  </div>
-</div>
-
-<!-- Port Forwarding Dialog -->
-<div id="forward-dialog" class="modal-overlay">
-  <div class="modal-box" style="width:450px;">
-    <h3>🔀 Port Forwarding</h3>
-    <div class="setting-group"><label>Connection</label><input type="text" id="forward-conn-id" readonly placeholder="Active SSH connection ID"></div>
-    <div class="setting-group"><label>Type</label>
-      <select id="forward-type">
-        <option value="local">Local (-L)</option>
-        <option value="remote">Remote (-R)</option>
-        <option value="dynamic">Dynamic / SOCKS5 (-D)</option>
-      </select>
-    </div>
-    <div class="setting-group" id="forward-local-group"><label>Local Address</label><input type="text" id="forward-local-addr" placeholder="localhost:8080"></div>
-    <div class="setting-group" id="forward-remote-group"><label>Remote Address</label><input type="text" id="forward-remote-addr" placeholder="localhost:80"></div>
-    <div class="modal-actions">
-      <button class="btn-secondary" id="forward-cancel">Cancel</button>
-      <button class="btn-primary" id="forward-add">Add Forward</button>
-    </div>
-    <div id="forward-list" style="margin-top:12px;max-height:150px;overflow-y:auto;"></div>
-  </div>
-</div>
-
-<!-- Host Key Verification Dialog -->
-<div id="hostkey-dialog" class="modal-overlay">
-  <div class="modal-box">
-    <h3>🔐 Host Key Verification</h3>
-    <p id="hostkey-message" style="color:#ccc;font-size:13px;margin:0 0 12px;word-wrap:break-word;"></p>
-    <div class="setting-group"><label>Fingerprint</label><code id="hostkey-fingerprint" style="font-size:11px;color:#569cd6;word-break:break-all;"></code></div>
-    <div class="modal-actions">
-      <button class="btn-secondary" id="hostkey-reject">Reject</button>
-      <button class="btn-primary" id="hostkey-accept">Trust &amp; Connect</button>
-    </div>
-  </div>
-</div>
-
-<!-- Command Palette -->
-<div id="command-palette" class="modal-overlay">
-  <div class="modal-box" style="width:500px;max-height:400px;padding:0;">
-    <input type="text" id="cmd-palette-input" placeholder="Type a command..." style="width:100%;padding:12px 16px;background:#1e1e1e;border:none;border-bottom:1px solid #3a3a3a;color:#ccc;font-size:14px;outline:none;">
-    <div id="cmd-palette-items" style="max-height:320px;overflow-y:auto;padding:4px 0;">
-    </div>
-  </div>
-</div>
-
-<!-- Command Palette -->
-
-
-<!-- Profile Edit Dialog -->
-<div id="profile-edit-dialog" class="modal-overlay">
-  <div class="modal-box">
-    <h3>Edit Profile</h3>
-    <input type="hidden" id="edit-profile-id">
-    <div class="setting-group"><label>Name</label><input type="text" id="edit-profile-name"></div>
-    <div class="setting-group"><label>Group</label><input type="text" id="edit-profile-group" placeholder="e.g. Production"></div>
-    <div class="setting-group"><label>Host</label><input type="text" id="edit-profile-host"></div>
-    <div class="setting-group"><label>Port</label><input type="number" id="edit-profile-port" value="22"></div>
-    <div class="setting-group"><label>User</label><input type="text" id="edit-profile-user"></div>
-    <div class="setting-group"><label>Auth</label>
-      <select id="edit-profile-auth"><option value="agent">SSH Agent</option><option value="publicKey">Public Key</option><option value="password">Password</option></select>
-    </div>
-    <div class="setting-group"><label>Private Key Path</label><input type="text" id="edit-profile-key" placeholder="~/.ssh/id_ed25519"></div>
-    <div class="setting-group"><label>Jump Host</label><input type="text" id="edit-profile-jump" placeholder="bastion.example.com"></div>
-    <div class="setting-group"><label>Login Script</label><textarea id="edit-profile-login-script" rows="3" style="width:100%;background:#1e1e1e;border:1px solid #3a3a3a;color:#ccc;padding:8px;border-radius:4px;font-family:monospace;font-size:12px;resize:vertical;" placeholder="Commands to run after connect"></textarea></div>
-    <div class="modal-actions">
-      <button class="btn-secondary" id="edit-profile-cancel">Cancel</button>
-      <button class="btn-primary" id="edit-profile-save">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- Tab Search Bar -->
-<div id="tab-search-bar" class="tab-search-bar">
-  <input type="text" id="tab-search-input" placeholder="Search tabs...">
-  <div id="tab-search-results" class="tab-search-results"></div>
-</div>
-
-<!-- SFTP File Browser Dialog -->
-
-<div id="sftp-dialog" class="modal-overlay">
-  <div class="modal-box" style="width:650px;max-height:80vh;">
-    <h3 style="display:flex;justify-content:space-between;align-items:center;">
-      <span>📁 SFTP File Browser</span>
-      <span id="sftp-session-label" style="font-size:11px;color:#666;font-weight:normal;"></span>
-    </h3>
-    <!-- Path bar -->
-    <div style="display:flex;gap:4px;margin-bottom:8px;">
-      <button class="btn-icon" id="sftp-go-up" title="Parent directory">⬆</button>
-      <button class="btn-icon" id="sftp-refresh" title="Refresh">🔄</button>
-      <input type="text" id="sftp-path" style="flex:1;background:#1e1e1e;border:1px solid #3a3a3a;color:#ccc;padding:4px 8px;border-radius:4px;font-size:12px;font-family:monospace;" value="/">
-      <button class="btn-icon" id="sftp-go" title="Go">→</button>
-    </div>
-    <!-- File list -->
-    <div id="sftp-file-list" style="max-height:400px;overflow-y:auto;border:1px solid #2b2b2b;border-radius:4px;background:#1a1a1a;">
-      <div style="padding:20px;text-align:center;color:#666;">Loading...</div>
-    </div>
-    <!-- Actions -->
-    <div style="display:flex;gap:4px;margin-top:8px;">
-      <button class="btn-secondary" id="sftp-mkdir-btn" style="font-size:12px;">📁 New Folder</button>
-      <button class="btn-secondary" id="sftp-upload-btn" style="font-size:12px;">⬆ Upload</button>
-      <button class="btn-secondary" id="sftp-download-btn" style="font-size:12px;">⬇ Download</button>
-      <button class="btn-secondary" id="sftp-delete-btn" style="font-size:12px;color:#f44747;">🗑 Delete</button>
-      <div style="flex:1;"></div>
-      <button class="btn-secondary" id="sftp-close-btn" style="font-size:12px;">Close</button>
-    </div>
-    <!-- Upload file input (hidden) -->
-    <input type="file" id="sftp-upload-input" style="display:none;">
-  </div>
-</div>
-
-<script src="./src/main.js" type="module"></script>
-<!-- Notification Center -->
-<div id="notification-center">
-  <div style="padding:12px 16px;border-bottom:1px solid #3a3a3a;display:flex;justify-content:space-between;align-items:center;">
-    <strong style="color:#ccc;font-size:14px;">Notifications</strong>
-    <button class="btn-icon" onclick="document.getElementById('notification-center').classList.remove('active')" title="Close">&times;</button>
-  </div>
-  <div id="notification-list" style="padding:8px;max-height:300px;overflow-y:auto;">
-    <div style="color:#666;font-size:12px;text-align:center;padding:20px;">No notifications</div>
-  </div>
-</div>
-
-</body>
-</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>tabby-wails</title>
+</head>
+<body>
+<div id="app"></div>
+<!-- SSH Connection Dialog -->
+<div id="ssh-dialog" class="modal-overlay">
+  <div class="modal-box">
+    <h3>🔐 SSH Connect</h3>
+    <div class="setting-group"><label>Host</label><input type="text" id="ssh-host" placeholder="example.com"></div>
+    <div class="setting-group"><label>Port</label><input type="number" id="ssh-port" value="22" min="1" max="65535"></div>
+    <div class="setting-group"><label>Username</label><input type="text" id="ssh-user" placeholder="root"></div>
+    <div class="setting-group"><label>Authentication</label>
+      <select id="ssh-auth">
+        <option value="agent">SSH Agent</option>
+        <option value="publicKey">Public Key</option>
+        <option value="password">Password</option>
+        <option value="keyboardInteractive">Keyboard Interactive</option>
+      </select>
+    </div>
+    <div class="setting-group" id="ssh-password-group" style="display:none;"><label>Password</label><input type="password" id="ssh-password"></div>
+    <div class="setting-group" id="ssh-key-group" style="display:none;"><label>Private Key Path</label><input type="text" id="ssh-key-path" placeholder="~/.ssh/id_ed25519"></div><div class="setting-group" id="ssh-passphrase-group" style="display:none;"><label>Key Passphrase</label><input type="password" id="ssh-key-passphrase" placeholder="Optional passphrase"></div>
+    <div class="setting-group"><label>Connection Mode</label>
+ <select id="ssh-connection-mode" onchange="toggleSSHConnectionMode()">
+ <option value="direct">Direct</option>
+ <option value="jumpHost">Jump Host</option>
+ <option value="proxyCommand">Proxy Command</option>
+ <option value="socksProxy">SOCKS Proxy</option>
+ <option value="httpProxy">HTTP Proxy</option>
+ </select>
+ </div>
+ <div class="setting-group" id="ssh-jump-host-group" style="display:none;"><label>Jump Host</label><input type="text" id="ssh-jump-host" placeholder="user@bastion.example.com:22"></div>
+ <div class="setting-group" id="ssh-proxy-cmd-group" style="display:none;"><label>Proxy Command</label><input type="text" id="ssh-proxy-command" placeholder="e.g. nc -X 5 -x proxy:1080 %h %p"></div>
+ <div class="setting-group" id="ssh-socks-proxy-group" style="display:none;"><label>SOCKS Proxy Host</label><input type="text" id="ssh-socks-host" placeholder="localhost"><label style="margin-top:6px;">SOCKS Proxy Port</label><input type="number" id="ssh-socks-port" value="1080" min="1" max="65535"></div>
+ <div class="setting-group" id="ssh-http-proxy-group" style="display:none;"><label>HTTP Proxy Host</label><input type="text" id="ssh-http-proxy-host" placeholder="localhost"><label style="margin-top:6px;">HTTP Proxy Port</label><input type="number" id="ssh-http-proxy-port" value="3128" min="1" max="65535"></div>
+  
+  <div class="setting-group"><label>Login Script</label><textarea id="ssh-login-script" rows="3" placeholder="Commands to run after connect (one per line)&#10;# This is a comment&#10;cd /var/log&#10;ls -la" style="width:100%;background:#1e1e1e;border:1px solid #3a3a3a;color:#ccc;padding:8px;border-radius:4px;font-family:monospace;font-size:12px;resize:vertical;"></textarea></div>
+  <div class="setting-group"><label>Keepalive Interval (seconds)</label><input type="number" id="ssh-keepalive" value="30" min="0" max="300" placeholder="30"></div><div class="setting-group"><label>Connection Timeout (seconds)</label><input type="number" id="ssh-timeout" value="15" min="1" max="120" placeholder="15"></div><div class="setting-group"><label>Agent Forwarding</label><div class="toggle-container"><input type="checkbox" id="ssh-agent-forward"><label for="ssh-agent-forward" class="toggle-label"></label></div></div><div class="setting-group"><label>X11 Forwarding</label><div class="toggle-container"><input type="checkbox" id="ssh-x11"><label for="ssh-x11" class="toggle-label"></label></div></div><div class="setting-group"><label>Skip Banner</label><div class="toggle-container"><input type="checkbox" id="ssh-skip-banner"><label for="ssh-skip-banner" class="toggle-label"></label></div></div><div class="setting-group"><label>Save as Profile</label><div class="toggle-container"><input type="checkbox" id="ssh-save-profile"><label for="ssh-save-profile" class="toggle-label"></label></div></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="ssh-cancel">Cancel</button>
+      <button class="btn-secondary" style="font-size:11px;" onclick="importSSHConfig()">Import ~/.ssh/config</button> <button class="btn-primary" id="ssh-connect">Connect</button>
+    </div>
+  </div>
+</div>
+<!-- Serial Port Dialog -->
+<div id="serial-dialog" class="modal-overlay">
+  <div class="modal-box">
+    <h3>📡 Serial Port</h3>
+    <div class="setting-group"><label>Port</label>
+      <div style="display:flex;gap:4px;align-items:center;">
+        <select id="serial-port-select" style="flex:1;">
+          <option value="">-- Select Port --</option>
+        </select>
+        <button class="btn-icon" id="serial-refresh" title="Refresh ports">🔄</button>
+      </div>
+    </div>
+    <div class="setting-group"><label>Baud Rate</label>
+      <select id="serial-baud">
+        <option value="9600">9600</option><option value="19200">19200</option><option value="38400">38400</option>
+        <option value="57600">57600</option><option value="115200" selected>115200</option><option value="230400">230400</option>
+        <option value="460800">460800</option><option value="921600">921600</option>
+      </select>
+    </div>
+    <div class="setting-group"><label>Data Bits</label>
+      <select id="serial-data-bits"><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8" selected>8</option></select>
+    </div>
+    <div class="setting-group"><label>Stop Bits</label>
+      <select id="serial-stop-bits"><option value="1" selected>1</option><option value="2">2</option></select>
+    </div>
+    <div class="setting-group"><label>Parity</label>
+      <select id="serial-parity"><option value="none" selected>None</option><option value="even">Even</option><option value="odd">Odd</option></select>
+    </div>
+    
+  
+  <div class="setting-group"><label>Save as Profile</label><div class="toggle-container"><input type="checkbox" id="serial-save-profile"><label for="serial-save-profile" class="toggle-label"></label></div></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="serial-cancel">Cancel</button>
+      <button class="btn-primary" id="serial-connect">Connect</button>
+    </div>
+  </div>
+</div>
+<!-- Telnet Dialog -->
+<div id="telnet-dialog" class="modal-overlay">
+  <div class="modal-box">
+    <h3>🌐 Telnet Connect</h3>
+    <div class="setting-group"><label>Host</label><input type="text" id="telnet-host" placeholder="example.com"></div>
+    <div class="setting-group"><label>Port</label><input type="number" id="telnet-port" value="23" min="1" max="65535"></div>
+    
+  
+  <div class="setting-group"><label>Save as Profile</label><div class="toggle-container"><input type="checkbox" id="telnet-save-profile"><label for="telnet-save-profile" class="toggle-label"></label></div></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="telnet-cancel">Cancel</button>
+      <button class="btn-primary" id="telnet-connect">Connect</button>
+    </div>
+  </div>
+</div>
+<!-- Port Forwarding Dialog -->
+<div id="forward-dialog" class="modal-overlay">
+  <div class="modal-box" style="width:450px;">
+    <h3>🔀 Port Forwarding</h3>
+    <div class="setting-group"><label>Connection</label><input type="text" id="forward-conn-id" readonly placeholder="Active SSH connection ID"></div>
+    <div class="setting-group"><label>Type</label>
+      <select id="forward-type">
+        <option value="local">Local (-L)</option>
+        <option value="remote">Remote (-R)</option>
+        <option value="dynamic">Dynamic / SOCKS5 (-D)</option>
+      </select>
+    </div>
+    <div class="setting-group" id="forward-local-group"><label>Local Address</label><input type="text" id="forward-local-addr" placeholder="localhost:8080"></div>
+    <div class="setting-group" id="forward-remote-group"><label>Remote Address</label><input type="text" id="forward-remote-addr" placeholder="localhost:80"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="forward-cancel">Cancel</button>
+      <button class="btn-primary" id="forward-add">Add Forward</button>
+    </div>
+    <div id="forward-list" style="margin-top:12px;max-height:150px;overflow-y:auto;"></div>
+  </div>
+</div>
+<!-- Host Key Verification Dialog -->
+<div id="hostkey-dialog" class="modal-overlay">
+  <div class="modal-box">
+    <h3>🔐 Host Key Verification</h3>
+    <p id="hostkey-message" style="color:#ccc;font-size:13px;margin:0 0 12px;word-wrap:break-word;"></p>
+    <div class="setting-group"><label>Fingerprint</label><code id="hostkey-fingerprint" style="font-size:11px;color:#569cd6;word-break:break-all;"></code></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="hostkey-reject">Reject</button>
+      <button class="btn-primary" id="hostkey-accept">Trust &amp; Connect</button>
+    </div>
+  </div>
+</div>
+<!-- Command Palette -->
+<div id="command-palette" class="modal-overlay">
+  <div class="modal-box" style="width:500px;max-height:400px;padding:0;">
+    <input type="text" id="cmd-palette-input" placeholder="Type a command..." style="width:100%;padding:12px 16px;background:#1e1e1e;border:none;border-bottom:1px solid #3a3a3a;color:#ccc;font-size:14px;outline:none;">
+    <div id="cmd-palette-items" style="max-height:320px;overflow-y:auto;padding:4px 0;">
+    </div>
+  </div>
+</div>
+<!-- Command Palette -->
+<!-- Profile Edit Dialog -->
+<div id="profile-edit-dialog" class="modal-overlay">
+  <div class="modal-box">
+    <h3>Edit Profile</h3>
+    <input type="hidden" id="edit-profile-id">
+    <div class="setting-group"><label>Name</label><input type="text" id="edit-profile-name"></div>
+    <div class="setting-group"><label>Group</label><input type="text" id="edit-profile-group" placeholder="e.g. Production"></div>
+    <div class="setting-group"><label>Host</label><input type="text" id="edit-profile-host"></div>
+    <div class="setting-group"><label>Port</label><input type="number" id="edit-profile-port" value="22"></div>
+    <div class="setting-group"><label>User</label><input type="text" id="edit-profile-user"></div>
+    <div class="setting-group"><label>Auth</label>
+      <select id="edit-profile-auth"><option value="agent">SSH Agent</option><option value="publicKey">Public Key</option><option value="password">Password</option></select>
+    </div>
+    <div class="setting-group"><label>Private Key Path</label><input type="text" id="edit-profile-key" placeholder="~/.ssh/id_ed25519"></div>
+    <div class="setting-group"><label>Jump Host</label><input type="text" id="edit-profile-jump" placeholder="bastion.example.com"></div>
+    <div class="setting-group"><label>Login Script</label><textarea id="edit-profile-login-script" rows="3" style="width:100%;background:#1e1e1e;border:1px solid #3a3a3a;color:#ccc;padding:8px;border-radius:4px;font-family:monospace;font-size:12px;resize:vertical;" placeholder="Commands to run after connect"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="edit-profile-cancel">Cancel</button>
+      <button class="btn-primary" id="edit-profile-save">Save</button>
+    </div>
+  </div>
+</div>
+<!-- Tab Search Bar -->
+<div id="tab-search-bar" class="tab-search-bar">
+  <input type="text" id="tab-search-input" placeholder="Search tabs...">
+  <div id="tab-search-results" class="tab-search-results"></div>
+</div>
+<!-- SFTP File Browser Dialog -->
+<div id="sftp-dialog" class="modal-overlay">
+  <div class="modal-box" style="width:650px;max-height:80vh;">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;">
+      <span>📁 SFTP File Browser</span>
+      <span id="sftp-session-label" style="font-size:11px;color:#666;font-weight:normal;"></span>
+    </h3>
+    <!-- Path bar -->
+    <div style="display:flex;gap:4px;margin-bottom:8px;">
+      <button class="btn-icon" id="sftp-go-up" title="Parent directory">⬆</button>
+      <button class="btn-icon" id="sftp-refresh" title="Refresh">🔄</button>
+      <input type="text" id="sftp-path" style="flex:1;background:#1e1e1e;border:1px solid #3a3a3a;color:#ccc;padding:4px 8px;border-radius:4px;font-size:12px;font-family:monospace;" value="/">
+      <button class="btn-icon" id="sftp-go" title="Go">→</button>
+    </div>
+    <!-- File list -->
+    <div id="sftp-file-list" style="max-height:400px;overflow-y:auto;border:1px solid #2b2b2b;border-radius:4px;background:#1a1a1a;">
+      <div style="padding:20px;text-align:center;color:#666;">Loading...</div>
+    </div>
+    <!-- Actions -->
+    <div style="display:flex;gap:4px;margin-top:8px;">
+      <button class="btn-secondary" id="sftp-mkdir-btn" style="font-size:12px;">📁 New Folder</button>
+      <button class="btn-secondary" id="sftp-upload-btn" style="font-size:12px;">⬆ Upload</button>
+      <button class="btn-secondary" id="sftp-download-btn" style="font-size:12px;">⬇ Download</button>
+      <button class="btn-secondary" id="sftp-delete-btn" style="font-size:12px;color:#f44747;">🗑 Delete</button>
+      <div style="flex:1;"></div>
+      <button class="btn-secondary" id="sftp-close-btn" style="font-size:12px;">Close</button>
+    </div>
+    <!-- Upload file input (hidden) -->
+    <input type="file" id="sftp-upload-input" style="display:none;">
+  </div>
+</div>
+<script src="./src/main.js" type="module"></script>
+<!-- Notification Center -->
+<div id="notification-center">
+  <div style="padding:12px 16px;border-bottom:1px solid #3a3a3a;display:flex;justify-content:space-between;align-items:center;">
+    <strong style="color:#ccc;font-size:14px;">Notifications</strong>
+    <button class="btn-icon" onclick="document.getElementById('notification-center').classList.remove('active')" title="Close">&times;</button>
+  </div>
+  <div id="notification-list" style="padding:8px;max-height:300px;overflow-y:auto;">
+    <div style="color:#666;font-size:12px;text-align:center;padding:20px;">No notifications</div>
+  </div>
+</div>
+</body>
+</html>

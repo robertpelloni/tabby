@@ -192,9 +192,24 @@ function renderColorSchemePreview(name) { const container = document.getElementB
 
 // ===== SSH DIALOG =====
 
-function openSSHDialog() { document.getElementById('ssh-dialog').classList.add('active'); document.getElementById('ssh-host').focus(); }
+function openSSHDialog() {
+ document.getElementById('ssh-dialog').classList.add('active');
+ document.getElementById('ssh-connection-mode').value = 'direct';
+ document.getElementById('ssh-jump-host-group').style.display = 'none';
+ document.getElementById('ssh-proxy-cmd-group').style.display = 'none';
+ document.getElementById('ssh-socks-proxy-group').style.display = 'none';
+ document.getElementById('ssh-http-proxy-group').style.display = 'none';
+ document.getElementById('ssh-host').focus();
+}
 
 function closeSSHDialog() { document.getElementById('ssh-dialog').classList.remove('active'); const t = getActiveTab(); if (t) t.term.focus(); }
+function toggleSSHConnectionMode() {
+ const mode = document.getElementById('ssh-connection-mode').value;
+ document.getElementById('ssh-jump-host-group').style.display = mode === 'jumpHost' ? 'block' : 'none';
+ document.getElementById('ssh-proxy-cmd-group').style.display = mode === 'proxyCommand' ? 'block' : 'none';
+ document.getElementById('ssh-socks-proxy-group').style.display = mode === 'socksProxy' ? 'block' : 'none';
+ document.getElementById('ssh-http-proxy-group').style.display = mode === 'httpProxy' ? 'block' : 'none';
+}
 
 async function doSSHConnect() { const host = document.getElementById('ssh-host').value.trim(); const port = parseInt(document.getElementById('ssh-port').value) || 22; const user = document.getElementById('ssh-user').value.trim(); const auth = document.getElementById('ssh-auth').value; if (!host) { showToast('Host is required', 'error'); return; } closeSSHDialog(); showStatus('Connecting to ' + host + '...');
 
@@ -232,7 +247,7 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
 
  }
 
- const jumpHostValue = document.getElementById('ssh-jump-host').value.trim();
+ const jumpHostValue = document.getElementById('ssh-connection-mode').value === 'jumpHost' ? document.getElementById('ssh-jump-host').value.trim() : '';
 
  let jumpHostParams = null;
 
@@ -258,26 +273,26 @@ async function doSSHConnect() { const host = document.getElementById('ssh-host')
 
  const agentForward = document.getElementById('ssh-agent-forward').checked;
 
+ const connectionMode = document.getElementById('ssh-connection-mode').value;
+ const x11 = document.getElementById('ssh-x11').checked;
+ const skipBanner = document.getElementById('ssh-skip-banner').checked;
  const sshParams = {
-
  host: host,
-
  port: port,
-
  user: user,
-
  auth: authParams,
-
  keepaliveInterval: keepalive,
-
  keepaliveCountMax: 3,
-
  readyTimeout: timeout * 1000,
-
  agentForward: agentForward,
-
- jumpHost: jumpHostParams
-
+ x11: x11,
+ skipBanner: skipBanner,
+ jumpHost: connectionMode === 'jumpHost' ? jumpHostParams : null,
+ proxyCommand: connectionMode === 'proxyCommand' ? document.getElementById('ssh-proxy-command').value.trim() : '',
+ socksProxyHost: connectionMode === 'socksProxy' ? document.getElementById('ssh-socks-host').value.trim() : '',
+ socksProxyPort: connectionMode === 'socksProxy' ? parseInt(document.getElementById('ssh-socks-port').value) || 1080 : 0,
+ httpProxyHost: connectionMode === 'httpProxy' ? document.getElementById('ssh-http-proxy-host').value.trim() : '',
+ httpProxyPort: connectionMode === 'httpProxy' ? parseInt(document.getElementById('ssh-http-proxy-port').value) || 3128 : 0,
  };
 
  const result = await SSHConnect(sshParams);
