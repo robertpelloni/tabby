@@ -239,13 +239,20 @@ func GetBuiltInScheme(name string) *ColorScheme {
 			return &BuiltInSchemes[i]
 		}
 	}
+	// Also check community schemes
+	for i := range CommunitySchemes {
+		if CommunitySchemes[i].Name == name {
+			return &CommunitySchemes[i]
+		}
+	}
 	return nil
 }
 
-// GetSchemeNames returns the names of all built-in color schemes.
+// GetSchemeNames returns the names of all available color schemes.
 func GetSchemeNames() []string {
-	names := make([]string, len(BuiltInSchemes))
-	for i, s := range BuiltInSchemes {
+	all := AllSchemes()
+	names := make([]string, len(all))
+	for i, s := range all {
 		names[i] = s.Name
 	}
 	return names

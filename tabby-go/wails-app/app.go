@@ -314,9 +314,9 @@ func (a *App) SetWindowTitle(title string) {
 
 // ==== Color Schemes ====
 
-// GetColorSchemes returns all built-in color schemes.
+// GetColorSchemes returns all available color schemes (built-in + community).
 func (a *App) GetColorSchemes() []colorscheme.ColorScheme {
-	return colorscheme.BuiltInSchemes
+	return colorscheme.AllSchemes()
 }
 
 // GetColorSchemeNames returns just the names of all built-in color schemes.
