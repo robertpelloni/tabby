@@ -1408,3 +1408,137 @@ body.light-theme .quick-connect-btn:hover { background: #eee; border-color: #ccc
 .log-info .log-msg { color: var(--text-secondary); }
 .btn-danger { background: #f44747; color: #fff; border: none; }
 .btn-danger:hover { background: #d32f2f; }
+
+/* ===== TABBY LOGO ===== */
+.tabby-logo {
+    font-size: 36px;
+    font-weight: 200;
+    color: #ddd;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+.tabby-logo .logo-accent {
+    color: #0e639c;
+    font-weight: 600;
+}
+.tabby-logo small {
+    font-size: 10px;
+    color: #555;
+    font-weight: 400;
+    vertical-align: super;
+    letter-spacing: 0;
+}
+#sidebar-header .logo-accent {
+    color: #0e639c;
+    font-weight: 600;
+}
+
+/* ===== QUICK CONNECT GRID ENHANCED ===== */
+.qc-name {
+    font-weight: 500;
+    font-size: 13px;
+    color: inherit;
+}
+.qc-desc {
+    font-size: 11px;
+    color: #777;
+    margin-top: 2px;
+}
+.quick-connect-btn:hover .qc-desc {
+    color: #aaa;
+}
+
+/* ===== PROFILE TREE (Original Tabby Style) ===== */
+.profile-group-header {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-top: 1px solid #333;
+    background: #1a1a1a;
+}
+.profile-group-header:first-child {
+    border-top: none;
+}
+.profile-group-header:hover {
+    background: #222;
+    color: #aaa;
+}
+.profile-group-header .group-arrow {
+    font-size: 10px;
+    width: 12px;
+    text-align: center;
+    transition: transform 0.15s;
+}
+.profile-group-header .group-arrow.collapsed {
+    transform: rotate(-90deg);
+}
+.profile-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px 5px 28px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #999;
+    transition: background 0.1s, color 0.1s;
+}
+.profile-item:hover {
+    background: #222;
+    color: #ccc;
+}
+.profile-icon {
+    font-size: 11px;
+    width: 16px;
+    text-align: center;
+}
+.profile-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+.profile-item .profile-actions {
+    display: none;
+    gap: 4px;
+}
+.profile-item:hover .profile-actions {
+    display: flex;
+}
+
+/* Light theme profile tree */
+body.light-theme .profile-group-header {
+    background: #f0f0f0;
+    border-color: #ddd;
+    color: #666;
+}
+body.light-theme .profile-group-header:hover {
+    background: #e8e8e8;
+    color: #333;
+}
+body.light-theme .profile-item {
+    color: #666;
+}
+body.light-theme .profile-item:hover {
+    background: #e0e0e0;
+    color: #333;
+}
+
+/* ===== SIDEBAR FOOTER ENHANCED ===== */
+#sidebar-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-top: 1px solid #2b2b2b;
+    font-size: 11px;
+    color: #666;
+    flex-shrink: 0;
+}

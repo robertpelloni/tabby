@@ -1,6 +1,6 @@
 {
-  "signature": "tabby-go/wails-app/app.go::Unresolved from this turn — tabby-go/wails-app/app.go:\n🔴 STOP — 1 issue(s) must be fixed:\n  L319: undefined: colorscheme.AllSchemes",
+  "signature": "tabby-go/wails-app/wails.json::ℹ️ Advisory — no action required this turn:\nCode-quality warnings introduced/touched this turn: 1 across 1 file(s).\nTop rules: json:65536×1\nDetails written to .pi-lens/cache/code-quality-warnings.json\nNo action required unless you are already refactoring these areas.",
   "sessionId": "lens-mq6u7wlx-40d6a072",
-  "projectSeqStart": 1,
-  "projectSeqEnd": 2
+  "projectSeqStart": 2,
+  "projectSeqEnd": 3
 }

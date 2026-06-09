@@ -2978,7 +2978,7 @@ function importProfiles() {
 
 // ===== PROFILES =====
 
-function renderProfiles() { const section = document.getElementById('profiles-section'); const list = document.getElementById('profiles-list'); const editor = document.getElementById('profiles-editor-list'); if (!savedProfiles || savedProfiles.length === 0) { if (section) section.style.display = 'none'; if (editor) editor.innerHTML = '<div style="color:#666;font-size:12px;">No saved profiles yet.</div>'; return; } if (section) section.style.display = 'block'; if (list) {  } if (editor) { editor.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '🔐' : p.type === 'serial' ? '📡' : p.type === 'telnet' ? '🌐' : '⌘'; return `<div class="profile-editor-item"><span>${icon} ${p.name}</span><button class="btn-icon profile-edit" data-id="${p.id}" title="Edit">✎</button><button class="btn-icon profile-duplicate" data-id="${p.id}" title="Duplicate">➕</button>\u270e</button><button class="btn-icon profile-delete" data-id="${p.id}" title="Delete">\u00d7</button></div>`; }).join(''); editor.querySelectorAll('.profile-edit').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; const profile = savedProfiles.find(p => p.id === id); if (profile) editProfile(profile); }; }); editor.querySelectorAll('.profile-duplicate').forEach(btn => {
+function renderProfiles() { const section = document.getElementById('profiles-section'); const list = document.getElementById('profiles-list'); const editor = document.getElementById('profiles-editor-list'); if (!savedProfiles || savedProfiles.length === 0) { if (section) section.style.display = 'none'; if (editor) editor.innerHTML = '<div style="color:#666;font-size:12px;">No saved profiles yet.</div>'; return; } if (section) section.style.display = 'block'; if (list) { renderProfileGroups(); list.querySelectorAll('.profile-item').forEach(el => { el.ondblclick = () => { const p = savedProfiles.find(x => x.id === el.dataset.profileId); if (p) connectProfile(p); }; }); } if (editor) { editor.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '🔐' : p.type === 'serial' ? '📡' : p.type === 'telnet' ? '🌐' : '⌘'; return `<div class="profile-editor-item"><span>${icon} ${p.name}</span><button class="btn-icon profile-edit" data-id="${p.id}" title="Edit">✎</button><button class="btn-icon profile-duplicate" data-id="${p.id}" title="Duplicate">➕</button>\u270e</button><button class="btn-icon profile-delete" data-id="${p.id}" title="Delete">\u00d7</button></div>`; }).join(''); editor.querySelectorAll('.profile-edit').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; const profile = savedProfiles.find(p => p.id === id); if (profile) editProfile(profile); }; }); editor.querySelectorAll('.profile-duplicate').forEach(btn => {
 
     btn.onclick = (e) => {
 
@@ -3060,7 +3060,7 @@ function buildUI() {
 
         <div id="sidebar-header">
 
-            <div class="logo"><span>⌘</span> Tabby</div>
+            <div class="logo"><span class="logo-accent">⌘</span> Tabby <small style="font-size:9px;color:#666;font-weight:400;">go</small></div>
 
             <div style="display:flex;gap:4px;">
 
@@ -3095,44 +3095,27 @@ function buildUI() {
     <div id="main-content">
 
         <div id="welcome">
-
- <div class="title"><span>Tabby</span> Go</div>
-
+ <div class="welcome-screen">
+ <div class="tabby-logo"><span class="logo-accent">⌘</span> Tabby <small>go</small></div>
+ <p style="color:#777;font-size:14px;margin:8px 0 24px;">A modern terminal for a modern age</p>
  <div class="quick-connect-grid">
-
-   <div class="quick-connect-btn" onclick="newTab()"><span class="qc-icon">⌘</span> Local Shell</div>
-
-   <div class="quick-connect-btn" onclick="openSSHDialog()"><span class="qc-icon">🔐</span> SSH Connect</div>
-
-   <div class="quick-connect-btn" onclick="openSerialDialog()"><span class="qc-icon">📡</span> Serial Port</div>
-
-   <div class="quick-connect-btn" onclick="openTelnetDialog()"><span class="qc-icon">🌐</span> Telnet</div>
-
+ <div class="quick-connect-btn" onclick="newTab()"><span class="qc-icon">⌘</span><div><div class="qc-name">Local Shell</div><div class="qc-desc">Open a terminal</div></div></div>
+ <div class="quick-connect-btn" onclick="openSSHDialog()"><span class="qc-icon">🔐</span><div><div class="qc-name">SSH Connect</div><div class="qc-desc">Connect to a remote host</div></div></div>
+ <div class="quick-connect-btn" onclick="openSerialDialog()"><span class="qc-icon">📡</span><div><div class="qc-name">Serial Port</div><div class="qc-desc">Connect to hardware</div></div></div>
+ <div class="quick-connect-btn" onclick="openTelnetDialog()"><span class="qc-icon">🌐</span><div><div class="qc-name">Telnet</div><div class="qc-desc">Connect to a telnet server</div></div></div>
  </div>
-
- <div class="shortcuts" style="margin-top:32px;">
-
-   <div class="shortcut"><kbd>Ctrl+Shift+T</kbd> New Tab</div>
-
-   <div class="shortcut"><kbd>Ctrl+W</kbd> Close Tab</div>
-
-   <div class="shortcut"><kbd>Ctrl+Tab</kbd> Next Tab</div>
-
-   <div class="shortcut"><kbd>Ctrl+Shift+P</kbd> Command Palette</div>
-
-   <div class="shortcut"><kbd>Ctrl+Shift+F</kbd> Find</div>
-
-   <div class="shortcut"><kbd>Ctrl+\</kbd> Split Vertical</div>
-
-   <div class="shortcut"><kbd>Ctrl+,</kbd> Settings</div>
-
+ <div class="shortcuts" style="margin-top:40px;">
+ <div class="shortcut"><kbd>Ctrl+Shift+T</kbd> New Tab</div>
+ <div class="shortcut"><kbd>Ctrl+W</kbd> Close Tab</div>
+ <div class="shortcut"><kbd>Ctrl+Tab</kbd> Next Tab</div>
+ <div class="shortcut"><kbd>Ctrl+Shift+P</kbd> Command Palette</div>
+ <div class="shortcut"><kbd>Ctrl+Shift+F</kbd> Find</div>
+ <div class="shortcut"><kbd>Ctrl+\</kbd> Split Vertical</div>
+ <div class="shortcut"><kbd>Ctrl+,</kbd> Settings</div>
  </div>
-
-</div>
-
-    </div>
-
-    <div id="settings-panel">
+ </div>
+ </div>
+<div id="settings-panel">
 
         <div id="settings-header">
 
