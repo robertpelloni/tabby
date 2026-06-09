@@ -106,6 +106,8 @@ type Settings struct {
 	EnableAnalytics          bool   `toml:"enable_analytics" json:"enable_analytics"`
 	EnableAutomaticUpdates   bool   `toml:"enable_automatic_updates" json:"enable_automatic_updates"`
 	EnableExperimentalFeatures bool `toml:"enable_experimental_features" json:"enable_experimental_features"`
+	IdleTimeout              int    `toml:"idle_timeout" json:"idle_timeout"` // Minutes of inactivity before disconnect (0 = off)
+	PasteWarning             bool   `toml:"paste_warning" json:"paste_warning"` // Warn on multi-line paste (default: true)
 }
 
 // DefaultSettings returns the default settings, matching original Tabby defaults
@@ -196,6 +198,8 @@ func DefaultSettings() Settings {
 		EnableAnalytics:          true,
 		EnableAutomaticUpdates:   true,
 		EnableExperimentalFeatures: false,
+	IdleTimeout:              0,
+	PasteWarning:             true,
 	}
 
 	// Platform-specific overrides

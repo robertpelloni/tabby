@@ -752,6 +752,8 @@ export namespace settings {
 	    enable_analytics: boolean;
 	    enable_automatic_updates: boolean;
 	    enable_experimental_features: boolean;
+	    idle_timeout: number;
+	    paste_warning: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Settings(source);
@@ -824,6 +826,8 @@ export namespace settings {
 	        this.enable_analytics = source["enable_analytics"];
 	        this.enable_automatic_updates = source["enable_automatic_updates"];
 	        this.enable_experimental_features = source["enable_experimental_features"];
+	        this.idle_timeout = source["idle_timeout"];
+	        this.paste_warning = source["paste_warning"];
 	    }
 	}
 

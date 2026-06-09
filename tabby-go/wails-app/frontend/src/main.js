@@ -30,7 +30,9 @@ SFTPChmod, SFTPReadlink, SFTPSymlink,
 
 ImportSSHConfig,
 
-GetUsername, GetHomeDir, GetPlatform, GetNotifications, GetUnreadNotifications, MarkNotificationRead, ClearNotifications, SelectDirectory, StoreCredential, GetCredential, DeleteCredential, IsOSKeyringAvailable, CheckForUpdates, GetUpdateStatus, GetAuditLogPath,
+GetUsername,
+	GetHostname, GetHomeDir, GetPlatform, GetNotifications, GetUnreadNotifications, MarkNotificationRead, ClearNotifications, SelectDirectory, StoreCredential, GetCredential, DeleteCredential, IsOSKeyringAvailable, CheckForUpdates, GetUpdateStatus, GetAuditLogPath,
+	OpenInBrowser,
 
 } from '../wailsjs/go/main/App';
 

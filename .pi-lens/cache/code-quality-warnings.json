@@ -1,41 +1,15 @@
 {
-  "generatedAt": "2026-06-09T18:54:13.692Z",
+  "generatedAt": "2026-06-09T19:24:45.325Z",
   "scope": "turn_delta",
   "sessionId": "lens-mq6u7wlx-40d6a072",
-  "turnIndex": 156,
-  "projectSeqStart": 2,
-  "projectSeqEnd": 3,
+  "turnIndex": 180,
+  "projectSeqStart": 7,
+  "projectSeqEnd": 8,
   "deltaOnly": true,
-  "files": [
-    {
-      "filePath": "C:\\Users\\hyper\\workspace\\tabby\\tabby-go\\wails-app\\wails.json",
-      "displayPath": "tabby-go/wails-app/wails.json",
-      "fileSeq": 1,
-      "warnings": [
-        {
-          "id": "cq:4d77740eb8",
-          "filePath": "C:\\Users\\hyper\\workspace\\tabby\\tabby-go\\wails-app\\wails.json",
-          "displayPath": "tabby-go/wails-app/wails.json",
-          "line": 2,
-          "column": 14,
-          "severity": "warning",
-          "tool": "lsp",
-          "rule": "json:65536",
-          "message": "Unable to load schema from 'https://wails.io/schemas/config.v2.json': .",
-          "category": "other",
-          "origin": "dispatch"
-        }
-      ]
-    }
-  ],
+  "files": [],
   "summary": {
-    "warnings": 1,
-    "files": 1,
-    "topRules": [
-      {
-        "rule": "json:65536",
-        "count": 1
-      }
-    ]
+    "warnings": 0,
+    "files": 0,
+    "topRules": []
   }
 }
