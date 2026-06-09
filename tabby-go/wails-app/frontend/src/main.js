@@ -3572,7 +3572,9 @@ function buildUI() {
 
     // Button bindings
 
-    document.getElementById('btn-new-tab').onclick = (e) => showNewTabDropdown(e);
+    document.getElementById('btn-new-tab').onclick = (e) => {
+ if (e.shiftKey || e.ctrlKey) { showNewTabDropdown(e); } else { newTab(); }
+ };
 
     document.getElementById('btn-ssh').onclick = () => openSSHDialog();
 
@@ -4032,9 +4034,10 @@ function showToast(message, type = 'info') { const existing = document.querySele
 
 // ===== NEW TAB DROPDOWN =====
 
-function showNewTabDropdown(e) {
+function showNewTabDropdown(e) { console.log('[showNewTabDropdown] Button clicked, shells:', availableShells.length, 'default:', defaultShell);
 
-    document.querySelectorAll('#new-tab-dropdown').forEach(d => d.remove());
+    
+ e.stopPropagation();document.querySelectorAll('#new-tab-dropdown').forEach(d => d.remove());
 
     const dropdown = document.createElement('div'); dropdown.id = 'new-tab-dropdown';
 
@@ -4380,7 +4383,7 @@ this.lastActivity = Date.now(); this.term.onData((data) => { if (this.ptyId && !
 
     async spawn() {
 
-        try { setTabStatus(this, 'connecting'); logConnection(this, 'Spawning shell: ' + this.shell); const result = await PTYSpawn({ command: this.shell, args: [], env: {}, columns: this.term.cols, rows: this.term.rows }); this.ptyId = result.id; setTabStatus(this, 'connected'); logConnection(this, 'Shell started: ' + this.shell); const name = this.shell.split(/[/\\]/).pop().replace('.exe', ''); this.setTitle(name); showStatus(`Connected — ${name}`); }
+        try { setTabStatus(this, 'connecting'); logConnection(this, 'Spawning shell: ' + this.shell); console.log('[spawn] Calling PTYSpawn with:', { command: this.shell, args: [], env: {}, columns: this.term.cols, rows: this.term.rows }); const result = await PTYSpawn({ command: this.shell, args: [], env: {}, columns: this.term.cols, rows: this.term.rows }); console.log('[spawn] PTYSpawn result:', result); this.ptyId = result.id; setTabStatus(this, 'connected'); logConnection(this, 'Shell started: ' + this.shell); const name = this.shell.split(/[/\\]/).pop().replace('.exe', ''); this.setTitle(name); showStatus(`Connected — ${name}`); }
 
         catch (err) { this.term.writeln(`\x1b[1;31mFailed to spawn shell: ${err}\x1b[0m`); showToast(`Shell spawn failed: ${err}`, 'error'); }
 
@@ -4486,7 +4489,16 @@ EventsOn('menu:about', () => showAboutDialog());
 
 // ===== TAB MANAGEMENT =====
 
-function newTab(shell) { const tab = new Tab(shell); tabs.push(tab); tab.activate(); tab.spawn(); return tab; }
+function newTab(shell) {
+ const effectiveShell = shell || defaultShell;
+ console.log('[newTab] Creating tab with shell:', effectiveShell, 'defaultShell:', defaultShell);
+ const tab = new Tab(effectiveShell);
+ tabs.push(tab);
+ tab.activate();
+ tab.spawn();
+ console.log('[newTab] Tab created:', tab.id, 'tabs count:', tabs.length);
+ return tab;
+}
 
 function getActiveTab() { return tabs.find(t => t.id === activeTabId); }
 
