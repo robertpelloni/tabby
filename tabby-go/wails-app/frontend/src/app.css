@@ -500,6 +500,19 @@
   color: #ccc;
 }
 
+#new-tab-dropdown .dropdown-separator {
+  height: 1px;
+  background: #3a3a3a;
+  margin: 4px 8px;
+}
+#new-tab-dropdown .dropdown-section-label {
+  padding: 4px 14px 2px;
+  font-size: 10px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* ===== DRAG REORDER ===== */
 .tab-item.dragging {
   opacity: 0.5;

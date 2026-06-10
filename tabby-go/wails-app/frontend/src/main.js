@@ -3083,12 +3083,8 @@ function buildUI() {
 
             <div class="logo"><span class="logo-accent">⌘</span> Tabby <small style="font-size:9px;color:#666;font-weight:400;">go</small></div>
 
-            <div style="display:flex;gap:4px;">
-
-                <button class="btn-icon" id="btn-new-tab" title="New Tab (Ctrl+Shift+T)">+</button>
-
-                <button class="btn-icon" id="btn-ssh" title="SSH Connect">🔐</button><button class="btn-icon" id="btn-serial" title="Serial Port">\ud83d\udce1</button><button class="btn-icon" id="btn-telnet" title="Telnet Connect">\ud83c\udf10</button><button class="btn-icon" id="btn-notifications" title="Notifications">&#x1f514;</button><button class="btn-icon" id="btn-command-palette" title="Command Palette (Ctrl+Shift+P)">&#9881;</button><button class="btn-icon" id="btn-settings" title="Settings (Ctrl+,)">⚙</button>
-
+            <div style="display:flex;gap:4px;align-items:center;">
+                <button class="btn-icon" id="btn-new-tab" title="New Tab / Connect" style="font-size:18px;font-weight:bold;">+</button> <button class="btn-icon" id="btn-settings" title="Settings (Ctrl+,)">&#9881;</button>
             </div>
 
         </div>
@@ -3578,13 +3574,7 @@ function buildUI() {
 
     document.getElementById('btn-new-tab').onclick = (e) => showNewTabDropdown(e);
 
-    document.getElementById('btn-ssh').onclick = () => openSSHDialog();
-
-    document.getElementById('btn-serial').onclick = () => openSerialDialog();
-
-    document.getElementById('btn-telnet').onclick = () => openTelnetDialog();
-
-    document.getElementById('btn-settings').onclick = () => toggleSettings();
+                document.getElementById('btn-settings').onclick = () => toggleSettings();
 
     document.getElementById('serial-refresh').onclick = () => refreshSerialPorts();
 
@@ -3630,11 +3620,7 @@ function buildUI() {
 
     document.getElementById('sftp-close-btn').onclick = () => closeSFTPBrowser();
 
-    document.getElementById('btn-notifications').onclick = () => showNotificationCenter();
-
-    document.getElementById('btn-command-palette').onclick = () => toggleCommandPalette();
-
-    // Import SSH config is available via Command Palette
+            // Import SSH config is available via Command Palette
 
     document.getElementById('cmd-palette-input').oninput = () => filterCommandPalette();
 
@@ -4036,29 +4022,42 @@ function showToast(message, type = 'info') { const existing = document.querySele
 
 // ===== NEW TAB DROPDOWN =====
 
-function showNewTabDropdown(e) { console.log('[showNewTabDropdown] Button clicked, shells:', availableShells.length, 'default:', defaultShell);
-
-    
- e.stopPropagation();document.querySelectorAll('#new-tab-dropdown').forEach(d => d.remove());
-
+function showNewTabDropdown(e) {
+    e.stopPropagation();
+    document.querySelectorAll('#new-tab-dropdown').forEach(d => d.remove());
     const dropdown = document.createElement('div'); dropdown.id = 'new-tab-dropdown';
-
-    let html = `<div class="shell-item" data-shell=""><span class="shell-name">Default Shell</span><span class="shell-path">${defaultShell}</span></div>`;
-
-    availableShells.forEach(s => { const name = s.split(/[/\\]/).pop().replace('.exe', ''); html += `<div class="shell-item" data-shell="${s}"><span class="shell-name">${name}</span><span class="shell-path">${s}</span></div>`; });
-
+    let html = '';
+    // Connection types
+    html += '<div class="dropdown-section-label">New</div>';
+    html += '<div class="shell-item" data-action="new-tab"><span class="shell-name">⎘ Local Shell</span><span class="shell-path">' + defaultShell + '</span></div>';
+    availableShells.forEach(s => { const name = s.replace(String.fromCharCode(92),"/").split("/").pop().replace('.exe', ''); html += '<div class="shell-item" data-action="new-tab" data-shell="' + s + '"><span class="shell-name">' + name + '</span><span class="shell-path">' + s + '</span></div>'; });
+    html += '<div class="dropdown-separator"></div>';
+    html += '<div class="shell-item" data-action="ssh"><span class="shell-name">🔐 SSH Connect</span><span class="shell-path">Remote server</span></div>';
+    html += '<div class="shell-item" data-action="serial"><span class="shell-name">📡 Serial Port</span><span class="shell-path">Hardware device</span></div>';
+    html += '<div class="shell-item" data-action="telnet"><span class="shell-name">🌐 Telnet</span><span class="shell-path">Telnet server</span></div>';
+    html += '<div class="dropdown-separator"></div>';
+    html += '<div class="shell-item" data-action="command-palette"><span class="shell-name">⚙ Command Palette</span><span class="shell-path">Ctrl+Shift+P</span></div>';
+    html += '<div class="shell-item" data-action="notifications"><span class="shell-name">🔔 Notifications</span></div>';
+    html += '<div class="shell-item" data-action="settings"><span class="shell-name">⚙ Settings</span><span class="shell-path">Ctrl+,</span></div>';
     dropdown.innerHTML = html;
-
     const rect = e.currentTarget.getBoundingClientRect();
-
     dropdown.style.position = 'fixed'; dropdown.style.left = rect.left + 'px'; dropdown.style.top = (rect.bottom + 4) + 'px';
-
     document.body.appendChild(dropdown);
-
-    dropdown.onclick = (ev) => { const item = ev.target.closest('.shell-item'); if (!item) return; dropdown.remove(); newTab(item.dataset.shell || undefined); };
-
+    dropdown.onclick = (ev) => {
+        const item = ev.target.closest('.shell-item');
+        if (!item) return;
+        dropdown.remove();
+        const action = item.dataset.action;
+        const shell = item.dataset.shell;
+        if (action === 'new-tab') newTab(shell || undefined);
+        else if (action === 'ssh') openSSHDialog();
+        else if (action === 'serial') openSerialDialog();
+        else if (action === 'telnet') openTelnetDialog();
+        else if (action === 'command-palette') toggleCommandPalette();
+        else if (action === 'notifications') showNotificationCenter();
+        else if (action === 'settings') toggleSettings();
+    };
     setTimeout(() => { document.addEventListener('click', function handler(ev) { if (!dropdown.contains(ev.target)) { dropdown.remove(); document.removeEventListener('click', handler); } }); }, 10);
-
 }
 
 // ===== SCROLL TO BOTTOM =====
