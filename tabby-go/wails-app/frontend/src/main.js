@@ -1459,7 +1459,7 @@ function formatBytes(bytes) {
 
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  return parseFloat((bytes / k ** i).toFixed(1)) + ' ' + sizes[i];
 
 }
 
@@ -1475,9 +1475,9 @@ function buildToolbar(tab) {
 
     html += '<span class="toolbar-info">' + escHtml(tab.title || 'ssh') + '</span>';
 
-    html += '<button class="toolbar-btn" onclick="openSFTPBrowser(getActiveTab().sshConnectionId)" title="SFTP">\U0001f4c2</button>';
+    html += '<button class="toolbar-btn" onclick="openSFTPBrowser(getActiveTab().sshConnectionId)" title="SFTP">U0001f4c2</button>';
 
-    html += '<button class="toolbar-btn" onclick="openForwardDialog(getActiveTab().sshConnectionId)" title="Forward">\U0001f504</button>';
+    html += '<button class="toolbar-btn" onclick="openForwardDialog(getActiveTab().sshConnectionId)" title="Forward">U0001f504</button>';
 
   } else if (tab.isSerial) {
 
@@ -1527,7 +1527,7 @@ function updateToolbar(tab) {
 
   if (!tab || !tab.wrapper) return;
 
-  let toolbar = tab.wrapper.querySelector('.terminal-toolbar');
+  const toolbar = tab.wrapper.querySelector('.terminal-toolbar');
 
   const div = document.createElement('div');
 
@@ -1593,83 +1593,83 @@ function hideToolbarForTab(tab) {
 
 const PALETTE_COMMANDS = [
 
-  { id: 'new-tab', label: 'New Tab', icon: '+', action: function() { newTab(); } },
+  { id: 'new-tab', label: 'New Tab', icon: '+', action: () => { newTab(); } },
 
-  { id: 'close-tab', label: 'Close Tab', icon: 'x', action: function() { var t = getActiveTab(); if (t) t.close(); } },
+  { id: 'close-tab', label: 'Close Tab', icon: 'x', action: () => { var t = getActiveTab(); if (t) t.close(); } },
 
-  { id: 'ssh-connect', label: 'SSH Connect...', icon: '#', action: function() { openSSHDialog(); } },
+  { id: 'ssh-connect', label: 'SSH Connect...', icon: '#', action: () => { openSSHDialog(); } },
 
-  { id: 'serial-connect', label: 'Serial Port...', icon: '~', action: function() { openSerialDialog(); } },
+  { id: 'serial-connect', label: 'Serial Port...', icon: '~', action: () => { openSerialDialog(); } },
 
-  { id: 'telnet-connect', label: 'Telnet Connect...', icon: '=', action: function() { openTelnetDialog(); } },
+  { id: 'telnet-connect', label: 'Telnet Connect...', icon: '=', action: () => { openTelnetDialog(); } },
 
-  { id: 'import-ssh-config', label: 'Import SSH Config', icon: '@', action: function() { importSSHConfig(); } },
+  { id: 'import-ssh-config', label: 'Import SSH Config', icon: '@', action: () => { importSSHConfig(); } },
 
-  { id: 'toggle-settings', label: 'Settings', icon: '*', action: function() { toggleSettings(); } },
+  { id: 'toggle-settings', label: 'Settings', icon: '*', action: () => { toggleSettings(); } },
 
-  { id: 'split-horizontal', label: 'Split Horizontal', icon: '-', action: function() { splitPane('horizontal'); } },
+  { id: 'split-horizontal', label: 'Split Horizontal', icon: '-', action: () => { splitPane('horizontal'); } },
 
-  { id: 'split-vertical', label: 'Split Vertical', icon: '|', action: function() { splitPane('vertical'); } },
+  { id: 'split-vertical', label: 'Split Vertical', icon: '|', action: () => { splitPane('vertical'); } },
 
-  { id: 'find', label: 'Find in Terminal', icon: '?', action: function() { toggleFind(); } },
+  { id: 'find', label: 'Find in Terminal', icon: '?', action: () => { toggleFind(); } },
 
-  { id: 'clear-terminal', label: 'Clear Terminal', icon: '!', action: function() { clearTerminal(); } },
+  { id: 'clear-terminal', label: 'Clear Terminal', icon: '!', action: () => { clearTerminal(); } },
 
-  { id: 'copy', label: 'Copy Selection', icon: 'C', action: function() { var t = getActiveTab(); if (t) t.copySelection(); } },
+  { id: 'copy', label: 'Copy Selection', icon: 'C', action: () => { var t = getActiveTab(); if (t) t.copySelection(); } },
 
-  { id: 'paste', label: 'Paste from Clipboard', icon: 'V', action: function() { var t = getActiveTab(); if (t) t.pasteFromClipboard(); } },
+  { id: 'paste', label: 'Paste from Clipboard', icon: 'V', action: () => { var t = getActiveTab(); if (t) t.pasteFromClipboard(); } },
 
-  { id: 'zoom-in', label: 'Increase Font Size', icon: '+', action: function() { fontSize = Math.min(32, fontSize + 1); tabs.forEach(function(t) { t.term.options.fontSize = fontSize; }); showToast('Font: ' + fontSize, 'info'); } },
+  { id: 'zoom-in', label: 'Increase Font Size', icon: '+', action: () => { fontSize = Math.min(32, fontSize + 1); tabs.forEach((t) => { t.term.options.fontSize = fontSize; }); showToast('Font: ' + fontSize, 'info'); } },
 
-  { id: 'zoom-out', label: 'Decrease Font Size', icon: '-', action: function() { fontSize = Math.max(8, fontSize - 1); tabs.forEach(function(t) { t.term.options.fontSize = fontSize; }); showToast('Font: ' + fontSize, 'info'); } },
+  { id: 'zoom-out', label: 'Decrease Font Size', icon: '-', action: () => { fontSize = Math.max(8, fontSize - 1); tabs.forEach((t) => { t.term.options.fontSize = fontSize; }); showToast('Font: ' + fontSize, 'info'); } },
 
-  { id: 'zoom-reset', label: 'Reset Font Size', icon: '0', action: function() { fontSize = 14; tabs.forEach(function(t) { t.term.options.fontSize = fontSize; }); showToast('Font: 14', 'info'); } },
+  { id: 'zoom-reset', label: 'Reset Font Size', icon: '0', action: () => { fontSize = 14; tabs.forEach((t) => { t.term.options.fontSize = fontSize; }); showToast('Font: 14', 'info'); } },
 
-  { id: 'toggle-fullscreen', label: 'Toggle Fullscreen', icon: 'F', action: function() { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } },
+  { id: 'toggle-fullscreen', label: 'Toggle Fullscreen', icon: 'F', action: () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } },
 
-  { id: 'sftp-browser', label: 'SFTP File Browser', icon: 'F', action: function() { var t = getActiveTab(); if (t && t.isSSH) openSFTPBrowser(t.sshConnectionId); else showToast('Requires active SSH tab', 'info'); } },
+  { id: 'sftp-browser', label: 'SFTP File Browser', icon: 'F', action: () => { var t = getActiveTab(); if (t && t.isSSH) openSFTPBrowser(t.sshConnectionId); else showToast('Requires active SSH tab', 'info'); } },
 
-  { id: 'port-forward', label: 'Port Forwarding', icon: 'P', action: function() { var t = getActiveTab(); if (t && t.isSSH) openForwardDialog(t.sshConnectionId); else showToast('Requires active SSH tab', 'info'); } },
+  { id: 'port-forward', label: 'Port Forwarding', icon: 'P', action: () => { var t = getActiveTab(); if (t && t.isSSH) openForwardDialog(t.sshConnectionId); else showToast('Requires active SSH tab', 'info'); } },
 
-  { id: 'save-session', label: 'Save Session State', icon: 'S', action: function() { saveSession(); } },
+  { id: 'save-session', label: 'Save Session State', icon: 'S', action: () => { saveSession(); } },
 
-  { id: 'reload-colors', label: 'Reload Color Schemes', icon: 'R', action: function() { reloadColorSchemes(); } },
+  { id: 'reload-colors', label: 'Reload Color Schemes', icon: 'R', action: () => { reloadColorSchemes(); } },
 
-  { id: 'tab-search', label: 'Search Tabs...', icon: 'T', action: function() { toggleTabSearch(); } },
+  { id: 'tab-search', label: 'Search Tabs...', icon: 'T', action: () => { toggleTabSearch(); } },
 
-  { id: 'export-profiles', label: 'Export Profiles...', icon: '↑', action: function() { exportProfiles(); } },
+  { id: 'export-profiles', label: 'Export Profiles...', icon: '↑', action: () => { exportProfiles(); } },
 
-  { id: 'import-profiles', label: 'Import Profiles...', icon: '↓', action: function() { importProfiles(); } },
+  { id: 'import-profiles', label: 'Import Profiles...', icon: '↓', action: () => { importProfiles(); } },
 
-    { id: 'open-settings', label: 'Open Settings', icon: '⚙', action: function() { openSettingsPanel(); } },
+    { id: 'open-settings', label: 'Open Settings', icon: '⚙', action: () => { openSettingsPanel(); } },
 
-  { id: 'connection-log', label: 'View Connection Log', icon: '📋', action: function() { showConnectionLog(); } },
+  { id: 'connection-log', label: 'View Connection Log', icon: '📋', action: () => { showConnectionLog(); } },
 
-  { id: 'always-on-top', label: 'Toggle Always on Top', icon: '📌', action: function() { toggleAlwaysOnTop(); } },
+  { id: 'always-on-top', label: 'Toggle Always on Top', icon: '📌', action: () => { toggleAlwaysOnTop(); } },
 
-{ id: 'about', label: 'About Tabby Go', icon: 'i', action: function() { showAboutDialog(); } },
+{ id: 'about', label: 'About Tabby Go', icon: 'i', action: () => { showAboutDialog(); } },
 
-  { id: 'run-snippet', label: 'Run Snippet...', icon: '>', action: function() { runSnippet(); } },
+  { id: 'run-snippet', label: 'Run Snippet...', icon: '>', action: () => { runSnippet(); } },
 
-  { id: 'save-snippet', label: 'Save Snippet...', icon: 'S', action: function() { saveSnippet(); } },
+  { id: 'save-snippet', label: 'Save Snippet...', icon: 'S', action: () => { saveSnippet(); } },
 
-  { id: 'check-updates', label: 'Check for Updates', icon: '↑', action: function() { checkForUpdates(); } },
+  { id: 'check-updates', label: 'Check for Updates', icon: '↑', action: () => { checkForUpdates(); } },
 
-  { id: 'audit-log', label: 'Open Audit Log', icon: 'A', action: function() { openAuditLog(); } },
+  { id: 'audit-log', label: 'Open Audit Log', icon: 'A', action: () => { openAuditLog(); } },
 
-  { id: 'close-all-tabs', label: 'Close All Tabs', icon: 'X', action: function() { closeAllTabs(); } },
+  { id: 'close-all-tabs', label: 'Close All Tabs', icon: 'X', action: () => { closeAllTabs(); } },
 
-  { id: 'close-other-tabs', label: 'Close Other Tabs', icon: 'X', action: function() { closeOtherTabs(); } },
+  { id: 'close-other-tabs', label: 'Close Other Tabs', icon: 'X', action: () => { closeOtherTabs(); } },
 
-  { id: 'duplicate-profile', label: 'Duplicate Active Profile', icon: 'D', action: function() { duplicateActiveProfile(); } },
+  { id: 'duplicate-profile', label: 'Duplicate Active Profile', icon: 'D', action: () => { duplicateActiveProfile(); } },
 
-  { id: 'notifications', label: 'Show Notifications', icon: '!', action: function() { showNotificationCenter(); } },
+  { id: 'notifications', label: 'Show Notifications', icon: '!', action: () => { showNotificationCenter(); } },
 
-  { id: 'custom-css', label: 'Edit Custom CSS', icon: 'C', action: function() { editCustomCSS(); } },
+  { id: 'custom-css', label: 'Edit Custom CSS', icon: 'C', action: () => { editCustomCSS(); } },
 
-  { id: 'save-credential', label: 'Save Credential to Keychain', icon: 'K', action: function() { saveCredentialDialog(); } },
+  { id: 'save-credential', label: 'Save Credential to Keychain', icon: 'K', action: () => { saveCredentialDialog(); } },
 
-  { id: 'get-credential', label: 'Get Credential from Keychain', icon: 'K', action: function() { getCredentialDialog(); } },
+  { id: 'get-credential', label: 'Get Credential from Keychain', icon: 'K', action: () => { getCredentialDialog(); } },
 
 ];
 
@@ -1715,23 +1715,19 @@ function filterCommandPalette() {
 
   var container = document.getElementById('cmd-palette-items');
 
-  var filtered = PALETTE_COMMANDS.filter(function(cmd) { return cmd.label.toLowerCase().includes(query); });
+  var filtered = PALETTE_COMMANDS.filter((cmd) => cmd.label.toLowerCase().includes(query));
 
   paletteSelectedIdx = 0;
 
-  container.innerHTML = filtered.map(function(cmd, i) {
-
-    return '<div class="palette-item' + (i === 0 ? ' selected' : '') + '" data-id="' + cmd.id + '">' +
+  container.innerHTML = filtered.map((cmd, i) => '<div class="palette-item' + (i === 0 ? ' selected' : '') + '" data-id="' + cmd.id + '">' +
 
       '<span class="palette-icon">' + cmd.icon + '</span>' +
 
-      '<span class="palette-label">' + cmd.label + '</span></div>';
+      '<span class="palette-label">' + cmd.label + '</span></div>').join('');
 
-  }).join('');
+  container.querySelectorAll('.palette-item').forEach((el) => {
 
-  container.querySelectorAll('.palette-item').forEach(function(el) {
-
-    el.onclick = function() { executePaletteCommand(el.dataset.id); };
+    el.onclick = () => { executePaletteCommand(el.dataset.id); };
 
   });
 
@@ -1747,9 +1743,9 @@ function handlePaletteKey(e) {
 
     toggleCommandPalette();
 
-  } else if (e.key === 'ArrowDown') { e.preventDefault(); paletteSelectedIdx = Math.min(paletteSelectedIdx + 1, items.length - 1); items.forEach(function(el, i) { el.classList.toggle('selected', i === paletteSelectedIdx); }); }
+  } else if (e.key === 'ArrowDown') { e.preventDefault(); paletteSelectedIdx = Math.min(paletteSelectedIdx + 1, items.length - 1); items.forEach((el, i) => { el.classList.toggle('selected', i === paletteSelectedIdx); }); }
 
-  else if (e.key === 'ArrowUp') { e.preventDefault(); paletteSelectedIdx = Math.max(paletteSelectedIdx - 1, 0); items.forEach(function(el, i) { el.classList.toggle('selected', i === paletteSelectedIdx); }); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); paletteSelectedIdx = Math.max(paletteSelectedIdx - 1, 0); items.forEach((el, i) => { el.classList.toggle('selected', i === paletteSelectedIdx); }); }
 
   else if (e.key === 'Enter') { e.preventDefault(); var sel = items[paletteSelectedIdx]; if (sel) sel.click(); }
 
@@ -1757,7 +1753,7 @@ function handlePaletteKey(e) {
 
 function executePaletteCommand(id) {
 
-  var cmd = PALETTE_COMMANDS.find(function(c) { return c.id === id; });
+  var cmd = PALETTE_COMMANDS.find((c) => c.id === id);
 
   if (cmd) { toggleCommandPalette(); cmd.action(); }
 
@@ -1771,9 +1767,9 @@ async function reloadColorSchemes() {
 
     if (schemes && schemes.length) {
 
-      schemes.forEach(function(s) { COLOR_SCHEMES[s.Name] = s; });
+      schemes.forEach((s) => { COLOR_SCHEMES[s.Name] = s; });
 
-      schemeNames = schemes.map(function(s) { return s.Name; });
+      schemeNames = schemes.map((s) => s.Name);
 
       showToast('Loaded ' + schemes.length + ' color schemes', 'success');
 
@@ -1811,7 +1807,7 @@ async function importSSHConfig() {
 
         var name = u + '@' + h;
 
-        var exists = savedProfiles.find(function(pr) { return pr.name === name && pr.type === 'ssh'; });
+        var exists = savedProfiles.find((pr) => pr.name === name && pr.type === 'ssh');
 
         if (exists) { skipped++; continue; }
 
@@ -2019,7 +2015,7 @@ function runLoginScript(tab, script) {
 
   const lines = script.split('\n');
 
-  let delay = 500; // Initial delay after connection
+  const delay = 500; // Initial delay after connection
 
   lines.forEach((line, i) => {
 
@@ -3127,7 +3123,7 @@ function buildUI() {
  <div class="shortcut"><kbd>Ctrl+Tab</kbd> Next Tab</div>
  <div class="shortcut"><kbd>Ctrl+Shift+P</kbd> Command Palette</div>
  <div class="shortcut"><kbd>Ctrl+Shift+F</kbd> Find</div>
- <div class="shortcut"><kbd>Ctrl+\</kbd> Split Vertical</div>
+ <div class="shortcut"><kbd>Ctrl+</kbd> Split Vertical</div>
  <div class="shortcut"><kbd>Ctrl+,</kbd> Settings</div>
  </div>
  </div>
@@ -3470,8 +3466,6 @@ function buildUI() {
 
             </div>
 
-        </div>
-
             <div class="settings-page" id="settings-profiles">
 
                 <h3>Saved Profiles</h3>
@@ -3491,6 +3485,8 @@ function buildUI() {
             <button id="btn-save" class="btn-primary">Save Settings</button>
 
         </div>
+
+    </div>
 
     </div>`;
 
@@ -4094,7 +4090,7 @@ function addScrollToBottom(term, container) {
 
 // ===== ZMODEM =====
 
-let zmodemActive = false;
+const zmodemActive = false;
 
 function setupZmodem(term, tab) {
 
@@ -4771,7 +4767,7 @@ async function reconnectTab(tab) {
 
  tab.setTitle(session.user + '@' + session.host + jumpLabel);
 
- tab.tabEl.querySelector('.tab-icon').textContent = '\U0001f510';
+ tab.tabEl.querySelector('.tab-icon').textContent = 'U0001f510';
 
  tab.term.onData((data) => {
 
@@ -4805,7 +4801,7 @@ async function reconnectTab(tab) {
 
  tab.setTitle(session.host + ':' + (session.port || 23));
 
- tab.tabEl.querySelector('.tab-icon').textContent = '\U0001f310';
+ tab.tabEl.querySelector('.tab-icon').textContent = 'U0001f310';
 
  tab.telnetDataHandler = (params) => {
 
@@ -4877,7 +4873,7 @@ async function reconnectTab(tab) {
 
  tab.setTitle(session.port.split('/').pop().split('\\').pop() + ' @ ' + (session.baudRate || 115200) + ' baud');
 
- tab.tabEl.querySelector('.tab-icon').textContent = '\U0001f4e1';
+ tab.tabEl.querySelector('.tab-icon').textContent = 'U0001f4e1';
 
  tab.serialDataHandler = (params) => {
 
