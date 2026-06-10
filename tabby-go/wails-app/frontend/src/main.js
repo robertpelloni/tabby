@@ -1,54 +1,94 @@
-import './style.css';
+import "./style.css";
 
-import './app.css';
+import "./app.css";
 
-import '@xterm/xterm/css/xterm.css';
-import { Terminal } from '@xterm/xterm';
-import { FitAddon } from '@xterm/addon-fit';
-import { SearchAddon } from '@xterm/addon-search';
-import { WebLinksAddon } from '@xterm/addon-web-links';
+import "@xterm/xterm/css/xterm.css";
+import { Terminal } from "@xterm/xterm";
+import { FitAddon } from "@xterm/addon-fit";
+import { SearchAddon } from "@xterm/addon-search";
+import { WebLinksAddon } from "@xterm/addon-web-links";
 
 import {
-
- PTYSpawn, PTYWrite, PTYResize, PTYKill,
-
- SSHConnect, SSHStartShell, SSHWrite, SSHResize, SSHClose,
-
- SSHAddForward, SSHRemoveForward, SSHListForwards, HandleHostKeyResponse, HandleKeyboardInteractiveResponse,
-
- SerialOpen, SerialWrite, SerialClose, SerialListPorts,
-
- TelnetConnect, TelnetWrite, TelnetResize, TelnetClose,
-
- GetDefaultShell, GetAvailableShells, GetColorSchemes,
-
- SetWindowTitle, GetSettings, SaveSettings, ResetSettings,
-
- SaveSessionState, LoadSessionState, ClearSessionState,
-
- GetProfiles, SaveProfiles, SFTPOpen, SFTPList, SFTPDownload, SFTPUpload, SFTPDelete,
-
-SFTPRename, SFTPMkdir, SFTPStat, SFTPClose, SFTPRmdir, SFTPReadDir, SFTPMkdirAll,
-
-SFTPChmod, SFTPReadlink, SFTPSymlink,
-
-ImportSSHConfig,
-
-GetUsername,
-	GetHostname, GetHomeDir, GetPlatform, GetNotifications, GetUnreadNotifications, MarkNotificationRead, ClearNotifications, SelectDirectory, StoreCredential, GetCredential, DeleteCredential, IsOSKeyringAvailable, CheckForUpdates, GetUpdateStatus, GetAuditLogPath,
+	PTYSpawn,
+	PTYWrite,
+	PTYResize,
+	PTYKill,
+	SSHConnect,
+	SSHStartShell,
+	SSHWrite,
+	SSHResize,
+	SSHClose,
+	SSHAddForward,
+	SSHRemoveForward,
+	SSHListForwards,
+	HandleHostKeyResponse,
+	HandleKeyboardInteractiveResponse,
+	SerialOpen,
+	SerialWrite,
+	SerialClose,
+	SerialListPorts,
+	TelnetConnect,
+	TelnetWrite,
+	TelnetResize,
+	TelnetClose,
+	GetDefaultShell,
+	GetAvailableShells,
+	GetColorSchemes,
+	SetWindowTitle,
+	GetSettings,
+	SaveSettings,
+	ResetSettings,
+	SaveSessionState,
+	LoadSessionState,
+	ClearSessionState,
+	GetProfiles,
+	SaveProfiles,
+	SFTPOpen,
+	SFTPList,
+	SFTPDownload,
+	SFTPUpload,
+	SFTPDelete,
+	SFTPRename,
+	SFTPMkdir,
+	SFTPStat,
+	SFTPClose,
+	SFTPRmdir,
+	SFTPReadDir,
+	SFTPMkdirAll,
+	SFTPChmod,
+	SFTPReadlink,
+	SFTPSymlink,
+	ImportSSHConfig,
+	GetUsername,
+	GetHostname,
+	GetHomeDir,
+	GetPlatform,
+	GetNotifications,
+	GetUnreadNotifications,
+	MarkNotificationRead,
+	ClearNotifications,
+	SelectDirectory,
+	StoreCredential,
+	GetCredential,
+	DeleteCredential,
+	IsOSKeyringAvailable,
+	CheckForUpdates,
+	GetUpdateStatus,
+	GetAuditLogPath,
 	OpenInBrowser,
+} from "../wailsjs/go/main/App";
 
-} from '../wailsjs/go/main/App';
-
-import { EventsOn, WindowSetAlwaysOnTop } from '../wailsjs/runtime/runtime';
+import { EventsOn, WindowSetAlwaysOnTop } from "../wailsjs/runtime/runtime";
 
 // ===== GLOBALS =====
 
 const COLOR_SCHEMES = {};
 
-window.__serialDataHandlers = []; window.__serialExitHandlers = [];
+window.__serialDataHandlers = [];
+window.__serialExitHandlers = [];
 
-window.__telnetDataHandlers = []; window.__telnetExitHandlers = [];
+window.__telnetDataHandlers = [];
+window.__telnetExitHandlers = [];
 
 let schemeNames = [];
 
@@ -58,7 +98,7 @@ let activeTabId = null;
 
 let tabCounter = 0;
 
-let defaultShell = '';
+let defaultShell = "";
 
 let availableShells = [];
 
@@ -77,856 +117,1080 @@ let savedProfiles = [];
 // Idle connection monitor
 
 setInterval(() => {
+	const timeout = settings.IdleTimeout || 0;
 
-  const timeout = settings.IdleTimeout || 0;
+	if (timeout <= 0) return;
 
-  if (timeout <= 0) return;
+	tabs.forEach((tab) => {
+		if (tab.lastActivity && Date.now() - tab.lastActivity > timeout * 60000) {
+			if (
+				tab.status === "connected" &&
+				(tab.isSSH || tab.isSerial || tab.isTelnet)
+			) {
+				showToast("Idle timeout: " + tab.title, "info");
 
-  tabs.forEach(tab => {
-
-    if (tab.lastActivity && Date.now() - tab.lastActivity > timeout * 60000) {
-
-      if (tab.status === 'connected' && (tab.isSSH || tab.isSerial || tab.isTelnet)) {
-
-        showToast('Idle timeout: ' + tab.title, 'info');
-
-        tab.close();
-
-      }
-
-    }
-
-  });
-
+				tab.close();
+			}
+		}
+	});
 }, 60000);
 
 async function init() {
+	defaultShell = await GetDefaultShell();
 
-    defaultShell = await GetDefaultShell();
+	try {
+		availableShells = await GetAvailableShells();
+	} catch (_) {
+		availableShells = [];
+	}
 
-    try { availableShells = await GetAvailableShells(); } catch (_) { availableShells = []; }
+	try {
+		settings = await GetSettings();
+	} catch (_) {
+		settings = {};
+	}
 
-    try { settings = await GetSettings(); } catch (_) { settings = {}; }
+	if (settings.FontSize) fontSize = settings.FontSize;
 
-    if (settings.FontSize) fontSize = settings.FontSize;
+	// Tab bar drag-and-drop reordering
 
-  // Tab bar drag-and-drop reordering
+	const tabBar = document.getElementById("tab-bar");
 
-  const tabBar = document.getElementById('tab-bar');
+	if (tabBar) {
+		tabBar.addEventListener("dragover", (e) => {
+			e.preventDefault();
+			const dragging = tabBar.querySelector(".dragging");
+			if (dragging) {
+				const afterEl = getDragAfterElement(tabBar, e.clientX);
+				if (afterEl) tabBar.insertBefore(dragging, afterEl);
+				else tabBar.appendChild(dragging);
+			}
+		});
+	}
 
-  if (tabBar) {
+	function getDragAfterElement(container, x) {
+		const elements = [
+			...container.querySelectorAll(".tab-item:not(.dragging)"),
+		];
 
-    tabBar.addEventListener('dragover', (e) => { e.preventDefault(); const dragging = tabBar.querySelector('.dragging'); if (dragging) { const afterEl = getDragAfterElement(tabBar, e.clientX); if (afterEl) tabBar.insertBefore(dragging, afterEl); else tabBar.appendChild(dragging); } });
+		return elements.reduce(
+			(closest, child) => {
+				const box = child.getBoundingClientRect();
 
-  }
+				const offset = x - box.left - box.width / 2;
 
-  function getDragAfterElement(container, x) {
+				if (offset < 0 && offset > closest.offset)
+					return { offset, element: child };
 
-    const elements = [...container.querySelectorAll('.tab-item:not(.dragging)')];
+				return closest;
+			},
+			{ offset: Number.NEGATIVE_INFINITY },
+		).element;
+	}
 
-    return elements.reduce((closest, child) => {
+	const savedCSS = localStorage.getItem("tabby-custom-css");
 
-      const box = child.getBoundingClientRect();
+	// Check for updates silently on startup
 
-      const offset = x - box.left - box.width / 2;
+	setTimeout(() => CheckForUpdates().catch(() => {}), 5000);
 
-      if (offset < 0 && offset > closest.offset) return { offset, element: child };
+	if (savedCSS) applyCustomCSS(savedCSS);
 
-      return closest;
+	// Load color schemes from Go backend
 
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
+	try {
+		const schemes = await GetColorSchemes();
 
-  }
+		if (schemes && schemes.length) {
+			schemes.forEach((s) => {
+				COLOR_SCHEMES[s.Name] = s;
+			});
 
-const savedCSS = localStorage.getItem('tabby-custom-css');
+			schemeNames = schemes.map((s) => s.Name);
+		}
+	} catch (_) {
+		schemeNames = [
+			"Tabby Default",
+			"Tabby Default Light",
+			"Dracula",
+			"Solarized Dark",
+			"Solarized Light",
+			"Monokai",
+			"Nord",
+			"One Half Dark",
+			"One Half Light",
+			"Gruvbox Dark",
+			"Tokyo Night",
+			"Catppuccin Mocha",
+			"Catppuccin Latte",
+			"Ayu Dark",
+			"Atom One Light",
+			"Batman",
+		];
+	}
 
-  // Check for updates silently on startup
+	// Load connection profiles
 
-  setTimeout(() => CheckForUpdates().catch(() => {}), 5000);
+	try {
+		savedProfiles = (await GetProfiles()) || [];
+	} catch (_) {
+		savedProfiles = [];
+	}
 
-  if (savedCSS) applyCustomCSS(savedCSS);
+	buildUI();
 
-    // Load color schemes from Go backend
+	bindGlobalKeys();
 
-    try {
+	applySettingsToUI();
 
-        const schemes = await GetColorSchemes();
+	const restored = await restoreSession();
 
-        if (schemes && schemes.length) {
-
-            schemes.forEach(s => { COLOR_SCHEMES[s.Name] = s; });
-
-            schemeNames = schemes.map(s => s.Name);
-
-        }
-
-    } catch (_) {
-
-        schemeNames = ['Tabby Default','Tabby Default Light','Dracula','Solarized Dark','Solarized Light','Monokai','Nord','One Half Dark','One Half Light','Gruvbox Dark','Tokyo Night','Catppuccin Mocha','Catppuccin Latte','Ayu Dark','Atom One Light','Batman'];
-
-    }
-
-    // Load connection profiles
-
-    try { savedProfiles = await GetProfiles() || []; } catch (_) { savedProfiles = []; }
-
-    buildUI();
-
-    bindGlobalKeys();
-
-    applySettingsToUI();
-
-    const restored = await restoreSession();
-
-    if (!restored) newTab();
-
+	if (!restored) newTab();
 }
 
 // ===== COLOR SCHEME HELPERS =====
 
-function getColorSchemeTheme(name) { const scheme = COLOR_SCHEMES[name]; if (!scheme) return null; const c = scheme.Colors || []; return { background: scheme.Background, foreground: scheme.Foreground, cursor: scheme.Cursor, cursorAccent: scheme.CursorAccent || undefined, selectionBackground: scheme.Selection || undefined, selectionForeground: scheme.SelectionForeground || undefined, black: c[0], red: c[1], green: c[2], yellow: c[3], blue: c[4], magenta: c[5], cyan: c[6], white: c[7], brightBlack: c[8], brightRed: c[9], brightGreen: c[10], brightYellow: c[11], brightBlue: c[12], brightMagenta: c[13], brightCyan: c[14], brightWhite: c[15] }; }
+function getColorSchemeTheme(name) {
+	const scheme = COLOR_SCHEMES[name];
+	if (!scheme) return null;
+	const c = scheme.Colors || [];
+	return {
+		background: scheme.Background,
+		foreground: scheme.Foreground,
+		cursor: scheme.Cursor,
+		cursorAccent: scheme.CursorAccent || undefined,
+		selectionBackground: scheme.Selection || undefined,
+		selectionForeground: scheme.SelectionForeground || undefined,
+		black: c[0],
+		red: c[1],
+		green: c[2],
+		yellow: c[3],
+		blue: c[4],
+		magenta: c[5],
+		cyan: c[6],
+		white: c[7],
+		brightBlack: c[8],
+		brightRed: c[9],
+		brightGreen: c[10],
+		brightYellow: c[11],
+		brightBlue: c[12],
+		brightMagenta: c[13],
+		brightCyan: c[14],
+		brightWhite: c[15],
+	};
+}
 
-function isSchemeLight(name) { const bg = (COLOR_SCHEMES[name] && COLOR_SCHEMES[name].Background) || '#171717'; return isLightColor(bg); }
+function isSchemeLight(name) {
+	const bg =
+		(COLOR_SCHEMES[name] && COLOR_SCHEMES[name].Background) || "#171717";
+	return isLightColor(bg);
+}
 
-function isLightColor(hex) { if (!hex || hex.length < 7 || hex[0] !== '#') return false; const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16); return (0.299*r + 0.587*g + 0.114*b) / 255 > 0.5; }
+function isLightColor(hex) {
+	if (!hex || hex.length < 7 || hex[0] !== "#") return false;
+	const r = parseInt(hex.slice(1, 3), 16),
+		g = parseInt(hex.slice(3, 5), 16),
+		b = parseInt(hex.slice(5, 7), 16);
+	return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.5;
+}
 
-function applyColorScheme(name) { const theme = getColorSchemeTheme(name); if (!theme) return; tabs.forEach(t => { if (t.term) t.term.options.theme = theme; }); if (isSchemeLight(name)) { document.body.classList.add('light-theme'); document.body.classList.remove('dark-theme'); } else { document.body.classList.add('dark-theme'); document.body.classList.remove('light-theme'); } renderColorSchemePreview(name); }
+function applyColorScheme(name) {
+	const theme = getColorSchemeTheme(name);
+	if (!theme) return;
+	tabs.forEach((t) => {
+		if (t.term) t.term.options.theme = theme;
+	});
+	if (isSchemeLight(name)) {
+		document.body.classList.add("light-theme");
+		document.body.classList.remove("dark-theme");
+	} else {
+		document.body.classList.add("dark-theme");
+		document.body.classList.remove("light-theme");
+	}
+	renderColorSchemePreview(name);
+}
 
-function renderColorSchemePreview(name) { const container = document.getElementById('color-scheme-preview'); if (!container) return; const scheme = COLOR_SCHEMES[name]; if (!scheme) { container.innerHTML = ''; return; } const c = scheme.Colors || []; const all = [scheme.Background, scheme.Foreground, scheme.Cursor, ...c]; container.innerHTML = all.map(color => `<div style="width:16px;height:16px;border-radius:3px;background:${color};border:1px solid #3a3a3a;" title="${color}"></div>`).join(''); }
+function renderColorSchemePreview(name) {
+	const container = document.getElementById("color-scheme-preview");
+	if (!container) return;
+	const scheme = COLOR_SCHEMES[name];
+	if (!scheme) {
+		container.innerHTML = "";
+		return;
+	}
+	const c = scheme.Colors || [];
+	const all = [scheme.Background, scheme.Foreground, scheme.Cursor, ...c];
+	container.innerHTML = all
+		.map(
+			(color) =>
+				`<div style="width:16px;height:16px;border-radius:3px;background:${color};border:1px solid #3a3a3a;" title="${color}"></div>`,
+		)
+		.join("");
+}
 
 // ===== SSH DIALOG =====
 
 function openSSHDialog() {
- document.getElementById('ssh-dialog').classList.add('active');
- document.getElementById('ssh-connection-mode').value = 'direct';
- document.getElementById('ssh-jump-host-group').style.display = 'none';
- document.getElementById('ssh-proxy-cmd-group').style.display = 'none';
- document.getElementById('ssh-socks-proxy-group').style.display = 'none';
- document.getElementById('ssh-http-proxy-group').style.display = 'none';
- document.getElementById('ssh-host').focus();
+	document.getElementById("ssh-dialog").classList.add("active");
+	document.getElementById("ssh-connection-mode").value = "direct";
+	document.getElementById("ssh-jump-host-group").style.display = "none";
+	document.getElementById("ssh-proxy-cmd-group").style.display = "none";
+	document.getElementById("ssh-socks-proxy-group").style.display = "none";
+	document.getElementById("ssh-http-proxy-group").style.display = "none";
+	document.getElementById("ssh-host").focus();
 }
 
-function closeSSHDialog() { document.getElementById('ssh-dialog').classList.remove('active'); const t = getActiveTab(); if (t) t.term.focus(); }
+function closeSSHDialog() {
+	document.getElementById("ssh-dialog").classList.remove("active");
+	const t = getActiveTab();
+	if (t) t.term.focus();
+}
 function toggleSSHConnectionMode() {
- const mode = document.getElementById('ssh-connection-mode').value;
- document.getElementById('ssh-jump-host-group').style.display = mode === 'jumpHost' ? 'block' : 'none';
- document.getElementById('ssh-proxy-cmd-group').style.display = mode === 'proxyCommand' ? 'block' : 'none';
- document.getElementById('ssh-socks-proxy-group').style.display = mode === 'socksProxy' ? 'block' : 'none';
- document.getElementById('ssh-http-proxy-group').style.display = mode === 'httpProxy' ? 'block' : 'none';
+	const mode = document.getElementById("ssh-connection-mode").value;
+	document.getElementById("ssh-jump-host-group").style.display =
+		mode === "jumpHost" ? "block" : "none";
+	document.getElementById("ssh-proxy-cmd-group").style.display =
+		mode === "proxyCommand" ? "block" : "none";
+	document.getElementById("ssh-socks-proxy-group").style.display =
+		mode === "socksProxy" ? "block" : "none";
+	document.getElementById("ssh-http-proxy-group").style.display =
+		mode === "httpProxy" ? "block" : "none";
 }
 
-async function doSSHConnect() { const host = document.getElementById('ssh-host').value.trim(); const port = parseInt(document.getElementById('ssh-port').value) || 22; const user = document.getElementById('ssh-user').value.trim(); const auth = document.getElementById('ssh-auth').value; if (!host) { showToast('Host is required', 'error'); return; } closeSSHDialog(); showStatus('Connecting to ' + host + '...');
+async function doSSHConnect() {
+	const host = document.getElementById("ssh-host").value.trim();
+	const port = parseInt(document.getElementById("ssh-port").value) || 22;
+	const user = document.getElementById("ssh-user").value.trim();
+	const auth = document.getElementById("ssh-auth").value;
+	if (!host) {
+		showToast("Host is required", "error");
+		return;
+	}
+	closeSSHDialog();
+	showStatus("Connecting to " + host + "...");
 
-  const tab = new Tab(defaultShell);
+	const tab = new Tab(defaultShell);
 
- tab.connectionType = 'ssh';
+	tab.connectionType = "ssh";
 
- tabs.push(tab);
+	tabs.push(tab);
 
- tab.activate();
+	tab.activate();
 
- tab.ptyId = null;
+	tab.ptyId = null;
 
- const spinner = document.createElement('div');
+	const spinner = document.createElement("div");
 
- spinner.className = 'connecting-spinner';
+	spinner.className = "connecting-spinner";
 
- spinner.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border:3px solid var(--border);border-top:3px solid var(--accent);border-radius:50%;animation:spin 1s linear infinite;z-index:15;';
+	spinner.style.cssText =
+		"position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border:3px solid var(--border);border-top:3px solid var(--accent);border-radius:50%;animation:spin 1s linear infinite;z-index:15;";
 
- tab.wrapper.appendChild(spinner);
+	tab.wrapper.appendChild(spinner);
 
- try {
+	try {
+		const authParams = { type: auth };
 
- const authParams = { type: auth };
+		if (auth === "password") {
+			authParams.password = document.getElementById("ssh-password").value;
+		} else if (auth === "publicKey") {
+			const keyPath = document.getElementById("ssh-key-path").value;
 
- if (auth === 'password') {
+			authParams.privateKeyPaths = keyPath ? [keyPath] : [];
+		}
 
- authParams.password = document.getElementById('ssh-password').value;
+		const jumpHostValue =
+			document.getElementById("ssh-connection-mode").value === "jumpHost"
+				? document.getElementById("ssh-jump-host").value.trim()
+				: "";
 
- } else if (auth === 'publicKey') {
+		let jumpHostParams = null;
 
- const keyPath = document.getElementById('ssh-key-path').value;
+		if (jumpHostValue) {
+			const jhParts = jumpHostValue.split(":");
 
- authParams.privateKeyPaths = keyPath ? [keyPath] : [];
+			const jhHost = jhParts[0];
 
- }
+			const jhPort = parseInt(jhParts[1]) || 22;
 
- const jumpHostValue = document.getElementById('ssh-connection-mode').value === 'jumpHost' ? document.getElementById('ssh-jump-host').value.trim() : '';
+			const jhUser = jhHost.includes("@") ? jhHost.split("@")[0] : user;
 
- let jumpHostParams = null;
+			const jhCleanHost = jhHost.includes("@") ? jhHost.split("@")[1] : jhHost;
 
- if (jumpHostValue) {
+			jumpHostParams = {
+				host: jhCleanHost,
+				port: jhPort,
+				user: jhUser,
+				auth: { type: "agent" },
+				keepaliveInterval: 30,
+				readyTimeout: 15000,
+			};
+		}
 
- const jhParts = jumpHostValue.split(':');
+		const keepalive =
+			parseInt(document.getElementById("ssh-keepalive").value) || 30;
 
- const jhHost = jhParts[0];
+		const timeout =
+			parseInt(document.getElementById("ssh-timeout").value) || 15;
 
- const jhPort = parseInt(jhParts[1]) || 22;
+		const agentForward = document.getElementById("ssh-agent-forward").checked;
 
- const jhUser = jhHost.includes('@') ? jhHost.split('@')[0] : user;
+		const connectionMode = document.getElementById("ssh-connection-mode").value;
+		const x11 = document.getElementById("ssh-x11").checked;
+		const skipBanner = document.getElementById("ssh-skip-banner").checked;
+		const sshParams = {
+			host: host,
+			port: port,
+			user: user,
+			auth: authParams,
+			keepaliveInterval: keepalive,
+			keepaliveCountMax: 3,
+			readyTimeout: timeout * 1000,
+			agentForward: agentForward,
+			x11: x11,
+			skipBanner: skipBanner,
+			jumpHost: connectionMode === "jumpHost" ? jumpHostParams : null,
+			proxyCommand:
+				connectionMode === "proxyCommand"
+					? document.getElementById("ssh-proxy-command").value.trim()
+					: "",
+			socksProxyHost:
+				connectionMode === "socksProxy"
+					? document.getElementById("ssh-socks-host").value.trim()
+					: "",
+			socksProxyPort:
+				connectionMode === "socksProxy"
+					? parseInt(document.getElementById("ssh-socks-port").value) || 1080
+					: 0,
+			httpProxyHost:
+				connectionMode === "httpProxy"
+					? document.getElementById("ssh-http-proxy-host").value.trim()
+					: "",
+			httpProxyPort:
+				connectionMode === "httpProxy"
+					? parseInt(document.getElementById("ssh-http-proxy-port").value) ||
+						3128
+					: 0,
+		};
 
- const jhCleanHost = jhHost.includes('@') ? jhHost.split('@')[1] : jhHost;
+		const result = await SSHConnect(sshParams);
 
- jumpHostParams = { host: jhCleanHost, port: jhPort, user: jhUser, auth: { type: 'agent' }, keepaliveInterval: 30, readyTimeout: 15000 };
+		setTabStatus(tab, "connected");
+		logConnection(tab, "SSH connected to " + host);
 
- }
+		const sp = tab.wrapper.querySelector(".connecting-spinner");
+		if (sp) sp.remove();
 
- const keepalive = parseInt(document.getElementById('ssh-keepalive').value) || 30;
+		showToast("Connected to " + host, "success");
 
- const timeout = parseInt(document.getElementById('ssh-timeout').value) || 15;
+		tab.sshConnectionId = result.connectionId;
 
- const agentForward = document.getElementById('ssh-agent-forward').checked;
+		tab.sessionData = JSON.stringify({
+			type: "ssh",
+			host,
+			port,
+			user,
+			auth: authParams,
+		});
+		let jumpLabel = "";
 
- const connectionMode = document.getElementById('ssh-connection-mode').value;
- const x11 = document.getElementById('ssh-x11').checked;
- const skipBanner = document.getElementById('ssh-skip-banner').checked;
- const sshParams = {
- host: host,
- port: port,
- user: user,
- auth: authParams,
- keepaliveInterval: keepalive,
- keepaliveCountMax: 3,
- readyTimeout: timeout * 1000,
- agentForward: agentForward,
- x11: x11,
- skipBanner: skipBanner,
- jumpHost: connectionMode === 'jumpHost' ? jumpHostParams : null,
- proxyCommand: connectionMode === 'proxyCommand' ? document.getElementById('ssh-proxy-command').value.trim() : '',
- socksProxyHost: connectionMode === 'socksProxy' ? document.getElementById('ssh-socks-host').value.trim() : '',
- socksProxyPort: connectionMode === 'socksProxy' ? parseInt(document.getElementById('ssh-socks-port').value) || 1080 : 0,
- httpProxyHost: connectionMode === 'httpProxy' ? document.getElementById('ssh-http-proxy-host').value.trim() : '',
- httpProxyPort: connectionMode === 'httpProxy' ? parseInt(document.getElementById('ssh-http-proxy-port').value) || 3128 : 0,
- };
+		if (result.jumpChain && result.jumpChain.length > 0) {
+			jumpLabel = " (via " + result.jumpChain.join(" -> ") + ")";
+		}
 
- const result = await SSHConnect(sshParams);
+		tab.setTitle(user + "@" + host + jumpLabel);
+		tab.tabEl.querySelector(".tab-icon").textContent = "🔐";
+		const shellResult = await SSHStartShell({
+			connectionId: result.connectionId,
+			columns: tab.term.cols,
+			rows: tab.term.rows,
+			terminal: "xterm-256color",
+		});
+		tab.sshSessionId = shellResult.sessionId;
+		tab.isSSH = true;
+		tab.sshHost = host;
+		tab.sshPort = port;
+		tab.sshUser = user;
+		tab.term.onData((data) => {
+			if (data.includes("\n") && data.trim().split("\n").length > 1) {
+				if (
+					settings.PasteWarning !== false &&
+					!confirm(
+						"Paste multi-line content? (" +
+							data.trim().split("\n").length +
+							" lines)",
+					)
+				)
+					return;
+			}
+			if (tab.sshConnectionId && tab.sshSessionId)
+				SSHWrite({
+					connectionId: tab.sshConnectionId,
+					sessionId: tab.sshSessionId,
+					data: btoa(data),
+				});
+		});
 
- setTabStatus(tab, 'connected'); logConnection(tab, 'SSH connected to ' + host);
+		setupInputProcessing(tab.term, tab);
 
- const sp = tab.wrapper.querySelector('.connecting-spinner'); if (sp) sp.remove();
+		const loginScriptEl = document.getElementById("ssh-login-script");
 
- showToast('Connected to ' + host, 'success');
+		if (loginScriptEl && loginScriptEl.value.trim())
+			runLoginScript(tab, loginScriptEl.value);
 
- tab.sshConnectionId = result.connectionId; 
+		let statusText = "SSH - " + user + "@" + host;
 
-    tab.sessionData = JSON.stringify({ type: 'ssh', host, port, user, auth: authParams }); let jumpLabel = '';
+		if (result.jumpChain && result.jumpChain.length > 0) {
+			statusText += " via " + result.jumpChain.join(" -> ");
+		}
 
-    if (result.jumpChain && result.jumpChain.length > 0) {
-
-        jumpLabel = ' (via ' + result.jumpChain.join(' -> ') + ')';
-
-    }
-
-    tab.setTitle(user + '@' + host + jumpLabel); tab.tabEl.querySelector('.tab-icon').textContent = '🔐'; const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: 'xterm-256color' }); tab.sshSessionId = shellResult.sessionId; tab.isSSH = true; tab.sshHost = host; tab.sshPort = port; tab.sshUser = user; tab.term.onData((data) => { if (data.includes('\n') && data.trim().split('\n').length > 1) { if (settings.PasteWarning !== false && !confirm('Paste multi-line content? (' + data.trim().split('\n').length + ' lines)')) return; } if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) }); });
-
-    setupInputProcessing(tab.term, tab);
-
-    const loginScriptEl = document.getElementById('ssh-login-script');
-
-    if (loginScriptEl && loginScriptEl.value.trim()) runLoginScript(tab, loginScriptEl.value);
-
- let statusText = 'SSH - ' + user + '@' + host;
-
-    if (result.jumpChain && result.jumpChain.length > 0) {
-
-        statusText += ' via ' + result.jumpChain.join(' -> ');
-
-    }
-
-    showStatus(statusText); if (document.getElementById('ssh-save-profile') && document.getElementById('ssh-save-profile').checked) { savedProfiles.push({ id: 'ssh-' + Date.now(), type: 'ssh', name: user + '@' + host, options: { host, port, user, auth, privateKeys: authParams.privateKeyPaths || [] }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); } } catch (err) { const sp = tab.wrapper.querySelector('.connecting-spinner'); if (sp) sp.remove(); showToast('SSH failed: ' + err, 'error'); showStatus('SSH failed - ' + host); } }
+		showStatus(statusText);
+		if (
+			document.getElementById("ssh-save-profile") &&
+			document.getElementById("ssh-save-profile").checked
+		) {
+			savedProfiles.push({
+				id: "ssh-" + Date.now(),
+				type: "ssh",
+				name: user + "@" + host,
+				options: {
+					host,
+					port,
+					user,
+					auth,
+					privateKeys: authParams.privateKeyPaths || [],
+				},
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+			});
+			SaveProfiles(savedProfiles).catch(() => {});
+			renderProfiles();
+		}
+	} catch (err) {
+		const sp = tab.wrapper.querySelector(".connecting-spinner");
+		if (sp) sp.remove();
+		showToast("SSH failed: " + err, "error");
+		showStatus("SSH failed - " + host);
+	}
+}
 
 // ===== SERIAL PORT DIALOG =====
 
 function openSerialDialog() {
+	document.getElementById("serial-dialog").classList.add("active");
 
-  document.getElementById('serial-dialog').classList.add('active');
-
-  refreshSerialPorts();
-
+	refreshSerialPorts();
 }
 
 function closeSerialDialog() {
+	document.getElementById("serial-dialog").classList.remove("active");
 
-  document.getElementById('serial-dialog').classList.remove('active');
+	const t = getActiveTab();
 
-  const t = getActiveTab();
-
-  if (t) t.term.focus();
-
+	if (t) t.term.focus();
 }
 
 async function refreshSerialPorts() {
+	const select = document.getElementById("serial-port-select");
 
-  const select = document.getElementById('serial-port-select');
+	select.innerHTML = '<option value="">-- Scanning... --</option>';
 
-  select.innerHTML = '<option value="">-- Scanning... --</option>';
+	try {
+		const ports = await SerialListPorts();
 
-  try {
+		select.innerHTML = '<option value="">-- Select Port --</option>';
 
-    const ports = await SerialListPorts();
+		if (ports && ports.length) {
+			ports.forEach((p) => {
+				const opt = document.createElement("option");
 
-    select.innerHTML = '<option value="">-- Select Port --</option>';
+				opt.value = p.Name;
 
-    if (ports && ports.length) {
+				opt.textContent = p.Name;
 
-      ports.forEach(p => {
+				select.appendChild(opt);
+			});
+		} else {
+			select.innerHTML = '<option value="">-- No ports found --</option>';
+		}
+	} catch (err) {
+		select.innerHTML = '<option value="">-- Error scanning --</option>';
 
-        const opt = document.createElement('option');
-
-        opt.value = p.Name;
-
-        opt.textContent = p.Name;
-
-        select.appendChild(opt);
-
-      });
-
-    } else {
-
-      select.innerHTML = '<option value="">-- No ports found --</option>';
-
-    }
-
-  } catch (err) {
-
-    select.innerHTML = '<option value="">-- Error scanning --</option>';
-
-    showToast('Failed to list serial ports: ' + err, 'error');
-
-  }
-
+		showToast("Failed to list serial ports: " + err, "error");
+	}
 }
 
 async function doSerialConnect() {
+	const port = document.getElementById("serial-port-select").value;
 
-  const port = document.getElementById('serial-port-select').value;
+	const baud = parseInt(document.getElementById("serial-baud").value) || 115200;
 
-  const baud = parseInt(document.getElementById('serial-baud').value) || 115200;
+	const dataBits =
+		parseInt(document.getElementById("serial-data-bits").value) || 8;
 
-  const dataBits = parseInt(document.getElementById('serial-data-bits').value) || 8;
+	const stopBits =
+		parseInt(document.getElementById("serial-stop-bits").value) || 1;
 
-  const stopBits = parseInt(document.getElementById('serial-stop-bits').value) || 1;
+	const parity = document.getElementById("serial-parity").value;
 
-  const parity = document.getElementById('serial-parity').value;
+	if (!port) {
+		showToast("Select a serial port", "error");
+		return;
+	}
 
-  if (!port) { showToast('Select a serial port', 'error'); return; }
+	closeSerialDialog();
 
-  closeSerialDialog();
+	showStatus("Connecting to " + port + "...");
 
-  showStatus('Connecting to ' + port + '...');
+	try {
+		const tab = new Tab(defaultShell);
 
-  try {
+		tabs.push(tab);
 
-    const tab = new Tab(defaultShell);
+		tab.activate();
 
- tabs.push(tab);
+		tab.ptyId = null;
 
- tab.activate();
+		setTabStatus(tab, "connecting");
+		logConnection(tab, "Opening serial port...");
 
- tab.ptyId = null;
+		const result = await SerialOpen({
+			port,
+			baudRate: baud,
+			dataBits,
+			stopBits,
+			parity,
+		});
 
- setTabStatus(tab, 'connecting'); logConnection(tab, 'Opening serial port...');
+		setTabStatus(tab, "connected");
+		logConnection(tab, "Serial port opened: " + port);
+		showToast("Serial connected: " + port, "success");
 
- const result = await SerialOpen({ port, baudRate: baud, dataBits, stopBits, parity });
+		tab.serialId = result.ID || result.id;
 
- setTabStatus(tab, 'connected'); logConnection(tab, 'Serial port opened: ' + port); showToast('Serial connected: ' + port, 'success');
+		tab.isSerial = true;
 
- tab.serialId = result.ID || result.id;
+		tab.serialPort = port;
 
- tab.isSerial = true;
+		tab.serialBaud = baud;
 
- tab.serialPort = port;
+		tab.sessionData = JSON.stringify({ type: "serial", port, baudRate: baud });
 
- tab.serialBaud = baud;
+		tab.setTitle(port.split("/").pop().split("\\").pop());
 
- tab.sessionData = JSON.stringify({ type: 'serial', port, baudRate: baud });
+		tab.tabEl.querySelector(".tab-icon").textContent = "📡";
 
- tab.setTitle(port.split('/').pop().split('\\').pop());
+		tab.serialDataHandler = (params) => {
+			if ((params.serialId || params.SerialID) === tab.serialId)
+				tab.term.write(atob(params.data || params.Data));
+		};
 
- tab.tabEl.querySelector('.tab-icon').textContent = '📡';
+		window.__serialDataHandlers = window.__serialDataHandlers || [];
+		window.__serialDataHandlers.push(tab.serialDataHandler);
 
- tab.serialDataHandler = (params) => {
+		tab.serialExitHandler = (params) => {
+			if ((params.serialId || params.SerialID) === tab.serialId) {
+				tab.exited = true;
+				setTabStatus(tab, "disconnected");
+				tab.term.writeln(`
 
-      if ((params.serialId || params.SerialID) === tab.serialId) tab.term.write(atob(params.data || params.Data));
+[1;33m[Serial port closed][0m`);
+				tab.setTitle(tab.title + " [disconnected]");
+				tab.tabEl.querySelector(".tab-icon").textContent = "✕";
+				tab.tabEl.querySelector(".tab-icon").style.color = "#f44747";
+			}
+		};
 
-    };
+		window.__serialExitHandlers = window.__serialExitHandlers || [];
+		window.__serialExitHandlers.push(tab.serialExitHandler);
 
-    window.__serialDataHandlers = window.__serialDataHandlers || []; window.__serialDataHandlers.push(tab.serialDataHandler);
+		tab.term.onData((data) => {
+			if (tab.serialId) SerialWrite(tab.serialId, btoa(data));
+		});
 
-      tab.serialExitHandler = (params) => { if ((params.serialId || params.SerialID) === tab.serialId) { tab.exited = true; setTabStatus(tab, 'disconnected'); tab.term.writeln(`
+		setupInputProcessing(tab.term, tab);
 
-[1;33m[Serial port closed][0m`); tab.setTitle(tab.title + ' [disconnected]'); tab.tabEl.querySelector('.tab-icon').textContent = '✕'; tab.tabEl.querySelector('.tab-icon').style.color = '#f44747'; } };
+		showStatus("Serial - " + port + " @ " + baud);
 
-      window.__serialExitHandlers = window.__serialExitHandlers || []; window.__serialExitHandlers.push(tab.serialExitHandler);
+		if (
+			document.getElementById("serial-save-profile") &&
+			document.getElementById("serial-save-profile").checked
+		) {
+			savedProfiles.push({
+				id: "serial-" + Date.now(),
+				type: "serial",
+				name: port + " @ " + baud,
+				options: { port, baudRate: baud, dataBits, stopBits, parity },
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+			});
 
-    tab.term.onData((data) => {
+			SaveProfiles(savedProfiles).catch(() => {});
 
-      if (tab.serialId) SerialWrite(tab.serialId, btoa(data));
+			renderProfiles();
+		}
+	} catch (err) {
+		showToast("Serial failed: " + err, "error");
 
-    });
-
-    setupInputProcessing(tab.term, tab);
-
-    showStatus('Serial - ' + port + ' @ ' + baud);
-
-    if (document.getElementById('serial-save-profile') && document.getElementById('serial-save-profile').checked) {
-
-      savedProfiles.push({ id: 'serial-' + Date.now(), type: 'serial', name: port + ' @ ' + baud, options: { port, baudRate: baud, dataBits, stopBits, parity }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-
-      SaveProfiles(savedProfiles).catch(() => {});
-
-      renderProfiles();
-
-    }
-
-  } catch (err) {
-
-    showToast('Serial failed: ' + err, 'error');
-
-    showStatus('Serial failed - ' + port);
-
-  }
-
+		showStatus("Serial failed - " + port);
+	}
 }
 
 // ===== TELNET DIALOG =====
 
 function openTelnetDialog() {
+	document.getElementById("telnet-dialog").classList.add("active");
 
-  document.getElementById('telnet-dialog').classList.add('active');
-
-  document.getElementById('telnet-host').focus();
-
+	document.getElementById("telnet-host").focus();
 }
 
 function closeTelnetDialog() {
+	document.getElementById("telnet-dialog").classList.remove("active");
 
-  document.getElementById('telnet-dialog').classList.remove('active');
+	const t = getActiveTab();
 
-  const t = getActiveTab();
-
-  if (t) t.term.focus();
-
+	if (t) t.term.focus();
 }
 
 async function doTelnetConnect() {
+	const host = document.getElementById("telnet-host").value.trim();
 
-  const host = document.getElementById('telnet-host').value.trim();
+	const port = parseInt(document.getElementById("telnet-port").value) || 23;
 
-  const port = parseInt(document.getElementById('telnet-port').value) || 23;
+	if (!host) {
+		showToast("Host is required", "error");
+		return;
+	}
 
-  if (!host) { showToast('Host is required', 'error'); return; }
+	closeTelnetDialog();
 
-  closeTelnetDialog();
+	showStatus("Connecting to " + host + ":" + port + "...");
 
-  showStatus('Connecting to ' + host + ':' + port + '...');
+	try {
+		const result = await TelnetConnect(host, port);
 
-  try {
+		const tab = new Tab(defaultShell);
 
-    const result = await TelnetConnect(host, port);
+		tabs.push(tab);
 
-    const tab = new Tab(defaultShell);
+		tab.activate();
 
- tabs.push(tab);
+		tab.ptyId = null;
 
- tab.activate();
+		setTabStatus(tab, "connected");
+		logConnection(tab, "Telnet connected to " + host + ":" + port);
+		showToast("Telnet connected: " + host, "success");
 
- tab.ptyId = null;
+		tab.telnetConnectionId = result.ConnectionID || result.connectionId;
 
- setTabStatus(tab, 'connected'); logConnection(tab, 'Telnet connected to ' + host + ':' + port); showToast('Telnet connected: ' + host, 'success');
+		tab.sessionData = JSON.stringify({ type: "telnet", host, port });
 
- tab.telnetConnectionId = result.ConnectionID || result.connectionId;
+		tab.isTelnet = true;
 
- tab.sessionData = JSON.stringify({ type: 'telnet', host, port });
+		tab.telnetHost = host;
 
- tab.isTelnet = true;
+		tab.telnetPort = port;
 
- tab.telnetHost = host;
+		tab.setTitle(host + ":" + port);
 
- tab.telnetPort = port;
+		tab.tabEl.querySelector(".tab-icon").textContent = "\ud83c\udf10";
 
- tab.setTitle(host + ':' + port);
+		tab.telnetDataHandler = (params) => {
+			const cid = params.ConnectionID || params.connectionId;
 
-    tab.tabEl.querySelector('.tab-icon').textContent = '\ud83c\udf10';
+			if (cid === tab.telnetConnectionId)
+				tab.term.write(atob(params.Data || params.data));
+		};
 
-    tab.telnetDataHandler = (params) => {
+		window.__telnetDataHandlers = window.__telnetDataHandlers || [];
+		window.__telnetDataHandlers.push(tab.telnetDataHandler);
 
-      const cid = params.ConnectionID || params.connectionId;
+		tab.telnetExitHandler = (params) => {
+			const cid = params.ConnectionID || params.connectionId;
+			if (cid === tab.telnetConnectionId) {
+				tab.exited = true;
+				setTabStatus(tab, "disconnected");
+				tab.term.writeln(`
 
-      if (cid === tab.telnetConnectionId) tab.term.write(atob(params.Data || params.data));
+[1;33m[Telnet connection closed][0m`);
+				tab.setTitle(tab.title + " [disconnected]");
+				tab.tabEl.querySelector(".tab-icon").textContent = "✕";
+				tab.tabEl.querySelector(".tab-icon").style.color = "#f44747";
+			}
+		};
 
-    };
+		window.__telnetExitHandlers = window.__telnetExitHandlers || [];
+		window.__telnetExitHandlers.push(tab.telnetExitHandler);
 
-    window.__telnetDataHandlers = window.__telnetDataHandlers || []; window.__telnetDataHandlers.push(tab.telnetDataHandler);
+		tab.term.onData((data) => {
+			if (
+				data.includes(String.fromCharCode(10)) &&
+				data.trim().split(String.fromCharCode(10)).length > 1
+			) {
+				if (
+					settings.PasteWarning !== false &&
+					!confirm(
+						"Paste multi-line content? (" +
+							data.trim().split(String.fromCharCode(10)).length +
+							" lines)",
+					)
+				)
+					return;
+			}
 
-      tab.telnetExitHandler = (params) => { const cid = params.ConnectionID || params.connectionId; if (cid === tab.telnetConnectionId) { tab.exited = true; setTabStatus(tab, 'disconnected'); tab.term.writeln(`
+			if (tab.telnetConnectionId)
+				TelnetWrite(tab.telnetConnectionId, btoa(data));
+		});
 
-[1;33m[Telnet connection closed][0m`); tab.setTitle(tab.title + ' [disconnected]'); tab.tabEl.querySelector('.tab-icon').textContent = '✕'; tab.tabEl.querySelector('.tab-icon').style.color = '#f44747'; } };
+		setupInputProcessing(tab.term, tab);
 
-      window.__telnetExitHandlers = window.__telnetExitHandlers || []; window.__telnetExitHandlers.push(tab.telnetExitHandler);
+		showStatus("Telnet - " + host + ":" + port);
 
-    tab.term.onData((data) => {
+		if (
+			document.getElementById("telnet-save-profile") &&
+			document.getElementById("telnet-save-profile").checked
+		) {
+			savedProfiles.push({
+				id: "telnet-" + Date.now(),
+				type: "telnet",
+				name: host + ":" + port,
+				options: { host, port },
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+			});
 
-      if (data.includes(String.fromCharCode(10)) && data.trim().split(String.fromCharCode(10)).length > 1) { if (settings.PasteWarning !== false && !confirm('Paste multi-line content? (' + data.trim().split(String.fromCharCode(10)).length + ' lines)')) return; }
+			SaveProfiles(savedProfiles).catch(() => {});
 
-      if (tab.telnetConnectionId) TelnetWrite(tab.telnetConnectionId, btoa(data));
+			renderProfiles();
+		}
+	} catch (err) {
+		showToast("Telnet failed: " + err, "error");
 
-    });
-
-    setupInputProcessing(tab.term, tab);
-
-    showStatus('Telnet - ' + host + ':' + port);
-
-    if (document.getElementById('telnet-save-profile') && document.getElementById('telnet-save-profile').checked) {
-
-      savedProfiles.push({ id: 'telnet-' + Date.now(), type: 'telnet', name: host + ':' + port, options: { host, port }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-
-      SaveProfiles(savedProfiles).catch(() => {});
-
-      renderProfiles();
-
-    }
-
-  } catch (err) {
-
-    showToast('Telnet failed: ' + err, 'error');
-
-    showStatus('Telnet failed - ' + host);
-
-  }
-
+		showStatus("Telnet failed - " + host);
+	}
 }
 
 // ===== PORT FORWARDING DIALOG =====
 
 function openForwardDialog(sshConnectionId) {
+	document.getElementById("forward-dialog").classList.add("active");
 
-  document.getElementById('forward-dialog').classList.add('active');
+	document.getElementById("forward-conn-id").value = sshConnectionId || "";
 
-  document.getElementById('forward-conn-id').value = sshConnectionId || '';
+	document.getElementById("forward-type").value = "local";
 
-  document.getElementById('forward-type').value = 'local';
+	document.getElementById("forward-local-addr").value = "";
 
-  document.getElementById('forward-local-addr').value = '';
+	document.getElementById("forward-remote-addr").value = "";
 
-  document.getElementById('forward-remote-addr').value = '';
+	toggleForwardFields();
 
-  toggleForwardFields();
-
-  loadForwardList(sshConnectionId);
-
+	loadForwardList(sshConnectionId);
 }
 
 function closeForwardDialog() {
+	document.getElementById("forward-dialog").classList.remove("active");
 
-  document.getElementById('forward-dialog').classList.remove('active');
+	const t = getActiveTab();
 
-  const t = getActiveTab();
-
-  if (t) t.term.focus();
-
+	if (t) t.term.focus();
 }
 
 function toggleForwardFields() {
+	const type = document.getElementById("forward-type").value;
 
-  const type = document.getElementById('forward-type').value;
+	const lg = document.getElementById("forward-local-group");
 
-  const lg = document.getElementById('forward-local-group');
+	const rg = document.getElementById("forward-remote-group");
 
-  const rg = document.getElementById('forward-remote-group');
+	const la = document.getElementById("forward-local-addr");
 
-  const la = document.getElementById('forward-local-addr');
+	if (type === "dynamic") {
+		lg.style.display = "block";
+		rg.style.display = "none";
 
-  if (type === 'dynamic') {
+		la.placeholder = "localhost:1080 (SOCKS5)";
+	} else if (type === "local") {
+		lg.style.display = "block";
+		rg.style.display = "block";
 
-    lg.style.display = 'block'; rg.style.display = 'none';
+		la.placeholder = "localhost:8080";
 
-    la.placeholder = 'localhost:1080 (SOCKS5)';
+		document.getElementById("forward-remote-addr").placeholder =
+			"remotehost:80";
+	} else {
+		lg.style.display = "block";
+		rg.style.display = "block";
 
-  } else if (type === 'local') {
+		la.placeholder = "remotehost:8080";
 
-    lg.style.display = 'block'; rg.style.display = 'block';
-
-    la.placeholder = 'localhost:8080';
-
-    document.getElementById('forward-remote-addr').placeholder = 'remotehost:80';
-
-  } else {
-
-    lg.style.display = 'block'; rg.style.display = 'block';
-
-    la.placeholder = 'remotehost:8080';
-
-    document.getElementById('forward-remote-addr').placeholder = 'localhost:80';
-
-  }
-
+		document.getElementById("forward-remote-addr").placeholder = "localhost:80";
+	}
 }
 
 async function doAddForward() {
+	const connId = document.getElementById("forward-conn-id").value;
 
-  const connId = document.getElementById('forward-conn-id').value;
+	const type = document.getElementById("forward-type").value;
 
-  const type = document.getElementById('forward-type').value;
+	const localAddr = document.getElementById("forward-local-addr").value.trim();
 
-  const localAddr = document.getElementById('forward-local-addr').value.trim();
+	const remoteAddr = document
+		.getElementById("forward-remote-addr")
+		.value.trim();
 
-  const remoteAddr = document.getElementById('forward-remote-addr').value.trim();
+	if (!connId) {
+		showToast("No SSH connection", "error");
+		return;
+	}
 
-  if (!connId) { showToast('No SSH connection', 'error'); return; }
+	try {
+		const params = { connectionId: connId, type };
 
-  try {
+		if (type === "local") {
+			const [lh, lp] = parseAddr(localAddr, "localhost");
 
-    const params = { connectionId: connId, type };
+			const [rh, rp] = parseAddr(remoteAddr, "localhost");
 
-    if (type === 'local') {
+			params.localHost = lh;
+			params.localPort = lp;
 
-      const [lh, lp] = parseAddr(localAddr, 'localhost');
+			params.remoteHost = rh;
+			params.remotePort = rp;
+		} else if (type === "remote") {
+			const [rh, rp] = parseAddr(localAddr, "0.0.0.0");
 
-      const [rh, rp] = parseAddr(remoteAddr, 'localhost');
+			const [lh, lp] = parseAddr(remoteAddr, "localhost");
 
-      params.localHost = lh; params.localPort = lp;
+			params.remoteHost = rh;
+			params.remotePort = rp;
 
-      params.remoteHost = rh; params.remotePort = rp;
+			params.localHost = lh;
+			params.localPort = lp;
+		} else {
+			const [lh, lp] = parseAddr(localAddr, "localhost");
 
-    } else if (type === 'remote') {
+			params.localHost = lh;
+			params.localPort = lp;
+		}
 
-      const [rh, rp] = parseAddr(localAddr, '0.0.0.0');
+		await SSHAddForward(params);
 
-      const [lh, lp] = parseAddr(remoteAddr, 'localhost');
+		showToast("Forward added", "success");
 
-      params.remoteHost = rh; params.remotePort = rp;
-
-      params.localHost = lh; params.localPort = lp;
-
-    } else {
-
-      const [lh, lp] = parseAddr(localAddr, 'localhost');
-
-      params.localHost = lh; params.localPort = lp;
-
-    }
-
-    await SSHAddForward(params);
-
-    showToast('Forward added', 'success');
-
-    loadForwardList(connId);
-
-  } catch (err) {
-
-    showToast('Failed to add forward: ' + err, 'error');
-
-  }
-
+		loadForwardList(connId);
+	} catch (err) {
+		showToast("Failed to add forward: " + err, "error");
+	}
 }
 
 async function loadForwardList(connId) {
+	const container = document.getElementById("forward-list");
 
-  const container = document.getElementById('forward-list');
+	if (!connId) {
+		container.innerHTML = "";
+		return;
+	}
 
-  if (!connId) { container.innerHTML = ''; return; }
+	try {
+		const forwards = await SSHListForwards(connId);
 
-  try {
+		if (!forwards || forwards.length === 0) {
+			container.innerHTML =
+				'<div style="color:#666;font-size:12px;">No active forwards</div>';
+		} else {
+			container.innerHTML = forwards
+				.map((f, i) => {
+					const ft = f.Type || f.type || "local";
 
-    const forwards = await SSHListForwards(connId);
+					const icon = ft === "local" ? "-L" : ft === "remote" ? "-R" : "-D";
 
-    if (!forwards || forwards.length === 0) {
+					const lh = f.LocalHost || f.localHost || "";
 
-      container.innerHTML = '<div style="color:#666;font-size:12px;">No active forwards</div>';
+					const lp = f.LocalPort || f.localPort || "";
 
-    } else {
+					const rh = f.RemoteHost || f.remoteHost || "";
 
-      container.innerHTML = forwards.map((f, i) => {
+					const rp = f.RemotePort || f.remotePort || "";
 
-        const ft = (f.Type || f.type || 'local');
+					const label =
+						ft === "dynamic"
+							? icon + " " + lh + ":" + lp
+							: icon + " " + lh + ":" + lp + " \u2192 " + rh + ":" + rp;
 
-        const icon = ft === 'local' ? '-L' : ft === 'remote' ? '-R' : '-D';
+					return (
+						'<div class="profile-editor-item"><span style="font-size:12px;color:#ccc;">' +
+						label +
+						'</span><button class="btn-icon forward-remove" data-idx="' +
+						i +
+						'" title="Remove">\u00d7</button></div>'
+					);
+				})
+				.join("");
 
-        const lh = f.LocalHost || f.localHost || '';
+			container.querySelectorAll(".forward-remove").forEach((btn) => {
+				btn.onclick = async () => {
+					const idx = parseInt(btn.dataset.idx);
 
-        const lp = f.LocalPort || f.localPort || '';
+					try {
+						await SSHRemoveForward({ connectionId: connId, forwardIndex: idx });
 
-        const rh = f.RemoteHost || f.remoteHost || '';
+						showToast("Forward removed", "info");
 
-        const rp = f.RemotePort || f.remotePort || '';
-
-        const label = ft === 'dynamic'
-
-          ? icon + ' ' + lh + ':' + lp
-
-          : icon + ' ' + lh + ':' + lp + ' \u2192 ' + rh + ':' + rp;
-
-        return '<div class="profile-editor-item"><span style="font-size:12px;color:#ccc;">' + label + '</span><button class="btn-icon forward-remove" data-idx="' + i + '" title="Remove">\u00d7</button></div>';
-
-      }).join('');
-
-      container.querySelectorAll('.forward-remove').forEach(btn => {
-
-        btn.onclick = async () => {
-
-          const idx = parseInt(btn.dataset.idx);
-
-          try {
-
-            await SSHRemoveForward({ connectionId: connId, forwardIndex: idx });
-
-            showToast('Forward removed', 'info');
-
-            loadForwardList(connId);
-
-          } catch (err) { showToast('Remove failed: ' + err, 'error'); }
-
-        };
-
-      });
-
-    }
-
-  } catch (err) {
-
-    container.innerHTML = '<div style="color:#f44747;font-size:12px;">Error: ' + err + '</div>';
-
-  }
-
+						loadForwardList(connId);
+					} catch (err) {
+						showToast("Remove failed: " + err, "error");
+					}
+				};
+			});
+		}
+	} catch (err) {
+		container.innerHTML =
+			'<div style="color:#f44747;font-size:12px;">Error: ' + err + "</div>";
+	}
 }
 
 function parseAddr(addr, defaultHost) {
+	const parts = addr.split(":");
 
-  const parts = addr.split(':');
+	if (parts.length === 2) return [parts[0], parseInt(parts[1]) || 0];
 
-  if (parts.length === 2) return [parts[0], parseInt(parts[1]) || 0];
+	if (parts.length === 1 && parts[0])
+		return [defaultHost, parseInt(parts[0]) || 0];
 
-  if (parts.length === 1 && parts[0]) return [defaultHost, parseInt(parts[0]) || 0];
-
-  return [defaultHost, 0];
-
+	return [defaultHost, 0];
 }
 
 // ===== SSH AUTH CHALLENGE HANDLERS =====
 
 async function handleKeyboardInteractive(params) {
+	try {
+		const connID = params.connectionId || params.ConnectionID;
 
- try {
+		const name = params.name || "";
 
- const connID = params.connectionId || params.ConnectionID;
+		const instruction = params.instruction || "";
 
- const name = params.name || '';
+		const prompts = params.prompts || [];
 
- const instruction = params.instruction || '';
+		const responses = [];
 
- const prompts = params.prompts || [];
+		for (const p of prompts) {
+			const answer = await showPasswordDialog(
+				"SSH Authentication",
+				p.prompt || "Response:",
+			);
 
- const responses = [];
+			if (answer === null) {
+				responses.push("");
+			} else {
+				responses.push(answer);
+			}
+		}
 
- for (const p of prompts) {
+		HandleKeyboardInteractiveResponse(connID, responses);
+	} catch (err) {
+		console.error("Keyboard-interactive error:", err);
 
- const answer = await showPasswordDialog('SSH Authentication', p.prompt || 'Response:');
-
- if (answer === null) {
-
- responses.push('');
-
- } else {
-
- responses.push(answer);
-
- }
-
- }
-
- HandleKeyboardInteractiveResponse(connID, responses);
-
- } catch (err) {
-
- console.error('Keyboard-interactive error:', err);
-
- HandleKeyboardInteractiveResponse(params.connectionId || params.ConnectionID, []);
-
- }
-
+		HandleKeyboardInteractiveResponse(
+			params.connectionId || params.ConnectionID,
+			[],
+		);
+	}
 }
 
 async function handleHostKeyPrompt(params) {
+	const connID = params.connectionId || params.ConnectionID;
 
-  const connID = params.connectionId || params.ConnectionID;
+	const host = params.host || "unknown";
 
-  const host = params.host || 'unknown';
+	const keyType = params.keyType || "unknown";
 
-  const keyType = params.keyType || 'unknown';
+	const fingerprint = params.fingerprint || "unknown";
 
-  const fingerprint = params.fingerprint || 'unknown';
+	const msg =
+		"Host key for " +
+		host +
+		" (" +
+		keyType +
+		")" +
+		String.fromCharCode(10) +
+		"Fingerprint: " +
+		fingerprint +
+		String.fromCharCode(10) +
+		String.fromCharCode(10) +
+		"Accept this host key?";
 
-  const msg = 'Host key for ' + host + ' (' + keyType + ')' + String.fromCharCode(10) + 'Fingerprint: ' + fingerprint + String.fromCharCode(10) + String.fromCharCode(10) + 'Accept this host key?';
+	const accepted = confirm(msg);
 
-  const accepted = confirm(msg);
-
-  HandleHostKeyResponse(connID, accepted);
-
+	HandleHostKeyResponse(connID, accepted);
 }
 
 // ===== SSH BANNER AND SERVICE MESSAGE HANDLERS =====
 
 function handleSSHBanner(params) {
+	const connID = params.connectionId || params.ConnectionID;
 
-  const connID = params.connectionId || params.ConnectionID;
+	const message = params.message || params.Message || "";
 
-  const message = params.message || params.Message || '';
+	if (message) {
+		const tab = tabs.find((t) => t.isSSH && t.sshConnectionId === connID);
 
-  if (message) {
+		if (tab && tab.term) {
+			tab.term.writeln(
+				String.fromCharCode(13, 10) +
+					String.fromCharCode(27) +
+					"[1;36m[SSH Banner]" +
+					String.fromCharCode(27) +
+					"[0m " +
+					message,
+			);
 
-    const tab = tabs.find(t => t.isSSH && t.sshConnectionId === connID);
-
-    if (tab && tab.term) {
-
-      tab.term.writeln(String.fromCharCode(13,10) + String.fromCharCode(27) + '[1;36m[SSH Banner]' + String.fromCharCode(27) + '[0m ' + message);
-
-      logConnection(tab, 'SSH Banner: ' + message.substring(0, 50));
-
-    }
-
-  }
-
+			logConnection(tab, "SSH Banner: " + message.substring(0, 50));
+		}
+	}
 }
 
 function handleSSHServiceMessage(params) {
+	const connID = params.connectionId || params.ConnectionID;
 
-  const connID = params.connectionId || params.ConnectionID;
+	const message = params.message || params.Message || "";
 
-  const message = params.message || params.Message || '';
+	if (message) {
+		const tab = tabs.find((t) => t.isSSH && t.sshConnectionId === connID);
 
-  if (message) {
-
-    const tab = tabs.find(t => t.isSSH && t.sshConnectionId === connID);
-
-    if (tab && tab.term) {
-
-      tab.term.writeln(String.fromCharCode(13,10) + String.fromCharCode(27) + '[1;33m[SSH]' + String.fromCharCode(27) + '[0m ' + message);
-
-    }
-
-  }
-
+		if (tab && tab.term) {
+			tab.term.writeln(
+				String.fromCharCode(13, 10) +
+					String.fromCharCode(27) +
+					"[1;33m[SSH]" +
+					String.fromCharCode(27) +
+					"[0m " +
+					message,
+			);
+		}
+	}
 }
 
 function handleTelnetServiceMessage(params) {
+	const connID = params.connectionId || params.ConnectionID;
 
-  const connID = params.connectionId || params.ConnectionID;
+	const message = params.message || params.Message || "";
 
-  const message = params.message || params.Message || '';
+	if (message) {
+		const tab = tabs.find((t) => t.isTelnet && t.telnetConnectionId === connID);
 
-  if (message) {
-
-    const tab = tabs.find(t => t.isTelnet && t.telnetConnectionId === connID);
-
-    if (tab && tab.term) {
-
-      tab.term.writeln(String.fromCharCode(13,10) + String.fromCharCode(27) + '[1;33m[Telnet]' + String.fromCharCode(27) + '[0m ' + message);
-
-    }
-
-  }
-
+		if (tab && tab.term) {
+			tab.term.writeln(
+				String.fromCharCode(13, 10) +
+					String.fromCharCode(27) +
+					"[1;33m[Telnet]" +
+					String.fromCharCode(27) +
+					"[0m " +
+					message,
+			);
+		}
+	}
 }
 
 // ===== HOST KEY VERIFICATION =====
@@ -934,29 +1198,25 @@ function handleTelnetServiceMessage(params) {
 let hostKeyResolve = null;
 
 function showHostKeyDialog(fingerprint, host) {
+	return new Promise((resolve) => {
+		hostKeyResolve = resolve;
 
-  return new Promise((resolve) => {
+		document.getElementById("hostkey-dialog").classList.add("active");
 
-    hostKeyResolve = resolve;
+		document.getElementById("hostkey-message").textContent =
+			"The host " + host + " is not in your known hosts. The fingerprint is:";
 
-    document.getElementById('hostkey-dialog').classList.add('active');
-
-    document.getElementById('hostkey-message').textContent =
-
-      'The host ' + host + ' is not in your known hosts. The fingerprint is:';
-
-    document.getElementById('hostkey-fingerprint').textContent = fingerprint;
-
-  });
-
+		document.getElementById("hostkey-fingerprint").textContent = fingerprint;
+	});
 }
 
 function closeHostKeyDialog(accepted) {
+	document.getElementById("hostkey-dialog").classList.remove("active");
 
-  document.getElementById('hostkey-dialog').classList.remove('active');
-
-  if (hostKeyResolve) { hostKeyResolve(accepted); hostKeyResolve = null; }
-
+	if (hostKeyResolve) {
+		hostKeyResolve(accepted);
+		hostKeyResolve = null;
+	}
 }
 
 // ===== SFTP FILE BROWSER =====
@@ -965,712 +1225,933 @@ let sftpSessionId = null;
 
 let sftpConnectionId = null;
 
-let sftpCurrentPath = '/';
+let sftpCurrentPath = "/";
 
 let sftpSelectedFile = null;
 
 let sftpFileData = [];
 
 async function openSFTPBrowser(connectionId) {
+	sftpConnectionId = connectionId;
 
-  sftpConnectionId = connectionId;
+	document.getElementById("sftp-dialog").classList.add("active");
 
-  document.getElementById('sftp-dialog').classList.add('active');
+	document.getElementById("sftp-session-label").textContent =
+		"SSH: " + connectionId;
 
-  document.getElementById('sftp-session-label').textContent = 'SSH: ' + connectionId;
+	try {
+		const result = await SFTPOpen({ connectionId });
 
-  try {
+		sftpSessionId = result.sessionId || result.SessionID;
 
-    const result = await SFTPOpen({ connectionId });
+		sftpNavigate("/");
+	} catch (err) {
+		showToast("Failed to open SFTP: " + err, "error");
 
-    sftpSessionId = result.sessionId || result.SessionID;
-
-    sftpNavigate('/');
-
-  } catch (err) {
-
-    showToast('Failed to open SFTP: ' + err, 'error');
-
-    closeSFTPBrowser();
-
-  }
-
+		closeSFTPBrowser();
+	}
 }
 
 function closeSFTPBrowser() {
+	document.getElementById("sftp-dialog").classList.remove("active");
 
-  document.getElementById('sftp-dialog').classList.remove('active');
+	if (sftpSessionId) {
+		SFTPClose(sftpSessionId).catch(() => {});
 
-  if (sftpSessionId) {
+		sftpSessionId = null;
+	}
 
-    SFTPClose(sftpSessionId).catch(() => {});
+	const t = getActiveTab();
 
-    sftpSessionId = null;
-
-  }
-
-  const t = getActiveTab();
-
-  if (t) t.term.focus();
-
+	if (t) t.term.focus();
 }
 
 async function sftpNavigate(path) {
+	if (!sftpSessionId) return;
 
-  if (!sftpSessionId) return;
+	if (!path) path = sftpCurrentPath;
 
-  if (!path) path = sftpCurrentPath;
+	sftpCurrentPath = path;
 
-  sftpCurrentPath = path;
+	document.getElementById("sftp-path").value = path;
 
-  document.getElementById('sftp-path').value = path;
+	const container = document.getElementById("sftp-file-list");
 
-  const container = document.getElementById('sftp-file-list');
+	container.innerHTML =
+		'<div style="padding:20px;text-align:center;color:#666;">Loading...</div>';
 
-  container.innerHTML = '<div style="padding:20px;text-align:center;color:#666;">Loading...</div>';
+	try {
+		const files = await SFTPReadDir(sftpSessionId, path);
 
-  try {
+		sftpFileData = files || [];
 
-    const files = await SFTPReadDir(sftpSessionId, path);
+		// Sort: directories first, then files, alphabetically
 
-    sftpFileData = files || [];
+		sftpFileData.sort((a, b) => {
+			const aDir = a.IsDir || a.isdir || false;
 
-    // Sort: directories first, then files, alphabetically
+			const bDir = b.IsDir || b.isdir || false;
 
-    sftpFileData.sort((a, b) => {
+			if (aDir && !bDir) return -1;
 
-      const aDir = a.IsDir || a.isdir || false;
+			if (!aDir && bDir) return 1;
 
-      const bDir = b.IsDir || b.isdir || false;
+			return (a.Name || a.name || "").localeCompare(b.Name || b.name || "");
+		});
 
-      if (aDir && !bDir) return -1;
-
-      if (!aDir && bDir) return 1;
-
-      return (a.Name || a.name || '').localeCompare(b.Name || b.name || '');
-
-    });
-
-    renderSFTPList();
-
-  } catch (err) {
-
-    container.innerHTML = '<div style="padding:20px;text-align:center;color:#f44747;">Error: ' + err + '</div>';
-
-  }
-
+		renderSFTPList();
+	} catch (err) {
+		container.innerHTML =
+			'<div style="padding:20px;text-align:center;color:#f44747;">Error: ' +
+			err +
+			"</div>";
+	}
 }
 
 function renderSFTPList() {
+	const container = document.getElementById("sftp-file-list");
 
-  const container = document.getElementById('sftp-file-list');
+	if (sftpFileData.length === 0) {
+		container.innerHTML =
+			'<div style="padding:20px;text-align:center;color:#666;">Empty directory</div>';
 
-  if (sftpFileData.length === 0) {
+		return;
+	}
 
-    container.innerHTML = '<div style="padding:20px;text-align:center;color:#666;">Empty directory</div>';
+	let html = "";
 
-    return;
+	sftpFileData.forEach((f, i) => {
+		const name = f.Name || f.name || "unknown";
 
-  }
+		const isDir = f.IsDir || f.isdir || false;
 
-  let html = '';
+		const size = f.Size || f.size || 0;
 
-  sftpFileData.forEach((f, i) => {
+		const modTime = f.ModTime || f.modTime || "";
 
-    const name = f.Name || f.name || 'unknown';
+		const perm = f.Mode || f.mode || "";
 
-    const isDir = f.IsDir || f.isdir || false;
+		const icon = isDir ? "\ud83d\udcc1" : "\ud83d\udcc4";
 
-    const size = f.Size || f.size || 0;
+		const sizeStr = isDir ? "--" : formatBytes(size);
 
-    const modTime = f.ModTime || f.modTime || '';
+		const selected = sftpSelectedFile === name;
 
-    const perm = f.Mode || f.mode || '';
+		html +=
+			'<div class="sftp-file-item' +
+			(selected ? " selected" : "") +
+			'" data-idx="' +
+			i +
+			'">' +
+			'<span class="sftp-icon">' +
+			icon +
+			"</span>" +
+			'<span class="sftp-name">' +
+			name +
+			"</span>" +
+			'<span class="sftp-size">' +
+			sizeStr +
+			"</span>" +
+			'<span class="sftp-perm">' +
+			perm +
+			"</span>" +
+			"</div>";
+	});
 
-    const icon = isDir ? '\ud83d\udcc1' : '\ud83d\udcc4';
+	container.innerHTML = html;
 
-    const sizeStr = isDir ? '--' : formatBytes(size);
+	container.querySelectorAll(".sftp-file-item").forEach((el) => {
+		el.onclick = () => {
+			const idx = parseInt(el.dataset.idx);
 
-    const selected = sftpSelectedFile === name;
+			const f = sftpFileData[idx];
 
-    html += '<div class="sftp-file-item' + (selected ? ' selected' : '') + '" data-idx="' + i + '">'
+			const name = f.Name || f.name;
 
-      + '<span class="sftp-icon">' + icon + '</span>'
+			const isDir = f.IsDir || f.isdir || false;
 
-      + '<span class="sftp-name">' + name + '</span>'
+			if (isDir) {
+				sftpNavigate(sftpCurrentPath.replace(/\/$/, "") + "/" + name);
+			} else {
+				sftpSelectedFile = name;
 
-      + '<span class="sftp-size">' + sizeStr + '</span>'
+				renderSFTPList();
+			}
+		};
 
-      + '<span class="sftp-perm">' + perm + '</span>'
+		el.ondblclick = () => {
+			const idx = parseInt(el.dataset.idx);
 
-      + '</div>';
+			const f = sftpFileData[idx];
 
-  });
+			const name = f.Name || f.name;
 
-  container.innerHTML = html;
+			const isDir = f.IsDir || f.isdir || false;
 
-  container.querySelectorAll('.sftp-file-item').forEach(el => {
+			if (isDir) {
+				sftpNavigate(sftpCurrentPath.replace(/\/$/, "") + "/" + name);
+			} else {
+				sftpDownloadFile(sftpCurrentPath.replace(/\/$/, "") + "/" + name, name);
+			}
+		};
 
-    el.onclick = () => {
+		el.oncontextmenu = (e) => {
+			e.preventDefault();
 
-      const idx = parseInt(el.dataset.idx);
+			const idx = parseInt(el.dataset.idx);
 
-      const f = sftpFileData[idx];
+			sftpSelectedFile = sftpFileData[idx].Name || sftpFileData[idx].name;
 
-      const name = f.Name || f.name;
+			renderSFTPList();
 
-      const isDir = f.IsDir || f.isdir || false;
-
-      if (isDir) {
-
-        sftpNavigate(sftpCurrentPath.replace(/\/$/, '') + '/' + name);
-
-      } else {
-
-        sftpSelectedFile = name;
-
-        renderSFTPList();
-
-      }
-
-    };
-
-    el.ondblclick = () => {
-
-      const idx = parseInt(el.dataset.idx);
-
-      const f = sftpFileData[idx];
-
-      const name = f.Name || f.name;
-
-      const isDir = f.IsDir || f.isdir || false;
-
-      if (isDir) {
-
-        sftpNavigate(sftpCurrentPath.replace(/\/$/, '') + '/' + name);
-
-      } else {
-
-        sftpDownloadFile(sftpCurrentPath.replace(/\/$/, '') + '/' + name, name);
-
-      }
-
-    };
-
-    el.oncontextmenu = (e) => {
-
-      e.preventDefault();
-
-      const idx = parseInt(el.dataset.idx);
-
-      sftpSelectedFile = (sftpFileData[idx].Name || sftpFileData[idx].name);
-
-      renderSFTPList();
-
-      showSFTPContextMenu(e, sftpFileData[idx]);
-
-    };
-
-  });
-
+			showSFTPContextMenu(e, sftpFileData[idx]);
+		};
+	});
 }
 
 async function sftpGoUp() {
+	if (sftpCurrentPath === "/") return;
 
-  if (sftpCurrentPath === '/') return;
+	const parts = sftpCurrentPath.replace(/\/$/, "").split("/");
 
-  const parts = sftpCurrentPath.replace(/\/$/, '').split('/');
+	parts.pop();
 
-  parts.pop();
-
-  sftpNavigate(parts.length ? parts.join('/') : '/');
-
+	sftpNavigate(parts.length ? parts.join("/") : "/");
 }
 
 async function sftpMkdir() {
+	const name = prompt("New folder name:");
 
-  const name = prompt('New folder name:');
+	if (!name) return;
 
-  if (!name) return;
+	try {
+		const path = sftpCurrentPath.replace(/\/$/, "") + "/" + name;
 
-  try {
+		await SFTPMkdir(sftpSessionId, path);
 
-    const path = sftpCurrentPath.replace(/\/$/, '') + '/' + name;
+		showToast("Folder created: " + name, "success");
 
-    await SFTPMkdir(sftpSessionId, path);
-
-    showToast('Folder created: ' + name, 'success');
-
-    sftpNavigate(sftpCurrentPath);
-
-  } catch (err) {
-
-    showToast('Failed to create folder: ' + err, 'error');
-
-  }
-
+		sftpNavigate(sftpCurrentPath);
+	} catch (err) {
+		showToast("Failed to create folder: " + err, "error");
+	}
 }
 
 async function sftpDeleteSelected() {
+	if (!sftpSelectedFile) {
+		showToast("Select a file first", "info");
+		return;
+	}
 
-  if (!sftpSelectedFile) { showToast('Select a file first', 'info'); return; }
+	if (!confirm("Delete " + sftpSelectedFile + "?")) return;
 
-  if (!confirm('Delete ' + sftpSelectedFile + '?')) return;
+	try {
+		const path = sftpCurrentPath.replace(/\/$/, "") + "/" + sftpSelectedFile;
 
-  try {
+		const file = sftpFileData.find(
+			(f) => (f.Name || f.name) === sftpSelectedFile,
+		);
 
-    const path = sftpCurrentPath.replace(/\/$/, '') + '/' + sftpSelectedFile;
+		const isDir = file && (file.IsDir || file.isdir || false);
 
-    const file = sftpFileData.find(f => (f.Name || f.name) === sftpSelectedFile);
+		if (isDir) {
+			await SFTPRmdir(sftpSessionId, path);
+		} else {
+			await SFTPDelete(sftpSessionId, path);
+		}
 
-    const isDir = file && (file.IsDir || file.isdir || false);
+		showToast("Deleted: " + sftpSelectedFile, "success");
 
-    if (isDir) {
+		sftpSelectedFile = null;
 
-      await SFTPRmdir(sftpSessionId, path);
-
-    } else {
-
-      await SFTPDelete(sftpSessionId, path);
-
-    }
-
-    showToast('Deleted: ' + sftpSelectedFile, 'success');
-
-    sftpSelectedFile = null;
-
-    sftpNavigate(sftpCurrentPath);
-
-  } catch (err) {
-
-    showToast('Failed to delete: ' + err, 'error');
-
-  }
-
+		sftpNavigate(sftpCurrentPath);
+	} catch (err) {
+		showToast("Failed to delete: " + err, "error");
+	}
 }
 
 async function sftpDownloadSelected() {
+	if (!sftpSelectedFile) {
+		showToast("Select a file first", "info");
+		return;
+	}
 
-  if (!sftpSelectedFile) { showToast('Select a file first', 'info'); return; }
+	const path = sftpCurrentPath.replace(/\/$/, "") + "/" + sftpSelectedFile;
 
-  const path = sftpCurrentPath.replace(/\/$/, '') + '/' + sftpSelectedFile;
-
-  sftpDownloadFile(path, sftpSelectedFile);
-
+	sftpDownloadFile(path, sftpSelectedFile);
 }
 
 async function sftpDownloadFile(remotePath, fileName) {
+	try {
+		const dir = await SelectDirectory("Choose download folder for " + fileName);
 
-  try {
+		const localPath = dir ? dir.replace(/\/$/, "") + "/" + fileName : fileName;
 
-    const dir = await SelectDirectory('Choose download folder for ' + fileName);
+		const result = await SFTPDownload({
+			sessionId: sftpSessionId,
+			remotePath: remotePath,
+			localPath: localPath,
+		});
 
-    const localPath = (dir ? dir.replace(/\/$/, '') + '/' + fileName : fileName);
-
-    const result = await SFTPDownload({ sessionId: sftpSessionId, remotePath: remotePath, localPath: localPath });
-
-    showToast('Downloaded: ' + fileName + ' -> ' + localPath, 'success');
-
-  } catch (err) { showToast('Download failed: ' + err, 'error'); }
-
+		showToast("Downloaded: " + fileName + " -> " + localPath, "success");
+	} catch (err) {
+		showToast("Download failed: " + err, "error");
+	}
 }
 
 async function sftpUploadFile(event) {
+	const file = event.target.files[0];
 
-  const file = event.target.files[0];
+	if (!file) return;
 
-  if (!file) return;
+	try {
+		const localPath = file.name;
 
-  try {
+		const remotePath = sftpCurrentPath.replace(/\/$/, "") + "/" + file.name;
 
-    const localPath = file.name;
+		// Read file as base64
 
-    const remotePath = sftpCurrentPath.replace(/\/$/, '') + '/' + file.name;
+		const reader = new FileReader();
 
-    // Read file as base64
+		reader.onload = async () => {
+			const b64 = reader.result.split(",")[1];
 
-    const reader = new FileReader();
+			try {
+				await SFTPUpload({
+					sessionId: sftpSessionId,
 
-    reader.onload = async () => {
+					remotePath: remotePath,
 
-      const b64 = reader.result.split(',')[1];
+					data: b64,
+				});
 
-      try {
+				showToast("Uploaded: " + file.name, "success");
 
-        await SFTPUpload({
+				sftpNavigate(sftpCurrentPath);
+			} catch (err) {
+				showToast("Upload failed: " + err, "error");
+			}
+		};
 
-          sessionId: sftpSessionId,
+		reader.readAsDataURL(file);
+	} catch (err) {
+		showToast("Upload failed: " + err, "error");
+	}
 
-          remotePath: remotePath,
-
-          data: b64
-
-        });
-
-        showToast('Uploaded: ' + file.name, 'success');
-
-        sftpNavigate(sftpCurrentPath);
-
-      } catch (err) {
-
-        showToast('Upload failed: ' + err, 'error');
-
-      }
-
-    };
-
-    reader.readAsDataURL(file);
-
-  } catch (err) {
-
-    showToast('Upload failed: ' + err, 'error');
-
-  }
-
-  event.target.value = '';
-
+	event.target.value = "";
 }
 
 function showSFTPContextMenu(e, file) {
+	document.querySelectorAll(".context-menu").forEach((m) => m.remove());
 
-  document.querySelectorAll('.context-menu').forEach(m => m.remove());
+	const name = file.Name || file.name;
 
-  const name = file.Name || file.name;
+	const isDir = file.IsDir || file.isdir || false;
 
-  const isDir = file.IsDir || file.isdir || false;
+	const menu = document.createElement("div");
 
-  const menu = document.createElement('div');
+	menu.className = "context-menu";
 
-  menu.className = 'context-menu';
+	let items =
+		'<div class="context-menu-item" data-action="download">\u2b07 Download</div>';
 
-  let items = '<div class="context-menu-item" data-action="download">\u2b07 Download</div>';
+	if (!isDir) {
+		items +=
+			'<div class="context-menu-item" data-action="rename">\u2702 Rename</div>';
+	}
 
-  if (!isDir) {
+	items +=
+		'<div class="context-menu-item" data-action="delete" style="color:#f44747;">\ud83d\uddd1 Delete</div>';
 
-    items += '<div class="context-menu-item" data-action="rename">\u2702 Rename</div>';
+	menu.innerHTML = items;
 
-  }
+	document.body.appendChild(menu);
 
-  items += '<div class="context-menu-item" data-action="delete" style="color:#f44747;">\ud83d\uddd1 Delete</div>';
+	if (tab.isSSH && tab.sshConnectionId) {
+		const sftpItem = menu.querySelector('[data-action="sftp"]');
 
-  menu.innerHTML = items;
+		const fwdItem = menu.querySelector('[data-action="forward"]');
 
-  document.body.appendChild(menu);
+		if (sftpItem) sftpItem.style.display = "";
 
-  if (tab.isSSH && tab.sshConnectionId) {
+		if (fwdItem) fwdItem.style.display = "";
+	}
 
-    const sftpItem = menu.querySelector('[data-action="sftp"]');
+	if (tab.isSSH && tab.sshConnectionId) {
+		const sftpItem = menu.querySelector('[data-action="sftp"]');
 
-    const fwdItem = menu.querySelector('[data-action="forward"]');
+		const fwdItem = menu.querySelector('[data-action="forward"]');
 
-    if (sftpItem) sftpItem.style.display = '';
+		if (sftpItem) sftpItem.style.display = "";
 
-    if (fwdItem) fwdItem.style.display = '';
+		if (fwdItem) fwdItem.style.display = "";
+	}
 
-  }
+	menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + "px";
 
-  if (tab.isSSH && tab.sshConnectionId) {
+	menu.style.top = Math.min(e.clientY, window.innerHeight - 150) + "px";
 
-    const sftpItem = menu.querySelector('[data-action="sftp"]');
+	const close = () => menu.remove();
 
-    const fwdItem = menu.querySelector('[data-action="forward"]');
+	menu.onclick = async (ev) => {
+		const item = ev.target.closest(".context-menu-item");
 
-    if (sftpItem) sftpItem.style.display = '';
+		if (!item) return;
 
-    if (fwdItem) fwdItem.style.display = '';
+		close();
 
-  }
+		const action = item.dataset.action;
 
-  menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+		const path = sftpCurrentPath.replace(/\/$/, "") + "/" + name;
 
-  menu.style.top = Math.min(e.clientY, window.innerHeight - 150) + 'px';
+		if (action === "download") {
+			await sftpDownloadFile(path, name);
+		} else if (action === "rename") {
+			const newName = prompt("New name:", name);
 
-  const close = () => menu.remove();
+			if (newName && newName !== name) {
+				const newPath = sftpCurrentPath.replace(/\/$/, "") + "/" + newName;
 
-  menu.onclick = async (ev) => {
+				try {
+					await SFTPRename(sftpSessionId, path, newPath);
 
-    const item = ev.target.closest('.context-menu-item');
+					showToast("Renamed to " + newName, "success");
 
-    if (!item) return;
+					sftpNavigate(sftpCurrentPath);
+				} catch (err) {
+					showToast("Rename failed: " + err, "error");
+				}
+			}
+		} else if (action === "delete") {
+			if (!confirm("Delete " + name + "?")) return;
 
-    close();
+			try {
+				if (isDir) await SFTPRmdir(sftpSessionId, path);
+				else await SFTPDelete(sftpSessionId, path);
 
-    const action = item.dataset.action;
+				showToast("Deleted: " + name, "success");
 
-    const path = sftpCurrentPath.replace(/\/$/, '') + '/' + name;
+				sftpSelectedFile = null;
 
-    if (action === 'download') {
+				sftpNavigate(sftpCurrentPath);
+			} catch (err) {
+				showToast("Delete failed: " + err, "error");
+			}
+		}
+	};
 
-      await sftpDownloadFile(path, name);
-
-    } else if (action === 'rename') {
-
-      const newName = prompt('New name:', name);
-
-      if (newName && newName !== name) {
-
-        const newPath = sftpCurrentPath.replace(/\/$/, '') + '/' + newName;
-
-        try {
-
-          await SFTPRename(sftpSessionId, path, newPath);
-
-          showToast('Renamed to ' + newName, 'success');
-
-          sftpNavigate(sftpCurrentPath);
-
-        } catch (err) { showToast('Rename failed: ' + err, 'error'); }
-
-      }
-
-    } else if (action === 'delete') {
-
-      if (!confirm('Delete ' + name + '?')) return;
-
-      try {
-
-        if (isDir) await SFTPRmdir(sftpSessionId, path);
-
-        else await SFTPDelete(sftpSessionId, path);
-
-        showToast('Deleted: ' + name, 'success');
-
-        sftpSelectedFile = null;
-
-        sftpNavigate(sftpCurrentPath);
-
-      } catch (err) { showToast('Delete failed: ' + err, 'error'); }
-
-    }
-
-  };
-
-  setTimeout(() => document.addEventListener('click', close, { once: true }), 10);
-
+	setTimeout(
+		() => document.addEventListener("click", close, { once: true }),
+		10,
+	);
 }
 
 function formatBytes(bytes) {
+	if (bytes === 0) return "0 B";
 
-  if (bytes === 0) return '0 B';
+	const k = 1024;
 
-  const k = 1024;
+	const sizes = ["B", "KB", "MB", "GB", "TB"];
 
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+	const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-  return parseFloat((bytes / k ** i).toFixed(1)) + ' ' + sizes[i];
-
+	return parseFloat((bytes / k ** i).toFixed(1)) + " " + sizes[i];
 }
 
 // ===== TERMINAL TOOLBAR =====
 
 function buildToolbar(tab) {
+	let html = '<div class="terminal-toolbar" id="toolbar-' + tab.id + '">';
 
-  let html = '<div class="terminal-toolbar" id="toolbar-' + tab.id + '">';
+	if (tab.isSSH) {
+		html += '<span class="toolbar-badge ssh">SSH</span>';
 
-  if (tab.isSSH) {
+		html +=
+			'<span class="toolbar-info">' + escHtml(tab.title || "ssh") + "</span>";
 
-    html += '<span class="toolbar-badge ssh">SSH</span>';
+		html +=
+			'<button class="toolbar-btn" onclick="openSFTPBrowser(getActiveTab().sshConnectionId)" title="SFTP">U0001f4c2</button>';
 
-    html += '<span class="toolbar-info">' + escHtml(tab.title || 'ssh') + '</span>';
+		html +=
+			'<button class="toolbar-btn" onclick="openForwardDialog(getActiveTab().sshConnectionId)" title="Forward">U0001f504</button>';
+	} else if (tab.isSerial) {
+		html += '<span class="toolbar-badge serial">SER</span>';
 
-    html += '<button class="toolbar-btn" onclick="openSFTPBrowser(getActiveTab().sshConnectionId)" title="SFTP">U0001f4c2</button>';
+		html +=
+			'<span class="toolbar-info">' +
+			escHtml(tab.title || "serial") +
+			"</span>";
+	} else if (tab.isTelnet) {
+		html += '<span class="toolbar-badge telnet">TEL</span>';
 
-    html += '<button class="toolbar-btn" onclick="openForwardDialog(getActiveTab().sshConnectionId)" title="Forward">U0001f504</button>';
+		html +=
+			'<span class="toolbar-info">' +
+			escHtml(tab.title || "telnet") +
+			"</span>";
+	} else {
+		html += '<span class="toolbar-badge local">LOCAL</span>';
 
-  } else if (tab.isSerial) {
+		html +=
+			'<span class="toolbar-info">' + escHtml(tab.title || "shell") + "</span>";
+	}
 
-    html += '<span class="toolbar-badge serial">SER</span>';
+	html += '<div class="toolbar-spacer"></div>';
 
-    html += '<span class="toolbar-info">' + escHtml(tab.title || 'serial') + '</span>';
+	html +=
+		'<button class="toolbar-btn" onclick="getActiveTab().copySelection()" title="Copy">C</button>';
 
-  } else if (tab.isTelnet) {
+	html +=
+		'<button class="toolbar-btn" onclick="getActiveTab().pasteFromClipboard()" title="Paste">P</button>';
 
-    html += '<span class="toolbar-badge telnet">TEL</span>';
+	html +=
+		'<button class="toolbar-btn" onclick="toggleFind()" title="Find">F</button>';
 
-    html += '<span class="toolbar-info">' + escHtml(tab.title || 'telnet') + '</span>';
+	html +=
+		'<button class="toolbar-btn" onclick="clearTerminal()" title="Clear">X</button>';
 
-  } else {
+	html +=
+		'<button class="toolbar-btn toolbar-pin" data-tab-id="' +
+		tab.id +
+		'" onclick="toggleToolbarPin(this.dataset.tabId)" title="Pin">Pin</button>';
 
-    html += '<span class="toolbar-badge local">LOCAL</span>';
+	html += "</div>";
 
-    html += '<span class="toolbar-info">' + escHtml(tab.title || 'shell') + '</span>';
-
-  }
-
-  html += '<div class="toolbar-spacer"></div>';
-
-  html += '<button class="toolbar-btn" onclick="getActiveTab().copySelection()" title="Copy">C</button>';
-
-  html += '<button class="toolbar-btn" onclick="getActiveTab().pasteFromClipboard()" title="Paste">P</button>';
-
-  html += '<button class="toolbar-btn" onclick="toggleFind()" title="Find">F</button>';
-
-  html += '<button class="toolbar-btn" onclick="clearTerminal()" title="Clear">X</button>';
-
-  html += '<button class="toolbar-btn toolbar-pin" data-tab-id="' + tab.id + '" onclick="toggleToolbarPin(this.dataset.tabId)" title="Pin">Pin</button>';
-
-  html += '</div>';
-
-  return html;
-
+	return html;
 }
 
 function escHtml(s) {
-
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
+	return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function updateToolbar(tab) {
+	if (!tab || !tab.wrapper) return;
 
-  if (!tab || !tab.wrapper) return;
+	const toolbar = tab.wrapper.querySelector(".terminal-toolbar");
 
-  const toolbar = tab.wrapper.querySelector('.terminal-toolbar');
+	const div = document.createElement("div");
 
-  const div = document.createElement('div');
+	div.innerHTML = buildToolbar(tab);
 
-  div.innerHTML = buildToolbar(tab);
+	const newToolbar = div.firstElementChild;
 
-  const newToolbar = div.firstElementChild;
-
-  if (toolbar) toolbar.replaceWith(newToolbar);
-
-  else tab.wrapper.insertBefore(newToolbar, tab.wrapper.firstChild);
-
+	if (toolbar) toolbar.replaceWith(newToolbar);
+	else tab.wrapper.insertBefore(newToolbar, tab.wrapper.firstChild);
 }
 
 function toggleToolbarPin(tabId) {
+	const tab = tabs.find((t) => t.id === tabId);
 
-  const tab = tabs.find(t => t.id === tabId);
+	if (!tab) return;
 
-  if (!tab) return;
+	tab.pinToolbar = !tab.pinToolbar;
 
-  tab.pinToolbar = !tab.pinToolbar;
+	const toolbar = tab.wrapper.querySelector(".terminal-toolbar");
 
-  const toolbar = tab.wrapper.querySelector('.terminal-toolbar');
+	if (toolbar) {
+		toolbar.classList.toggle("pinned", tab.pinToolbar);
 
-  if (toolbar) {
-
-    toolbar.classList.toggle('pinned', tab.pinToolbar);
-
-    toolbar.classList.toggle('unpinned', !tab.pinToolbar);
-
-  }
-
+		toolbar.classList.toggle("unpinned", !tab.pinToolbar);
+	}
 }
 
 function clearTerminal() {
+	const tab = getActiveTab();
 
-  const tab = getActiveTab();
-
-  if (tab) { tab.term.clear(); tab.term.focus(); }
-
+	if (tab) {
+		tab.term.clear();
+		tab.term.focus();
+	}
 }
 
 function showToolbarForTab(tab) {
+	if (!tab || !tab.wrapper || tab.pinToolbar) return;
 
-  if (!tab || !tab.wrapper || tab.pinToolbar) return;
+	const toolbar = tab.wrapper.querySelector(".terminal-toolbar");
 
-  const toolbar = tab.wrapper.querySelector('.terminal-toolbar');
-
-  if (toolbar) toolbar.classList.add('visible');
-
+	if (toolbar) toolbar.classList.add("visible");
 }
 
 function hideToolbarForTab(tab) {
+	if (!tab || !tab.wrapper || tab.pinToolbar) return;
 
-  if (!tab || !tab.wrapper || tab.pinToolbar) return;
+	const toolbar = tab.wrapper.querySelector(".terminal-toolbar");
 
-  const toolbar = tab.wrapper.querySelector('.terminal-toolbar');
-
-  if (toolbar) toolbar.classList.remove('visible');
-
+	if (toolbar) toolbar.classList.remove("visible");
 }
 
 // ===== COMMAND PALETTE =====
 
 const PALETTE_COMMANDS = [
+	{
+		id: "new-tab",
+		label: "New Tab",
+		icon: "+",
+		action: () => {
+			newTab();
+		},
+	},
 
-  { id: 'new-tab', label: 'New Tab', icon: '+', action: () => { newTab(); } },
+	{
+		id: "close-tab",
+		label: "Close Tab",
+		icon: "x",
+		action: () => {
+			var t = getActiveTab();
+			if (t) t.close();
+		},
+	},
 
-  { id: 'close-tab', label: 'Close Tab', icon: 'x', action: () => { var t = getActiveTab(); if (t) t.close(); } },
+	{
+		id: "ssh-connect",
+		label: "SSH Connect...",
+		icon: "#",
+		action: () => {
+			openSSHDialog();
+		},
+	},
 
-  { id: 'ssh-connect', label: 'SSH Connect...', icon: '#', action: () => { openSSHDialog(); } },
+	{
+		id: "serial-connect",
+		label: "Serial Port...",
+		icon: "~",
+		action: () => {
+			openSerialDialog();
+		},
+	},
 
-  { id: 'serial-connect', label: 'Serial Port...', icon: '~', action: () => { openSerialDialog(); } },
+	{
+		id: "telnet-connect",
+		label: "Telnet Connect...",
+		icon: "=",
+		action: () => {
+			openTelnetDialog();
+		},
+	},
 
-  { id: 'telnet-connect', label: 'Telnet Connect...', icon: '=', action: () => { openTelnetDialog(); } },
+	{
+		id: "import-ssh-config",
+		label: "Import SSH Config",
+		icon: "@",
+		action: () => {
+			importSSHConfig();
+		},
+	},
 
-  { id: 'import-ssh-config', label: 'Import SSH Config', icon: '@', action: () => { importSSHConfig(); } },
+	{
+		id: "toggle-settings",
+		label: "Settings",
+		icon: "*",
+		action: () => {
+			toggleSettings();
+		},
+	},
 
-  { id: 'toggle-settings', label: 'Settings', icon: '*', action: () => { toggleSettings(); } },
+	{
+		id: "split-horizontal",
+		label: "Split Horizontal",
+		icon: "-",
+		action: () => {
+			splitPane("horizontal");
+		},
+	},
 
-  { id: 'split-horizontal', label: 'Split Horizontal', icon: '-', action: () => { splitPane('horizontal'); } },
+	{
+		id: "split-vertical",
+		label: "Split Vertical",
+		icon: "|",
+		action: () => {
+			splitPane("vertical");
+		},
+	},
 
-  { id: 'split-vertical', label: 'Split Vertical', icon: '|', action: () => { splitPane('vertical'); } },
+	{
+		id: "find",
+		label: "Find in Terminal",
+		icon: "?",
+		action: () => {
+			toggleFind();
+		},
+	},
 
-  { id: 'find', label: 'Find in Terminal', icon: '?', action: () => { toggleFind(); } },
+	{
+		id: "clear-terminal",
+		label: "Clear Terminal",
+		icon: "!",
+		action: () => {
+			clearTerminal();
+		},
+	},
 
-  { id: 'clear-terminal', label: 'Clear Terminal', icon: '!', action: () => { clearTerminal(); } },
+	{
+		id: "copy",
+		label: "Copy Selection",
+		icon: "C",
+		action: () => {
+			var t = getActiveTab();
+			if (t) t.copySelection();
+		},
+	},
 
-  { id: 'copy', label: 'Copy Selection', icon: 'C', action: () => { var t = getActiveTab(); if (t) t.copySelection(); } },
+	{
+		id: "paste",
+		label: "Paste from Clipboard",
+		icon: "V",
+		action: () => {
+			var t = getActiveTab();
+			if (t) t.pasteFromClipboard();
+		},
+	},
 
-  { id: 'paste', label: 'Paste from Clipboard', icon: 'V', action: () => { var t = getActiveTab(); if (t) t.pasteFromClipboard(); } },
+	{
+		id: "zoom-in",
+		label: "Increase Font Size",
+		icon: "+",
+		action: () => {
+			fontSize = Math.min(32, fontSize + 1);
+			tabs.forEach((t) => {
+				t.term.options.fontSize = fontSize;
+			});
+			showToast("Font: " + fontSize, "info");
+		},
+	},
 
-  { id: 'zoom-in', label: 'Increase Font Size', icon: '+', action: () => { fontSize = Math.min(32, fontSize + 1); tabs.forEach((t) => { t.term.options.fontSize = fontSize; }); showToast('Font: ' + fontSize, 'info'); } },
+	{
+		id: "zoom-out",
+		label: "Decrease Font Size",
+		icon: "-",
+		action: () => {
+			fontSize = Math.max(8, fontSize - 1);
+			tabs.forEach((t) => {
+				t.term.options.fontSize = fontSize;
+			});
+			showToast("Font: " + fontSize, "info");
+		},
+	},
 
-  { id: 'zoom-out', label: 'Decrease Font Size', icon: '-', action: () => { fontSize = Math.max(8, fontSize - 1); tabs.forEach((t) => { t.term.options.fontSize = fontSize; }); showToast('Font: ' + fontSize, 'info'); } },
+	{
+		id: "zoom-reset",
+		label: "Reset Font Size",
+		icon: "0",
+		action: () => {
+			fontSize = 14;
+			tabs.forEach((t) => {
+				t.term.options.fontSize = fontSize;
+			});
+			showToast("Font: 14", "info");
+		},
+	},
 
-  { id: 'zoom-reset', label: 'Reset Font Size', icon: '0', action: () => { fontSize = 14; tabs.forEach((t) => { t.term.options.fontSize = fontSize; }); showToast('Font: 14', 'info'); } },
+	{
+		id: "toggle-fullscreen",
+		label: "Toggle Fullscreen",
+		icon: "F",
+		action: () => {
+			if (document.fullscreenElement) document.exitFullscreen();
+			else document.documentElement.requestFullscreen();
+		},
+	},
 
-  { id: 'toggle-fullscreen', label: 'Toggle Fullscreen', icon: 'F', action: () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } },
+	{
+		id: "sftp-browser",
+		label: "SFTP File Browser",
+		icon: "F",
+		action: () => {
+			var t = getActiveTab();
+			if (t && t.isSSH) openSFTPBrowser(t.sshConnectionId);
+			else showToast("Requires active SSH tab", "info");
+		},
+	},
 
-  { id: 'sftp-browser', label: 'SFTP File Browser', icon: 'F', action: () => { var t = getActiveTab(); if (t && t.isSSH) openSFTPBrowser(t.sshConnectionId); else showToast('Requires active SSH tab', 'info'); } },
+	{
+		id: "port-forward",
+		label: "Port Forwarding",
+		icon: "P",
+		action: () => {
+			var t = getActiveTab();
+			if (t && t.isSSH) openForwardDialog(t.sshConnectionId);
+			else showToast("Requires active SSH tab", "info");
+		},
+	},
 
-  { id: 'port-forward', label: 'Port Forwarding', icon: 'P', action: () => { var t = getActiveTab(); if (t && t.isSSH) openForwardDialog(t.sshConnectionId); else showToast('Requires active SSH tab', 'info'); } },
+	{
+		id: "save-session",
+		label: "Save Session State",
+		icon: "S",
+		action: () => {
+			saveSession();
+		},
+	},
 
-  { id: 'save-session', label: 'Save Session State', icon: 'S', action: () => { saveSession(); } },
+	{
+		id: "reload-colors",
+		label: "Reload Color Schemes",
+		icon: "R",
+		action: () => {
+			reloadColorSchemes();
+		},
+	},
 
-  { id: 'reload-colors', label: 'Reload Color Schemes', icon: 'R', action: () => { reloadColorSchemes(); } },
+	{
+		id: "tab-search",
+		label: "Search Tabs...",
+		icon: "T",
+		action: () => {
+			toggleTabSearch();
+		},
+	},
 
-  { id: 'tab-search', label: 'Search Tabs...', icon: 'T', action: () => { toggleTabSearch(); } },
+	{
+		id: "export-profiles",
+		label: "Export Profiles...",
+		icon: "↑",
+		action: () => {
+			exportProfiles();
+		},
+	},
 
-  { id: 'export-profiles', label: 'Export Profiles...', icon: '↑', action: () => { exportProfiles(); } },
+	{
+		id: "import-profiles",
+		label: "Import Profiles...",
+		icon: "↓",
+		action: () => {
+			importProfiles();
+		},
+	},
 
-  { id: 'import-profiles', label: 'Import Profiles...', icon: '↓', action: () => { importProfiles(); } },
+	{
+		id: "open-settings",
+		label: "Open Settings",
+		icon: "⚙",
+		action: () => {
+			openSettingsPanel();
+		},
+	},
 
-    { id: 'open-settings', label: 'Open Settings', icon: '⚙', action: () => { openSettingsPanel(); } },
+	{
+		id: "connection-log",
+		label: "View Connection Log",
+		icon: "📋",
+		action: () => {
+			showConnectionLog();
+		},
+	},
 
-  { id: 'connection-log', label: 'View Connection Log', icon: '📋', action: () => { showConnectionLog(); } },
+	{
+		id: "always-on-top",
+		label: "Toggle Always on Top",
+		icon: "📌",
+		action: () => {
+			toggleAlwaysOnTop();
+		},
+	},
 
-  { id: 'always-on-top', label: 'Toggle Always on Top', icon: '📌', action: () => { toggleAlwaysOnTop(); } },
+	{
+		id: "about",
+		label: "About Tabby Go",
+		icon: "i",
+		action: () => {
+			showAboutDialog();
+		},
+	},
 
-{ id: 'about', label: 'About Tabby Go', icon: 'i', action: () => { showAboutDialog(); } },
+	{
+		id: "run-snippet",
+		label: "Run Snippet...",
+		icon: ">",
+		action: () => {
+			runSnippet();
+		},
+	},
 
-  { id: 'run-snippet', label: 'Run Snippet...', icon: '>', action: () => { runSnippet(); } },
+	{
+		id: "save-snippet",
+		label: "Save Snippet...",
+		icon: "S",
+		action: () => {
+			saveSnippet();
+		},
+	},
 
-  { id: 'save-snippet', label: 'Save Snippet...', icon: 'S', action: () => { saveSnippet(); } },
+	{
+		id: "check-updates",
+		label: "Check for Updates",
+		icon: "↑",
+		action: () => {
+			checkForUpdates();
+		},
+	},
 
-  { id: 'check-updates', label: 'Check for Updates', icon: '↑', action: () => { checkForUpdates(); } },
+	{
+		id: "audit-log",
+		label: "Open Audit Log",
+		icon: "A",
+		action: () => {
+			openAuditLog();
+		},
+	},
 
-  { id: 'audit-log', label: 'Open Audit Log', icon: 'A', action: () => { openAuditLog(); } },
+	{
+		id: "close-all-tabs",
+		label: "Close All Tabs",
+		icon: "X",
+		action: () => {
+			closeAllTabs();
+		},
+	},
 
-  { id: 'close-all-tabs', label: 'Close All Tabs', icon: 'X', action: () => { closeAllTabs(); } },
+	{
+		id: "close-other-tabs",
+		label: "Close Other Tabs",
+		icon: "X",
+		action: () => {
+			closeOtherTabs();
+		},
+	},
 
-  { id: 'close-other-tabs', label: 'Close Other Tabs', icon: 'X', action: () => { closeOtherTabs(); } },
+	{
+		id: "duplicate-profile",
+		label: "Duplicate Active Profile",
+		icon: "D",
+		action: () => {
+			duplicateActiveProfile();
+		},
+	},
 
-  { id: 'duplicate-profile', label: 'Duplicate Active Profile', icon: 'D', action: () => { duplicateActiveProfile(); } },
+	{
+		id: "notifications",
+		label: "Show Notifications",
+		icon: "!",
+		action: () => {
+			showNotificationCenter();
+		},
+	},
 
-  { id: 'notifications', label: 'Show Notifications', icon: '!', action: () => { showNotificationCenter(); } },
+	{
+		id: "custom-css",
+		label: "Edit Custom CSS",
+		icon: "C",
+		action: () => {
+			editCustomCSS();
+		},
+	},
 
-  { id: 'custom-css', label: 'Edit Custom CSS', icon: 'C', action: () => { editCustomCSS(); } },
+	{
+		id: "save-credential",
+		label: "Save Credential to Keychain",
+		icon: "K",
+		action: () => {
+			saveCredentialDialog();
+		},
+	},
 
-  { id: 'save-credential', label: 'Save Credential to Keychain', icon: 'K', action: () => { saveCredentialDialog(); } },
-
-  { id: 'get-credential', label: 'Get Credential from Keychain', icon: 'K', action: () => { getCredentialDialog(); } },
-
+	{
+		id: "get-credential",
+		label: "Get Credential from Keychain",
+		icon: "K",
+		action: () => {
+			getCredentialDialog();
+		},
+	},
 ];
 
 var paletteVisible = false;
@@ -1678,265 +2159,293 @@ var paletteVisible = false;
 var paletteSelectedIdx = 0;
 
 function toggleCommandPalette() {
+	paletteVisible = !paletteVisible;
 
-  paletteVisible = !paletteVisible;
+	var el = document.getElementById("command-palette");
 
-  var el = document.getElementById('command-palette');
+	if (paletteVisible) {
+		el.classList.add("active");
 
-  if (paletteVisible) {
+		var input = document.getElementById("cmd-palette-input");
 
-    el.classList.add('active');
+		input.value = "";
 
-    var input = document.getElementById('cmd-palette-input');
+		input.focus();
 
-    input.value = '';
+		paletteSelectedIdx = 0;
 
-    input.focus();
+		filterCommandPalette();
+	} else {
+		el.classList.remove("active");
 
-    paletteSelectedIdx = 0;
+		var tab = getActiveTab();
 
-    filterCommandPalette();
-
-  } else {
-
-    el.classList.remove('active');
-
-    var tab = getActiveTab();
-
-    if (tab) tab.term.focus();
-
-  }
-
+		if (tab) tab.term.focus();
+	}
 }
 
 function filterCommandPalette() {
+	var query = (
+		document.getElementById("cmd-palette-input").value || ""
+	).toLowerCase();
 
-  var query = (document.getElementById('cmd-palette-input').value || '').toLowerCase();
+	var container = document.getElementById("cmd-palette-items");
 
-  var container = document.getElementById('cmd-palette-items');
+	var filtered = PALETTE_COMMANDS.filter((cmd) =>
+		cmd.label.toLowerCase().includes(query),
+	);
 
-  var filtered = PALETTE_COMMANDS.filter((cmd) => cmd.label.toLowerCase().includes(query));
+	paletteSelectedIdx = 0;
 
-  paletteSelectedIdx = 0;
+	container.innerHTML = filtered
+		.map(
+			(cmd, i) =>
+				'<div class="palette-item' +
+				(i === 0 ? " selected" : "") +
+				'" data-id="' +
+				cmd.id +
+				'">' +
+				'<span class="palette-icon">' +
+				cmd.icon +
+				"</span>" +
+				'<span class="palette-label">' +
+				cmd.label +
+				"</span></div>",
+		)
+		.join("");
 
-  container.innerHTML = filtered.map((cmd, i) => '<div class="palette-item' + (i === 0 ? ' selected' : '') + '" data-id="' + cmd.id + '">' +
-
-      '<span class="palette-icon">' + cmd.icon + '</span>' +
-
-      '<span class="palette-label">' + cmd.label + '</span></div>').join('');
-
-  container.querySelectorAll('.palette-item').forEach((el) => {
-
-    el.onclick = () => { executePaletteCommand(el.dataset.id); };
-
-  });
-
+	container.querySelectorAll(".palette-item").forEach((el) => {
+		el.onclick = () => {
+			executePaletteCommand(el.dataset.id);
+		};
+	});
 }
 
 function handlePaletteKey(e) {
+	var items = document.querySelectorAll(".palette-item");
 
-  var items = document.querySelectorAll('.palette-item');
+	if (e.key === "Escape") {
+		e.preventDefault();
 
-  if (e.key === 'Escape') {
-
-    e.preventDefault();
-
-    toggleCommandPalette();
-
-  } else if (e.key === 'ArrowDown') { e.preventDefault(); paletteSelectedIdx = Math.min(paletteSelectedIdx + 1, items.length - 1); items.forEach((el, i) => { el.classList.toggle('selected', i === paletteSelectedIdx); }); }
-
-  else if (e.key === 'ArrowUp') { e.preventDefault(); paletteSelectedIdx = Math.max(paletteSelectedIdx - 1, 0); items.forEach((el, i) => { el.classList.toggle('selected', i === paletteSelectedIdx); }); }
-
-  else if (e.key === 'Enter') { e.preventDefault(); var sel = items[paletteSelectedIdx]; if (sel) sel.click(); }
-
+		toggleCommandPalette();
+	} else if (e.key === "ArrowDown") {
+		e.preventDefault();
+		paletteSelectedIdx = Math.min(paletteSelectedIdx + 1, items.length - 1);
+		items.forEach((el, i) => {
+			el.classList.toggle("selected", i === paletteSelectedIdx);
+		});
+	} else if (e.key === "ArrowUp") {
+		e.preventDefault();
+		paletteSelectedIdx = Math.max(paletteSelectedIdx - 1, 0);
+		items.forEach((el, i) => {
+			el.classList.toggle("selected", i === paletteSelectedIdx);
+		});
+	} else if (e.key === "Enter") {
+		e.preventDefault();
+		var sel = items[paletteSelectedIdx];
+		if (sel) sel.click();
+	}
 }
 
 function executePaletteCommand(id) {
+	var cmd = PALETTE_COMMANDS.find((c) => c.id === id);
 
-  var cmd = PALETTE_COMMANDS.find((c) => c.id === id);
-
-  if (cmd) { toggleCommandPalette(); cmd.action(); }
-
+	if (cmd) {
+		toggleCommandPalette();
+		cmd.action();
+	}
 }
 
 async function reloadColorSchemes() {
+	try {
+		const schemes = await GetColorSchemes();
 
-  try {
+		if (schemes && schemes.length) {
+			schemes.forEach((s) => {
+				COLOR_SCHEMES[s.Name] = s;
+			});
 
-    const schemes = await GetColorSchemes();
+			schemeNames = schemes.map((s) => s.Name);
 
-    if (schemes && schemes.length) {
-
-      schemes.forEach((s) => { COLOR_SCHEMES[s.Name] = s; });
-
-      schemeNames = schemes.map((s) => s.Name);
-
-      showToast('Loaded ' + schemes.length + ' color schemes', 'success');
-
-    }
-
-  } catch (err) { showToast('Failed to reload schemes: ' + err, 'error'); }
-
+			showToast("Loaded " + schemes.length + " color schemes", "success");
+		}
+	} catch (err) {
+		showToast("Failed to reload schemes: " + err, "error");
+	}
 }
 
 // ===== SSH CONFIG IMPORT =====
 
 async function importSSHConfig() {
+	try {
+		const result = await ImportSSHConfig();
 
-  try {
+		if (result && result.length > 0) {
+			let imported = 0;
 
-    const result = await ImportSSHConfig();
+			let skipped = 0;
 
-    if (result && result.length > 0) {
+			for (var i = 0; i < result.length; i++) {
+				var host = result[i];
 
-      let imported = 0;
+				var opts = host.options || host.Options || {};
 
-      let skipped = 0;
+				var h = opts.host || opts.Host || "";
 
-      for (var i = 0; i < result.length; i++) {
+				var p = opts.port || opts.Port || 22;
 
-        var host = result[i];
+				var u = opts.user || opts.User || "root";
 
-        var opts = host.options || host.Options || {};
+				var name = u + "@" + h;
 
-        var h = opts.host || opts.Host || '';
+				var exists = savedProfiles.find(
+					(pr) => pr.name === name && pr.type === "ssh",
+				);
 
-        var p = opts.port || opts.Port || 22;
+				if (exists) {
+					skipped++;
+					continue;
+				}
 
-        var u = opts.user || opts.User || 'root';
+				savedProfiles.push({
+					id: "ssh-import-" + Date.now() + "-" + imported,
 
-        var name = u + '@' + h;
+					type: "ssh",
 
-        var exists = savedProfiles.find((pr) => pr.name === name && pr.type === 'ssh');
+					name: name,
 
-        if (exists) { skipped++; continue; }
+					options: {
+						host: h,
+						port: p,
+						user: u,
+						auth:
+							opts.privateKeys && opts.privateKeys.length
+								? "publicKey"
+								: "agent",
+						privateKeys: opts.privateKeys || opts.PrivateKeys || [],
+						jumpHost: opts.jumpHost || opts.JumpHost || "",
+					},
 
-        savedProfiles.push({
+					createdAt: new Date().toISOString(),
 
-          id: 'ssh-import-' + Date.now() + '-' + imported,
+					updatedAt: new Date().toISOString(),
+				});
 
-          type: 'ssh',
+				imported++;
+			}
 
-          name: name,
+			await SaveProfiles(savedProfiles);
 
-          options: { host: h, port: p, user: u, auth: ((opts.privateKeys && opts.privateKeys.length) ? 'publicKey' : 'agent'), privateKeys: opts.privateKeys || opts.PrivateKeys || [], jumpHost: opts.jumpHost || opts.JumpHost || '' },
+			renderProfiles();
 
-          createdAt: new Date().toISOString(),
-
-          updatedAt: new Date().toISOString(),
-
-        });
-
-        imported++;
-
-      }
-
-      await SaveProfiles(savedProfiles);
-
-      renderProfiles();
-
-      showToast('Imported ' + imported + ' hosts' + (skipped ? ', skipped ' + skipped + ' duplicates' : ''), 'success');
-
-    } else {
-
-      showToast('No SSH hosts found in config', 'info');
-
-    }
-
-  } catch (err) {
-
-    showToast('SSH config import failed: ' + err, 'error');
-
-  }
-
+			showToast(
+				"Imported " +
+					imported +
+					" hosts" +
+					(skipped ? ", skipped " + skipped + " duplicates" : ""),
+				"success",
+			);
+		} else {
+			showToast("No SSH hosts found in config", "info");
+		}
+	} catch (err) {
+		showToast("SSH config import failed: " + err, "error");
+	}
 }
 
 // ===== PROFILE EDITOR =====
 
 function editProfile(profile) {
+	const modal = document.getElementById("profile-edit-dialog");
 
-  const modal = document.getElementById('profile-edit-dialog');
+	if (!modal) return;
 
-  if (!modal) return;
+	modal.classList.add("active");
 
-  modal.classList.add('active');
+	document.getElementById("edit-profile-id").value = profile.id;
 
-  document.getElementById('edit-profile-id').value = profile.id;
+	document.getElementById("edit-profile-type").value = profile.type || "ssh";
 
-  document.getElementById('edit-profile-type').value = profile.type || 'ssh';
+	document.getElementById("edit-profile-name").value = profile.name || "";
 
-  document.getElementById('edit-profile-name').value = profile.name || '';
+	document.getElementById("edit-profile-group").value = profile.group || "";
 
-  document.getElementById('edit-profile-group').value = profile.group || '';
+	const opts = profile.options || {};
 
-  const opts = profile.options || {};
+	document.getElementById("edit-profile-host").value = opts.host || "";
 
-  document.getElementById('edit-profile-host').value = opts.host || '';
+	document.getElementById("edit-profile-port").value = opts.port || 22;
 
-  document.getElementById('edit-profile-port').value = opts.port || 22;
+	document.getElementById("edit-profile-user").value = opts.user || "";
 
-  document.getElementById('edit-profile-user').value = opts.user || '';
+	document.getElementById("edit-profile-auth").value = opts.auth || "agent";
 
-  document.getElementById('edit-profile-auth').value = opts.auth || 'agent';
+	document.getElementById("edit-profile-key").value =
+		(opts.privateKeys && opts.privateKeys[0]) || "";
 
-  document.getElementById('edit-profile-key').value = (opts.privateKeys && opts.privateKeys[0]) || '';
+	document.getElementById("edit-profile-jump").value = opts.jumpHost || "";
 
-  document.getElementById('edit-profile-jump').value = opts.jumpHost || '';
-
-  document.getElementById('edit-profile-login-script').value = opts.loginScript || '';
-
+	document.getElementById("edit-profile-login-script").value =
+		opts.loginScript || "";
 }
 
 function closeProfileEditor() {
+	document.getElementById("profile-edit-dialog").classList.remove("active");
 
-  document.getElementById('profile-edit-dialog').classList.remove('active');
-
-  const t = getActiveTab(); if (t) t.term.focus();
-
+	const t = getActiveTab();
+	if (t) t.term.focus();
 }
 
 function saveProfileEdit() {
+	const id = document.getElementById("edit-profile-id").value;
 
-  const id = document.getElementById('edit-profile-id').value;
+	const profile = savedProfiles.find((p) => p.id === id);
 
-  const profile = savedProfiles.find(p => p.id === id);
+	if (!profile) return;
 
-  if (!profile) return;
+	profile.name = document.getElementById("edit-profile-name").value.trim();
 
-  profile.name = document.getElementById('edit-profile-name').value.trim();
+	profile.group = document.getElementById("edit-profile-group").value.trim();
 
-  profile.group = document.getElementById('edit-profile-group').value.trim();
+	if (document.getElementById("edit-profile-type"))
+		profile.type = document.getElementById("edit-profile-type").value;
 
-  if (document.getElementById('edit-profile-type')) profile.type = document.getElementById('edit-profile-type').value;
+	if (!profile.options) profile.options = {};
 
-  if (!profile.options) profile.options = {};
+	profile.options.host = document
+		.getElementById("edit-profile-host")
+		.value.trim();
 
-  profile.options.host = document.getElementById('edit-profile-host').value.trim();
+	profile.options.port =
+		parseInt(document.getElementById("edit-profile-port").value) || 22;
 
-  profile.options.port = parseInt(document.getElementById('edit-profile-port').value) || 22;
+	profile.options.user = document
+		.getElementById("edit-profile-user")
+		.value.trim();
 
-  profile.options.user = document.getElementById('edit-profile-user').value.trim();
+	profile.options.auth = document.getElementById("edit-profile-auth").value;
 
-  profile.options.auth = document.getElementById('edit-profile-auth').value;
+	const keyPath = document.getElementById("edit-profile-key").value.trim();
 
-  const keyPath = document.getElementById('edit-profile-key').value.trim();
+	profile.options.privateKeys = keyPath ? [keyPath] : [];
 
-  profile.options.privateKeys = keyPath ? [keyPath] : [];
+	profile.options.jumpHost = document
+		.getElementById("edit-profile-jump")
+		.value.trim();
 
-  profile.options.jumpHost = document.getElementById('edit-profile-jump').value.trim();
+	profile.options.loginScript = document
+		.getElementById("edit-profile-login-script")
+		.value.trim();
 
-  profile.options.loginScript = document.getElementById('edit-profile-login-script').value.trim();
+	profile.updatedAt = new Date().toISOString();
 
-  profile.updatedAt = new Date().toISOString();
+	SaveProfiles(savedProfiles).catch(() => {});
 
-  SaveProfiles(savedProfiles).catch(() => {});
+	renderProfiles();
 
-  renderProfiles();
+	closeProfileEditor();
 
-  closeProfileEditor();
-
-  showToast('Profile saved: ' + profile.name, 'success');
-
+	showToast("Profile saved: " + profile.name, "success");
 }
 
 // ===== TAB SEARCH =====
@@ -1944,105 +2453,108 @@ function saveProfileEdit() {
 let tabSearchVisible = false;
 
 function toggleTabSearch() {
+	tabSearchVisible = !tabSearchVisible;
 
-  tabSearchVisible = !tabSearchVisible;
+	const el = document.getElementById("tab-search-bar");
 
-  const el = document.getElementById('tab-search-bar');
+	if (tabSearchVisible) {
+		el.classList.add("active");
 
-  if (tabSearchVisible) {
+		const input = document.getElementById("tab-search-input");
 
-    el.classList.add('active');
+		input.value = "";
 
-    const input = document.getElementById('tab-search-input');
+		input.focus();
 
-    input.value = '';
+		filterTabs();
+	} else {
+		el.classList.remove("active");
 
-    input.focus();
-
-    filterTabs();
-
-  } else {
-
-    el.classList.remove('active');
-
-    const t = getActiveTab(); if (t) t.term.focus();
-
-  }
-
+		const t = getActiveTab();
+		if (t) t.term.focus();
+	}
 }
 
 function filterTabs() {
+	const query = (
+		document.getElementById("tab-search-input").value || ""
+	).toLowerCase();
 
-  const query = (document.getElementById('tab-search-input').value || '').toLowerCase();
+	const results = document.getElementById("tab-search-results");
 
-  const results = document.getElementById('tab-search-results');
+	if (!results) return;
 
-  if (!results) return;
+	const filtered = tabs.filter((t) =>
+		(t.title || "").toLowerCase().includes(query),
+	);
 
-  const filtered = tabs.filter(t => (t.title || '').toLowerCase().includes(query));
+	results.innerHTML = filtered
+		.map((t, i) => {
+			const type = t.isSSH
+				? "SSH"
+				: t.isSerial
+					? "SER"
+					: t.isTelnet
+						? "TEL"
+						: "LOCAL";
 
-  results.innerHTML = filtered.map((t, i) => {
+			return (
+				'<div class="tab-search-item" data-tab-id="' +
+				t.id +
+				'">' +
+				'<span class="tab-search-type">' +
+				type +
+				"</span>" +
+				'<span class="tab-search-title">' +
+				(t.title || "shell") +
+				"</span></div>"
+			);
+		})
+		.join("");
 
-    const type = t.isSSH ? 'SSH' : (t.isSerial ? 'SER' : (t.isTelnet ? 'TEL' : 'LOCAL'));
+	results.querySelectorAll(".tab-search-item").forEach((el) => {
+		el.onclick = () => {
+			const tab = tabs.find((t) => t.id === el.dataset.tabId);
 
-    return '<div class="tab-search-item" data-tab-id="' + t.id + '">' +
-
-      '<span class="tab-search-type">' + type + '</span>' +
-
-      '<span class="tab-search-title">' + (t.title || 'shell') + '</span></div>';
-
-  }).join('');
-
-  results.querySelectorAll('.tab-search-item').forEach(el => {
-
-    el.onclick = () => {
-
-      const tab = tabs.find(t => t.id === el.dataset.tabId);
-
-      if (tab) { tab.activate(); toggleTabSearch(); }
-
-    };
-
-  });
-
+			if (tab) {
+				tab.activate();
+				toggleTabSearch();
+			}
+		};
+	});
 }
 
 // ===== LOGIN SCRIPTS =====
 
 function runLoginScript(tab, script) {
+	if (!script || !script.trim()) return;
 
-  if (!script || !script.trim()) return;
+	const lines = script.split("\n");
 
-  const lines = script.split('\n');
+	const delay = 500; // Initial delay after connection
 
-  const delay = 500; // Initial delay after connection
+	lines.forEach((line, i) => {
+		setTimeout(
+			() => {
+				const trimmed = line.trim();
 
-  lines.forEach((line, i) => {
+				if (!trimmed || trimmed.startsWith("#")) return; // Skip comments and empty lines
 
-    setTimeout(() => {
-
-      const trimmed = line.trim();
-
-      if (!trimmed || trimmed.startsWith('#')) return; // Skip comments and empty lines
-
-      if (tab.isSSH && tab.sshConnectionId && tab.sshSessionId) {
-
-        SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(trimmed + '\r') });
-
-      } else if (tab.ptyId && !tab.exited) {
-
-        PTYWrite(tab.ptyId, btoa(trimmed + '\r'));
-
-      } else if (tab.telnetConnectionId) {
-
-        TelnetWrite(tab.telnetConnectionId, btoa(trimmed + '\r'));
-
-      }
-
-    }, delay + (i * 300));
-
-  });
-
+				if (tab.isSSH && tab.sshConnectionId && tab.sshSessionId) {
+					SSHWrite({
+						connectionId: tab.sshConnectionId,
+						sessionId: tab.sshSessionId,
+						data: btoa(trimmed + "\r"),
+					});
+				} else if (tab.ptyId && !tab.exited) {
+					PTYWrite(tab.ptyId, btoa(trimmed + "\r"));
+				} else if (tab.telnetConnectionId) {
+					TelnetWrite(tab.telnetConnectionId, btoa(trimmed + "\r"));
+				}
+			},
+			delay + i * 300,
+		);
+	});
 }
 
 // ===== INPUT PROCESSING =====
@@ -2050,447 +2562,471 @@ function runLoginScript(tab, script) {
 // Right-click paste support
 
 function setupInputProcessing(term, tab) {
+	// Handle right-click paste
 
-  // Handle right-click paste
+	term.element.addEventListener("contextmenu", (e) => {
+		e.preventDefault();
 
-  term.element.addEventListener('contextmenu', (e) => {
+		if (settings.RightClick && settings.RightClick !== "off") {
+			tab.pasteFromClipboard();
+		}
+	});
 
-    e.preventDefault();
+	// Handle copy on select
 
-    if (settings.RightClick && settings.RightClick !== "off") {
+	if (settings.CopyOnSelect) {
+		term.onSelectionChange(() => {
+			const sel = term.getSelection();
 
-      tab.pasteFromClipboard();
-
-    }
-
-  });
-
-  // Handle copy on select
-
-  if (settings.CopyOnSelect) {
-
-    term.onSelectionChange(() => {
-
-      const sel = term.getSelection();
-
-      if (sel) navigator.clipboard.writeText(sel).catch(() => {});
-
-    });
-
-  }
-
+			if (sel) navigator.clipboard.writeText(sel).catch(() => {});
+		});
+	}
 }
 
 // ===== ABOUT DIALOG =====
 
 async function showAboutDialog() {
+	try {
+		const platform = await GetPlatform();
 
-  try {
+		const home = await GetHomeDir();
 
-    const platform = await GetPlatform();
+		const hostname = await GetHostname();
 
-    const home = await GetHomeDir();
+		const username = await GetUsername();
 
-    const hostname = await GetHostname();
+		const shell = await GetDefaultShell();
 
-    const username = await GetUsername();
+		const info =
+			"Tabby Go v" +
+			(platform.version || "1.0.0") +
+			"\r\n" +
+			"Platform: " +
+			(platform.os || "unknown") +
+			"/" +
+			(platform.arch || "unknown") +
+			"\r\n" +
+			"User: " +
+			username +
+			"@" +
+			hostname +
+			"\r\n" +
+			"Home: " +
+			home +
+			"\r\n" +
+			"Shell: " +
+			shell;
 
-    const shell = await GetDefaultShell();
-
-    const info = 'Tabby Go v' + (platform.version || '1.0.0') + '\r\n'
-
-      + 'Platform: ' + (platform.os || 'unknown') + '/' + (platform.arch || 'unknown') + '\r\n'
-
-      + 'User: ' + username + '@' + hostname + '\r\n'
-
-      + 'Home: ' + home + '\r\n'
-
-      + 'Shell: ' + shell;
-
-    alert(info);
-
-  } catch (err) {
-
-    alert('Tabby Go v1.0.0\r\nA modern terminal emulator built with Go + Wails');
-
-  }
-
+		alert(info);
+	} catch (err) {
+		alert(
+			"Tabby Go v1.0.0\r\nA modern terminal emulator built with Go + Wails",
+		);
+	}
 }
 
 // ===== NOTIFICATION CENTER =====
 
 async function showNotificationCenter() {
+	const panel = document.getElementById("notification-center");
 
-  const panel = document.getElementById('notification-center');
+	if (panel) {
+		panel.classList.toggle("active");
 
-  if (panel) {
+		if (panel.classList.contains("active")) {
+			try {
+				const notifs = await GetNotifications();
 
-    panel.classList.toggle('active');
+				const list = document.getElementById("notification-list");
 
-    if (panel.classList.contains('active')) {
+				if (list) {
+					if (!notifs || notifs.length === 0) {
+						list.innerHTML =
+							'<div style="color:#666;font-size:12px;text-align:center;padding:20px;">No notifications</div>';
+					} else {
+						list.innerHTML = notifs
+							.map((n) => {
+								const levelColor =
+									n.Level === 2
+										? "#f44747"
+										: n.Level === 1
+											? "#e8a84c"
+											: "#4ca8e8";
 
-      try {
+								const time = new Date(n.Timestamp).toLocaleTimeString();
 
-        const notifs = await GetNotifications();
-
-        const list = document.getElementById('notification-list');
-
-        if (list) {
-
-          if (!notifs || notifs.length === 0) {
-
-            list.innerHTML = '<div style="color:#666;font-size:12px;text-align:center;padding:20px;">No notifications</div>';
-
-          } else {
-
-            list.innerHTML = notifs.map(n => {
-
-              const levelColor = n.Level === 2 ? '#f44747' : n.Level === 1 ? '#e8a84c' : '#4ca8e8';
-
-              const time = new Date(n.Timestamp).toLocaleTimeString();
-
-              return '<div class="notif-item" style="padding:8px 12px;border-bottom:1px solid #2a2a2a;">' +
-
-                '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-
-                '<span style="font-size:12px;color:' + levelColor + ';font-weight:600;">' + (n.Title || 'Notification') + '</span>' +
-
-                '<span style="font-size:10px;color:#666;">' + time + '</span></div>' +
-
-                '<div style="font-size:11px;color:#aaa;margin-top:4px;">' + (n.Message || '') + '</div></div>';
-
-            }).join('');
-
-          }
-
-        }
-
-      } catch (err) { console.error('Failed to load notifications:', err); }
-
-    }
-
-  }
-
+								return (
+									'<div class="notif-item" style="padding:8px 12px;border-bottom:1px solid #2a2a2a;">' +
+									'<div style="display:flex;justify-content:space-between;align-items:center;">' +
+									'<span style="font-size:12px;color:' +
+									levelColor +
+									';font-weight:600;">' +
+									(n.Title || "Notification") +
+									"</span>" +
+									'<span style="font-size:10px;color:#666;">' +
+									time +
+									"</span></div>" +
+									'<div style="font-size:11px;color:#aaa;margin-top:4px;">' +
+									(n.Message || "") +
+									"</div></div>"
+								);
+							})
+							.join("");
+					}
+				}
+			} catch (err) {
+				console.error("Failed to load notifications:", err);
+			}
+		}
+	}
 }
 
 // ===== SETTINGS PANEL =====
 
 function openSettingsPanel() {
+	let panel = document.getElementById("settings-panel");
 
-  let panel = document.getElementById('settings-panel');
+	if (panel) {
+		panel.remove();
+		return;
+	}
 
-  if (panel) { panel.remove(); return; }
+	panel = document.createElement("div");
 
-  panel = document.createElement('div');
+	panel.id = "settings-panel";
 
-  panel.id = 'settings-panel';
+	panel.className = "modal-overlay";
 
-  panel.className = 'modal-overlay';
+	const dlg = document.createElement("div");
 
-  const dlg = document.createElement('div');
+	dlg.className = "modal-dialog";
 
-  dlg.className = 'modal-dialog';
+	dlg.style.maxWidth = "600px";
 
-  dlg.style.maxWidth = '600px';
+	dlg.style.maxHeight = "80vh";
 
-  dlg.style.maxHeight = '80vh';
+	dlg.style.overflowY = "auto";
 
-  dlg.style.overflowY = 'auto';
+	const hdr = document.createElement("div");
 
-  const hdr = document.createElement('div');
+	hdr.className = "modal-header";
 
-  hdr.className = 'modal-header';
+	hdr.innerHTML = "<h3>Settings</h3>";
 
-  hdr.innerHTML = '<h3>Settings</h3>';
+	const body = document.createElement("div");
 
-  const body = document.createElement('div');
+	body.className = "modal-body";
 
-  body.className = 'modal-body';
+	body.innerHTML = `
 
-  body.innerHTML = `
-
-    <div class="setting-group"><label>Terminal Font</label><input type="text" id="settings-font" class="text-input" value="${settings.Font || 'Cascadia Mono, Consolas, monospace'}"></div>
+    <div class="setting-group"><label>Terminal Font</label><input type="text" id="settings-font" class="text-input" value="${settings.Font || "Cascadia Mono, Consolas, monospace"}"></div>
 
     <div class="setting-group"><label>Font Size (px)</label><input type="number" id="settings-font-size" class="text-input" value="${settings.FontSize || 14}" min="8" max="32"></div>
 
     <div class="setting-group"><label>Scrollback Lines</label><input type="number" id="settings-scrollback" class="text-input" value="${settings.Scrollback || 25000}" min="100" max="100000"></div>
 
-    <div class="setting-group"><label>Cursor Style</label><select id="settings-cursor" class="text-input"><option value="block" ${settings.CursorStyle==='block'?'selected':''}>Block</option><option value="underline" ${settings.CursorStyle==='underline'?'selected':''}>Underline</option><option value="bar" ${settings.CursorStyle==='bar'?'selected':''}>Bar</option></select></div>
+    <div class="setting-group"><label>Cursor Style</label><select id="settings-cursor" class="text-input"><option value="block" ${settings.CursorStyle === "block" ? "selected" : ""}>Block</option><option value="underline" ${settings.CursorStyle === "underline" ? "selected" : ""}>Underline</option><option value="bar" ${settings.CursorStyle === "bar" ? "selected" : ""}>Bar</option></select></div>
 
-    <div class="setting-group"><label>Cursor Blink</label><input type="checkbox" id="settings-cursor-blink" ${settings.CursorBlink!==false?'checked':''}></div>
+    <div class="setting-group"><label>Cursor Blink</label><input type="checkbox" id="settings-cursor-blink" ${settings.CursorBlink !== false ? "checked" : ""}></div>
 
     <div class="setting-group"><label>Idle Timeout (minutes, 0=off)</label><input type="number" id="settings-idle-timeout" class="text-input" value="${settings.IdleTimeout || 0}" min="0" max="1440"></div>
 
-    <div class="setting-group"><label>Color Scheme</label><select id="settings-color-scheme" class="text-input">${Object.keys(colorSchemes).map(s => '<option value="'+s+'" '+(settings.ColorScheme===s?'selected':'')+'>'+s+'</option>').join('')}</select></div>
+    <div class="setting-group"><label>Color Scheme</label><select id="settings-color-scheme" class="text-input">${Object.keys(
+			colorSchemes,
+		)
+			.map(
+				(s) =>
+					'<option value="' +
+					s +
+					'" ' +
+					(settings.ColorScheme === s ? "selected" : "") +
+					">" +
+					s +
+					"</option>",
+			)
+			.join("")}</select></div>
 
-    <div class="setting-group"><label>Shell (Windows)</label><input type="text" id="settings-shell" class="text-input" value="${settings.DefaultShell || ''}" placeholder="Auto-detect"></div>
+    <div class="setting-group"><label>Shell (Windows)</label><input type="text" id="settings-shell" class="text-input" value="${settings.DefaultShell || ""}" placeholder="Auto-detect"></div>
 
   `;
 
-  const ftr = document.createElement('div');
+	const ftr = document.createElement("div");
 
-  ftr.className = 'modal-footer';
+	ftr.className = "modal-footer";
 
-  const saveBtn = document.createElement('button');
+	const saveBtn = document.createElement("button");
 
-  saveBtn.className = 'btn btn-primary'; saveBtn.textContent = 'Save';
+	saveBtn.className = "btn btn-primary";
+	saveBtn.textContent = "Save";
 
-  const cancelBtn = document.createElement('button');
+	const cancelBtn = document.createElement("button");
 
-  cancelBtn.className = 'btn btn-secondary'; cancelBtn.textContent = 'Cancel';
+	cancelBtn.className = "btn btn-secondary";
+	cancelBtn.textContent = "Cancel";
 
-  ftr.appendChild(saveBtn);
+	ftr.appendChild(saveBtn);
 
-  ftr.appendChild(cancelBtn);
+	ftr.appendChild(cancelBtn);
 
-  dlg.appendChild(hdr);
+	dlg.appendChild(hdr);
 
-  dlg.appendChild(body);
+	dlg.appendChild(body);
 
-  dlg.appendChild(ftr);
+	dlg.appendChild(ftr);
 
-  panel.appendChild(dlg);
+	panel.appendChild(dlg);
 
-  document.body.appendChild(panel);
+	document.body.appendChild(panel);
 
-  cancelBtn.onclick = () => panel.remove();
+	cancelBtn.onclick = () => panel.remove();
 
-  panel.onclick = (e) => { if (e.target === panel) panel.remove(); };
+	panel.onclick = (e) => {
+		if (e.target === panel) panel.remove();
+	};
 
-  saveBtn.onclick = () => {
+	saveBtn.onclick = () => {
+		settings.Font = document.getElementById("settings-font").value;
 
-    settings.Font = document.getElementById('settings-font').value;
+		settings.FontSize =
+			parseInt(document.getElementById("settings-font-size").value) || 14;
 
-    settings.FontSize = parseInt(document.getElementById('settings-font-size').value) || 14;
+		settings.Scrollback =
+			parseInt(document.getElementById("settings-scrollback").value) || 25000;
 
-    settings.Scrollback = parseInt(document.getElementById('settings-scrollback').value) || 25000;
+		settings.CursorStyle = document.getElementById("settings-cursor").value;
 
-    settings.CursorStyle = document.getElementById('settings-cursor').value;
+		settings.CursorBlink = document.getElementById(
+			"settings-cursor-blink",
+		).checked;
 
-    settings.CursorBlink = document.getElementById('settings-cursor-blink').checked;
+		settings.IdleTimeout =
+			parseInt(document.getElementById("settings-idle-timeout").value) || 0;
 
-    settings.IdleTimeout = parseInt(document.getElementById('settings-idle-timeout').value) || 0;
+		settings.ColorScheme = document.getElementById(
+			"settings-color-scheme",
+		).value;
 
-    settings.ColorScheme = document.getElementById('settings-color-scheme').value;
+		settings.DefaultShell = document.getElementById("settings-shell").value;
 
-    settings.DefaultShell = document.getElementById('settings-shell').value;
+		applySettings(settings);
 
-    applySettings(settings);
+		SaveSettings(settings).catch(() => {});
 
-    SaveSettings(settings).catch(() => {});
+		showToast("Settings saved", "success");
 
-    showToast('Settings saved', 'success');
-
-    panel.remove();
-
-  };
-
+		panel.remove();
+	};
 }
 
 // ===== CUSTOM CSS =====
 
 function editCustomCSS() {
+	const css = prompt(
+		"Enter custom CSS (applied on top of color scheme):",
+		localStorage.getItem("tabby-custom-css") || "",
+	);
 
-  const css = prompt('Enter custom CSS (applied on top of color scheme):', localStorage.getItem('tabby-custom-css') || '');
+	if (css === null) return;
 
-  if (css === null) return;
+	localStorage.setItem("tabby-custom-css", css);
 
-  localStorage.setItem('tabby-custom-css', css);
+	applyCustomCSS(css);
 
-  applyCustomCSS(css);
-
-  showToast('Custom CSS applied', 'success');
-
+	showToast("Custom CSS applied", "success");
 }
 
 function applyCustomCSS(css) {
+	let el = document.getElementById("tabby-custom-css");
 
-  let el = document.getElementById('tabby-custom-css');
+	if (!el) {
+		el = document.createElement("style");
+		el.id = "tabby-custom-css";
+		document.head.appendChild(el);
+	}
 
-  if (!el) { el = document.createElement('style'); el.id = 'tabby-custom-css'; document.head.appendChild(el); }
-
-  el.textContent = css;
-
+	el.textContent = css;
 }
 
 // ===== SFTP DRAG & DROP =====
 
 async function sftpHandleDrop(event) {
+	const files = event.dataTransfer.files;
 
-  const files = event.dataTransfer.files;
+	if (!files || files.length === 0) return;
 
-  if (!files || files.length === 0) return;
+	for (const file of files) {
+		const reader = new FileReader();
 
-  for (const file of files) {
+		reader.onload = async () => {
+			const b64 = reader.result.split(",")[1];
 
-    const reader = new FileReader();
+			const remotePath = sftpCurrentPath.replace(/\/$/, "") + "/" + file.name;
 
-    reader.onload = async () => {
+			try {
+				await SFTPUpload({
+					sessionId: sftpSessionId,
+					remotePath: remotePath,
+					data: b64,
+				});
 
-      const b64 = reader.result.split(',')[1];
+				showToast("Uploaded: " + file.name, "success");
 
-      const remotePath = sftpCurrentPath.replace(/\/$/, '') + '/' + file.name;
+				sftpNavigate(sftpCurrentPath);
+			} catch (err) {
+				showToast("Upload failed: " + err, "error");
+			}
+		};
 
-      try {
-
-        await SFTPUpload({ sessionId: sftpSessionId, remotePath: remotePath, data: b64 });
-
-        showToast('Uploaded: ' + file.name, 'success');
-
-        sftpNavigate(sftpCurrentPath);
-
-      } catch (err) { showToast('Upload failed: ' + err, 'error'); }
-
-    };
-
-    reader.readAsDataURL(file);
-
-  }
-
+		reader.readAsDataURL(file);
+	}
 }
 
 // ===== PROFILE GROUP RENDERING =====
 
 function renderProfileGroups() {
+	const groups = getProfileGroups();
 
-  const groups = getProfileGroups();
+	const list = document.getElementById("profiles-list");
 
-  const list = document.getElementById('profiles-list');
+	if (!list) return;
 
-  if (!list) return;
+	let html = "";
 
-  let html = '';
+	Object.keys(groups)
+		.sort()
+		.forEach((groupName) => {
+			if (groupName !== "Ungrouped" || Object.keys(groups).length > 1) {
+				const collapsed =
+					localStorage.getItem("tabby-group-collapsed-" + groupName) === "true";
 
-  Object.keys(groups).sort().forEach(groupName => {
+				const arrow = collapsed ? "▸" : "▾";
 
-    if (groupName !== 'Ungrouped' || Object.keys(groups).length > 1) {
+				html +=
+					'<div class="profile-group-header" data-group="' +
+					groupName +
+					'">' +
+					arrow +
+					" " +
+					groupName +
+					' <span class="group-count">(' +
+					groups[groupName].length +
+					")</span></div>";
 
-      const collapsed = localStorage.getItem('tabby-group-collapsed-' + groupName) === 'true';
+				if (collapsed)
+					html += '<div class="profile-group-items" style="display:none">';
+				else html += '<div class="profile-group-items">';
+			} else {
+				html += '<div class="profile-group-items">';
+			}
 
-      const arrow = collapsed ? '▸' : '▾';
+			groups[groupName].forEach((p) => {
+				const icon =
+					p.type === "ssh"
+						? "🔐"
+						: p.type === "serial"
+							? "📡"
+							: p.type === "telnet"
+								? "🌐"
+								: "⌘";
 
-      html += '<div class="profile-group-header" data-group="' + groupName + '">' + arrow + ' ' + groupName + ' <span class="group-count">(' + groups[groupName].length + ')</span></div>';
+				html +=
+					'<div class="profile-item" data-profile-id="' +
+					p.id +
+					'" title="' +
+					p.name +
+					'"><span class="profile-icon">' +
+					icon +
+					'</span><span class="profile-name">' +
+					p.name +
+					"</span></div>";
+			});
 
-      if (collapsed) html += '<div class="profile-group-items" style="display:none">';
+			html += "</div>";
+		});
 
-      else html += '<div class="profile-group-items">';
+	list.innerHTML = html;
 
-    } else {
+	list.querySelectorAll(".profile-group-header").forEach((h) => {
+		h.onclick = (e) => {
+			const items = h.nextElementSibling;
 
-      html += '<div class="profile-group-items">';
+			if (items) {
+				const collapsed = items.style.display === "none";
 
-    }
+				items.style.display = collapsed ? "" : "none";
 
-    groups[groupName].forEach(p => {
+				localStorage.setItem(
+					"tabby-group-collapsed-" + h.dataset.group,
+					collapsed ? "false" : "true",
+				);
 
-      const icon = p.type === 'ssh' ? '🔐' : p.type === 'serial' ? '📡' : p.type === 'telnet' ? '🌐' : '⌘';
+				renderProfileGroups();
+			}
+		};
+	});
 
-      html += '<div class="profile-item" data-profile-id="' + p.id + '" title="' + p.name + '"><span class="profile-icon">' + icon + '</span><span class="profile-name">' + p.name + '</span></div>';
+	list.querySelectorAll(".profile-item").forEach((el) => {
+		el.onclick = () => {
+			const profile = savedProfiles.find((p) => p.id === el.dataset.profileId);
 
-    });
-
-    html += '</div>';
-
-  });
-
-  list.innerHTML = html;
-
-  list.querySelectorAll('.profile-group-header').forEach(h => {
-
-    h.onclick = (e) => {
-
-      const items = h.nextElementSibling;
-
-      if (items) {
-
-        const collapsed = items.style.display === 'none';
-
-        items.style.display = collapsed ? '' : 'none';
-
-        localStorage.setItem('tabby-group-collapsed-' + h.dataset.group, collapsed ? 'false' : 'true');
-
-        renderProfileGroups();
-
-      }
-
-    };
-
-  });
-
-  list.querySelectorAll('.profile-item').forEach(el => {
-
-    el.onclick = () => {
-
-      const profile = savedProfiles.find(p => p.id === el.dataset.profileId);
-
-      if (profile) connectProfile(profile);
-
-    };
-
-  });
-
+			if (profile) connectProfile(profile);
+		};
+	});
 }
 
 function closeOtherTabs(keepTab) {
+	const tabs = [...openTabs];
 
-  const tabs = [...openTabs];
-
-  tabs.forEach(t => { if (t !== keepTab) closeTab(t); });
-
+	tabs.forEach((t) => {
+		if (t !== keepTab) closeTab(t);
+	});
 }
 
 function duplicateTab(tab) {
+	if (!tab) return;
 
-  if (!tab) return;
+	const newT = newTab(tab.title);
 
-  const newT = newTab(tab.title);
-
-  if (newT && tab.connectionType) {
-
-    newT.connectionType = tab.connectionType;
-
-  }
-
+	if (newT && tab.connectionType) {
+		newT.connectionType = tab.connectionType;
+	}
 }
 
 // ===== DUPLICATE PROFILE =====
 
 function duplicateActiveProfile() {
+	const activeTab = getActiveTab();
 
-  const activeTab = getActiveTab();
+	if (!activeTab) {
+		showToast("No active tab", "error");
+		return;
+	}
 
-  if (!activeTab) { showToast('No active tab', 'error'); return; }
+	const matchingProfile = savedProfiles.find((p) => p.name === activeTab.title);
 
-  const matchingProfile = savedProfiles.find(p => p.name === activeTab.title);
+	if (matchingProfile) {
+		const id = "profile-" + Date.now();
 
-  if (matchingProfile) {
+		const dup = JSON.parse(JSON.stringify(matchingProfile));
 
-    const id = 'profile-' + Date.now();
+		dup.id = id;
 
-    const dup = JSON.parse(JSON.stringify(matchingProfile));
+		dup.name = matchingProfile.name + " (copy)";
 
-    dup.id = id;
+		dup.createdAt = new Date().toISOString();
 
-    dup.name = matchingProfile.name + ' (copy)';
+		dup.updatedAt = new Date().toISOString();
 
-    dup.createdAt = new Date().toISOString();
+		savedProfiles.push(dup);
 
-    dup.updatedAt = new Date().toISOString();
+		SaveProfiles(savedProfiles).catch(() => {});
 
-    savedProfiles.push(dup);
+		renderProfiles();
 
-    SaveProfiles(savedProfiles).catch(() => {});
-
-    renderProfiles();
-
-    showToast('Duplicated: ' + dup.name, 'success');
-
-  } else {
-
-    showToast('No matching profile found', 'error');
-
-  }
-
+		showToast("Duplicated: " + dup.name, "success");
+	} else {
+		showToast("No matching profile found", "error");
+	}
 }
 
 // ===== CONNECTION LOG VIEWER =====
@@ -2498,580 +3034,656 @@ function duplicateActiveProfile() {
 // ===== CONNECTION LOG =====
 
 function setTabStatus(tab, status) {
+	if (!tab) return;
 
-  if (!tab) return;
+	tab.status = status;
 
-  tab.status = status;
+	const dot = tab.tabEl ? tab.tabEl.querySelector(".tab-status-dot") : null;
 
-  const dot = tab.tabEl ? tab.tabEl.querySelector('.tab-status-dot') : null;
+	if (dot) {
+		dot.className = "tab-status-dot";
 
-  if (dot) {
+		if (status === "connected") dot.classList.add("status-connected");
+		else if (status === "connecting") dot.classList.add("status-connecting");
+		else dot.classList.add("status-disconnected");
 
-    dot.className = 'tab-status-dot';
-
-    if (status === 'connected') dot.classList.add('status-connected');
-
-    else if (status === 'connecting') dot.classList.add('status-connecting');
-
-    else dot.classList.add('status-disconnected');
-
-    dot.title = status.charAt(0).toUpperCase() + status.slice(1);
-
-  }
-
+		dot.title = status.charAt(0).toUpperCase() + status.slice(1);
+	}
 }
 
 function logConnection(tab, message) {
+	if (!tab) return;
 
-  if (!tab) return;
+	tab.connectionLog.push({ time: new Date().toISOString(), message });
 
-  tab.connectionLog.push({ time: new Date().toISOString(), message });
-
-  if (tab.connectionLog.length > 500) tab.connectionLog.shift();
-
+	if (tab.connectionLog.length > 500) tab.connectionLog.shift();
 }
 
-function closeTab(tab) { tab.close(); }
+function closeTab(tab) {
+	tab.close();
+}
 
 function closeAllTabs(keepTab) {
-
-  if (!keepTab) {
-
-    [...tabs].forEach(t => t.close());
-
-  } else {
-
-    tabs.forEach(t => { if (t !== keepTab) t.close(); });
-
-  }
-
+	if (!keepTab) {
+		[...tabs].forEach((t) => t.close());
+	} else {
+		tabs.forEach((t) => {
+			if (t !== keepTab) t.close();
+		});
+	}
 }
 
 function getProfileGroups() {
+	const groups = {};
 
-  const groups = {};
+	savedProfiles.forEach((p) => {
+		const group = p.group || "Ungrouped";
 
-  savedProfiles.forEach(p => {
+		if (!groups[group]) groups[group] = [];
 
-    const group = p.group || 'Ungrouped';
+		groups[group].push(p);
+	});
 
-    if (!groups[group]) groups[group] = [];
-
-    groups[group].push(p);
-
-  });
-
-  return groups;
-
+	return groups;
 }
 
 function applySettings() {
+	if (!settings) return;
 
-  if (!settings) return;
+	tabs.forEach((t) => {
+		if (t.term) {
+			if (settings.FontFamily) t.term.options.fontFamily = settings.FontFamily;
 
-  tabs.forEach(t => {
+			if (settings.FontSize) t.term.options.fontSize = settings.FontSize;
 
-    if (t.term) {
+			if (settings.LineHeight)
+				t.term.options.lineHeight = parseFloat(settings.LineHeight);
 
-      if (settings.FontFamily) t.term.options.fontFamily = settings.FontFamily;
+			if (settings.CursorStyle)
+				t.term.options.cursorStyle = settings.CursorStyle;
 
-      if (settings.FontSize) t.term.options.fontSize = settings.FontSize;
+			if (settings.CursorBlink !== undefined)
+				t.term.options.cursorBlink = settings.CursorBlink;
 
-      if (settings.LineHeight) t.term.options.lineHeight = parseFloat(settings.LineHeight);
+			if (settings.Scrollback) t.term.options.scrollback = settings.Scrollback;
 
-      if (settings.CursorStyle) t.term.options.cursorStyle = settings.CursorStyle;
+			t.fitAddon.fit();
 
-      if (settings.CursorBlink !== undefined) t.term.options.cursorBlink = settings.CursorBlink;
+			if (t.ptyId && !t.exited) PTYResize(t.ptyId, t.term.cols, t.term.rows);
 
-      if (settings.Scrollback) t.term.options.scrollback = settings.Scrollback;
-
-      t.fitAddon.fit();
-
-      if (t.ptyId && !t.exited) PTYResize(t.ptyId, t.term.cols, t.term.rows);
-
-      if (t.isSSH && t.sshConnectionId && t.sshSessionId) SSHResize({ connectionId: t.sshConnectionId, sessionId: t.sshSessionId, columns: t.term.cols, rows: t.term.rows });
-
-    }
-
-  });
-
+			if (t.isSSH && t.sshConnectionId && t.sshSessionId)
+				SSHResize({
+					connectionId: t.sshConnectionId,
+					sessionId: t.sshSessionId,
+					columns: t.term.cols,
+					rows: t.term.rows,
+				});
+		}
+	});
 }
 
 function showConnectionLog() {
+	let panel = document.getElementById("conn-log-panel");
 
-  let panel = document.getElementById('conn-log-panel');
+	if (panel) {
+		panel.remove();
+		return;
+	}
 
-  if (panel) { panel.remove(); return; }
+	panel = document.createElement("div");
 
-  panel = document.createElement('div');
+	panel.id = "conn-log-panel";
+	panel.className = "modal-overlay";
 
-  panel.id = 'conn-log-panel'; panel.className = 'modal-overlay';
+	const dlg = document.createElement("div");
 
-  const dlg = document.createElement('div');
+	dlg.className = "modal-dialog";
 
-  dlg.className = 'modal-dialog';
+	dlg.style.cssText = "max-width:700px;max-height:80vh;";
 
-  dlg.style.cssText = 'max-width:700px;max-height:80vh;';
+	const hdr = document.createElement("div");
 
-  const hdr = document.createElement('div');
+	hdr.className = "modal-header";
 
-  hdr.className = 'modal-header';
+	hdr.innerHTML = "<h3>Connection Log</h3>";
 
-  hdr.innerHTML = '<h3>Connection Log</h3>';
+	const body = document.createElement("div");
 
-  const body = document.createElement('div');
+	body.className = "modal-body";
 
-  body.className = 'modal-body';
+	body.style.cssText = "max-height:60vh;overflow-y:auto;";
 
-  body.style.cssText = 'max-height:60vh;overflow-y:auto;';
+	const allLogs = [];
 
-  const allLogs = [];
+	tabs.forEach((t) => {
+		if (t.connectionLog) allLogs.push(...t.connectionLog);
+	});
 
-  tabs.forEach(t => { if (t.connectionLog) allLogs.push(...t.connectionLog); });
+	if (allLogs.length === 0) {
+		body.innerHTML =
+			'<p style="color:var(--text-secondary);text-align:center;">No connection events</p>';
+	} else {
+		let logHtml = '<div class="connection-log-entries">';
 
-  if (allLogs.length === 0) {
+		allLogs
+			.sort((a, b) => b.time - a.time)
+			.forEach((entry) => {
+				const time = new Date(entry.time).toLocaleTimeString();
 
-    body.innerHTML = '<p style="color:var(--text-secondary);text-align:center;">No connection events</p>';
+				const typeClass =
+					entry.type === "error"
+						? "log-error"
+						: entry.type === "connect"
+							? "log-connect"
+							: "log-info";
 
-  } else {
+				logHtml +=
+					'<div class="log-entry ' +
+					typeClass +
+					'"><span class="log-time">' +
+					time +
+					'</span><span class="log-msg">' +
+					entry.message +
+					"</span></div>";
+			});
 
-    let logHtml = '<div class="connection-log-entries">';
+		logHtml += "</div>";
 
-    allLogs.sort((a, b) => b.time - a.time).forEach(entry => {
+		body.innerHTML = logHtml;
+	}
 
-      const time = new Date(entry.time).toLocaleTimeString();
+	const ftr = document.createElement("div");
 
-      const typeClass = entry.type === 'error' ? 'log-error' : entry.type === 'connect' ? 'log-connect' : 'log-info';
+	ftr.className = "modal-footer";
 
-      logHtml += '<div class="log-entry ' + typeClass + '"><span class="log-time">' + time + '</span><span class="log-msg">' + entry.message + '</span></div>';
+	const closeBtn = document.createElement("button");
 
-    });
+	closeBtn.className = "btn btn-secondary";
+	closeBtn.textContent = "Close";
 
-    logHtml += '</div>';
+	const clearBtn = document.createElement("button");
 
-    body.innerHTML = logHtml;
+	clearBtn.className = "btn btn-danger";
+	clearBtn.textContent = "Clear Log";
+	clearBtn.style.marginRight = "auto";
 
-  }
+	ftr.appendChild(clearBtn);
+	ftr.appendChild(closeBtn);
 
-  const ftr = document.createElement('div');
+	dlg.appendChild(hdr);
+	dlg.appendChild(body);
+	dlg.appendChild(ftr);
 
-  ftr.className = 'modal-footer';
+	panel.appendChild(dlg);
+	document.body.appendChild(panel);
 
-  const closeBtn = document.createElement('button');
+	closeBtn.onclick = () => panel.remove();
 
-  closeBtn.className = 'btn btn-secondary'; closeBtn.textContent = 'Close';
+	panel.onclick = (e) => {
+		if (e.target === panel) panel.remove();
+	};
 
-  const clearBtn = document.createElement('button');
-
-  clearBtn.className = 'btn btn-danger'; clearBtn.textContent = 'Clear Log'; clearBtn.style.marginRight = 'auto';
-
-  ftr.appendChild(clearBtn); ftr.appendChild(closeBtn);
-
-  dlg.appendChild(hdr); dlg.appendChild(body); dlg.appendChild(ftr);
-
-  panel.appendChild(dlg); document.body.appendChild(panel);
-
-  closeBtn.onclick = () => panel.remove();
-
-  panel.onclick = (e) => { if (e.target === panel) panel.remove(); };
-
-  clearBtn.onclick = () => { tabs.forEach(t => { if (t.connectionLog) t.connectionLog = []; }); body.innerHTML = '<p style="color:var(--text-secondary);text-align:center;">Log cleared</p>'; };
-
+	clearBtn.onclick = () => {
+		tabs.forEach((t) => {
+			if (t.connectionLog) t.connectionLog = [];
+		});
+		body.innerHTML =
+			'<p style="color:var(--text-secondary);text-align:center;">Log cleared</p>';
+	};
 }
 
 // ===== UPDATER =====
 
 async function checkForUpdates() {
+	try {
+		const status = await CheckForUpdates();
 
-  try {
-
-    const status = await CheckForUpdates();
-
-    if (status && status.updateAvailable) {
-
-      showToast('Update available: v' + status.latestVersion, 'success');
-
-    } else if (status && !status.updateAvailable) {
-
-      showToast('You are on the latest version (v' + status.currentVersion + ')', 'info');
-
-    } else if (status && status.error) {
-
-      showToast('Update check failed: ' + status.error, 'error');
-
-    }
-
-  } catch (err) { showToast('Update check failed: ' + err, 'error'); }
-
+		if (status && status.updateAvailable) {
+			showToast("Update available: v" + status.latestVersion, "success");
+		} else if (status && !status.updateAvailable) {
+			showToast(
+				"You are on the latest version (v" + status.currentVersion + ")",
+				"info",
+			);
+		} else if (status && status.error) {
+			showToast("Update check failed: " + status.error, "error");
+		}
+	} catch (err) {
+		showToast("Update check failed: " + err, "error");
+	}
 }
 
 async function openAuditLog() {
+	try {
+		const path = await GetAuditLogPath();
 
-  try {
-
-    const path = await GetAuditLogPath();
-
-    if (path) {
-
-      showToast('Audit log: ' + path, 'info');
-
-    } else {
-
-      showToast('Audit logging not available', 'error');
-
-    }
-
-  } catch (err) { showToast('Failed: ' + err, 'error'); }
-
+		if (path) {
+			showToast("Audit log: " + path, "info");
+		} else {
+			showToast("Audit logging not available", "error");
+		}
+	} catch (err) {
+		showToast("Failed: " + err, "error");
+	}
 }
 
 // ===== TAB COLOR LABELS =====
 
 function setTabColor(tab, color) {
+	if (!tab || !tab.tabEl) return;
 
-  if (!tab || !tab.tabEl) return;
+	if (color) {
+		tab.tabEl.style.borderLeft = "3px solid " + color;
 
-  if (color) {
+		tab.colorLabel = color;
+	} else {
+		tab.tabEl.style.borderLeft = "";
 
-    tab.tabEl.style.borderLeft = '3px solid ' + color;
-
-    tab.colorLabel = color;
-
-  } else {
-
-    tab.tabEl.style.borderLeft = '';
-
-    tab.colorLabel = '';
-
-  }
-
+		tab.colorLabel = "";
+	}
 }
 
 // ===== SNIPPETS =====
 
-const savedSnippets = JSON.parse(localStorage.getItem('tabby-snippets') || '[]');
+const savedSnippets = JSON.parse(
+	localStorage.getItem("tabby-snippets") || "[]",
+);
 
 function saveSnippet() {
+	const name = prompt("Snippet name:");
 
-  const name = prompt('Snippet name:');
+	if (!name) return;
 
-  if (!name) return;
+	const cmd = prompt("Snippet command:");
 
-  const cmd = prompt('Snippet command:');
+	if (!cmd) return;
 
-  if (!cmd) return;
+	savedSnippets.push({ id: "snippet-" + Date.now(), name, command: cmd });
 
-  savedSnippets.push({ id: 'snippet-' + Date.now(), name, command: cmd });
+	localStorage.setItem("tabby-snippets", JSON.stringify(savedSnippets));
 
-  localStorage.setItem('tabby-snippets', JSON.stringify(savedSnippets));
-
-  showToast('Snippet saved: ' + name, 'success');
-
+	showToast("Snippet saved: " + name, "success");
 }
 
 function runSnippet() {
+	if (savedSnippets.length === 0) {
+		showToast("No saved snippets", "info");
+		return;
+	}
 
-  if (savedSnippets.length === 0) { showToast('No saved snippets', 'info'); return; }
+	const names = savedSnippets
+		.map((s, i) => i + 1 + ". " + s.name + ": " + s.command)
+		.join("\n");
 
-  const names = savedSnippets.map((s, i) => (i+1) + '. ' + s.name + ': ' + s.command).join('\n');
+	const choice = prompt("Choose snippet:\n" + names);
 
-  const choice = prompt('Choose snippet:\n' + names);
+	if (!choice) return;
 
-  if (!choice) return;
+	const idx = parseInt(choice) - 1;
 
-  const idx = parseInt(choice) - 1;
+	if (idx >= 0 && idx < savedSnippets.length) {
+		const snippet = savedSnippets[idx];
 
-  if (idx >= 0 && idx < savedSnippets.length) {
+		const tab = getActiveTab();
 
-    const snippet = savedSnippets[idx];
+		if (tab) {
+			tab.term.paste(snippet.command + "\r");
 
-    const tab = getActiveTab();
-
-    if (tab) {
-
-      tab.term.paste(snippet.command + '\r');
-
-      showToast('Running: ' + snippet.name, 'info');
-
-    } else {
-
-      showToast('No active tab', 'error');
-
-    }
-
-  }
-
+			showToast("Running: " + snippet.name, "info");
+		} else {
+			showToast("No active tab", "error");
+		}
+	}
 }
 
 // ===== PASSWORD DIALOG =====
 
 function showPasswordDialog(title, message) {
+	return new Promise((resolve) => {
+		const overlay = document.createElement("div");
 
-  return new Promise((resolve) => {
+		overlay.className = "modal-overlay";
 
-    const overlay = document.createElement('div');
+		const dlg = document.createElement("div");
 
-    overlay.className = 'modal-overlay';
+		dlg.className = "modal-dialog";
 
-    const dlg = document.createElement('div');
+		const hdr = document.createElement("div");
 
-    dlg.className = 'modal-dialog';
+		hdr.className = "modal-header";
 
-    const hdr = document.createElement('div');
+		hdr.innerHTML = "<h3>" + title + "</h3>";
 
-    hdr.className = 'modal-header';
+		const body = document.createElement("div");
 
-    hdr.innerHTML = '<h3>' + title + '</h3>';
+		body.className = "modal-body";
 
-    const body = document.createElement('div');
+		body.innerHTML =
+			"<p>" +
+			message +
+			'</p><input type="password" id="password-dialog-input" class="text-input" autofocus>';
 
-    body.className = 'modal-body';
+		const ftr = document.createElement("div");
 
-    body.innerHTML = '<p>' + message + '</p><input type="password" id="password-dialog-input" class="text-input" autofocus>';
+		ftr.className = "modal-footer";
 
-    const ftr = document.createElement('div');
+		const cancelBtn = document.createElement("button");
 
-    ftr.className = 'modal-footer';
+		cancelBtn.className = "btn btn-secondary";
 
-    const cancelBtn = document.createElement('button');
+		cancelBtn.textContent = "Cancel";
 
-    cancelBtn.className = 'btn btn-secondary';
+		const okBtn = document.createElement("button");
 
-    cancelBtn.textContent = 'Cancel';
+		okBtn.className = "btn btn-primary";
 
-    const okBtn = document.createElement('button');
+		okBtn.textContent = "Connect";
 
-    okBtn.className = 'btn btn-primary';
+		ftr.appendChild(cancelBtn);
 
-    okBtn.textContent = 'Connect';
+		ftr.appendChild(okBtn);
 
-    ftr.appendChild(cancelBtn);
+		dlg.appendChild(hdr);
 
-    ftr.appendChild(okBtn);
+		dlg.appendChild(body);
 
-    dlg.appendChild(hdr);
+		dlg.appendChild(ftr);
 
-    dlg.appendChild(body);
+		overlay.appendChild(dlg);
 
-    dlg.appendChild(ftr);
+		document.body.appendChild(overlay);
 
-    overlay.appendChild(dlg);
+		const input = overlay.querySelector("#password-dialog-input");
 
-    document.body.appendChild(overlay);
+		input.focus();
 
-    const input = overlay.querySelector('#password-dialog-input');
+		input.addEventListener("keydown", (e) => {
+			if (e.key === "Enter") {
+				resolve(input.value);
+				overlay.remove();
+			}
+			if (e.key === "Escape") {
+				resolve(null);
+				overlay.remove();
+			}
+		});
 
-    input.focus();
+		okBtn.onclick = () => {
+			resolve(input.value);
+			overlay.remove();
+		};
 
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { resolve(input.value); overlay.remove(); } if (e.key === 'Escape') { resolve(null); overlay.remove(); } });
-
-    okBtn.onclick = () => { resolve(input.value); overlay.remove(); };
-
-    cancelBtn.onclick = () => { resolve(null); overlay.remove(); };
-
-  });
-
+		cancelBtn.onclick = () => {
+			resolve(null);
+			overlay.remove();
+		};
+	});
 }
 
 // ===== KEYCHAIN =====
 
 async function saveCredentialDialog() {
+	const key = prompt("Enter credential key (e.g. ssh:host:user):");
 
-  const key = prompt('Enter credential key (e.g. ssh:host:user):');
+	if (!key) return;
 
-  if (!key) return;
+	const value = prompt("Enter credential value:");
 
-  const value = prompt('Enter credential value:');
+	if (!value) return;
 
-  if (!value) return;
+	try {
+		await StoreCredential(key, value);
 
-  try {
-
-    await StoreCredential(key, value);
-
-    showToast('Credential saved to keychain', 'success');
-
-  } catch (err) { showToast('Failed to save: ' + err, 'error'); }
-
+		showToast("Credential saved to keychain", "success");
+	} catch (err) {
+		showToast("Failed to save: " + err, "error");
+	}
 }
 
 async function getCredentialDialog() {
+	const key = prompt("Enter credential key to retrieve:");
 
-  const key = prompt('Enter credential key to retrieve:');
+	if (!key) return;
 
-  if (!key) return;
+	try {
+		const value = await GetCredential(key);
 
-  try {
-
-    const value = await GetCredential(key);
-
-    if (value) showToast('Credential: ' + key + ' = ' + value.substring(0, 20) + '...', 'success');
-
-    else showToast('Credential not found', 'error');
-
-  } catch (err) { showToast('Failed to retrieve: ' + err, 'error'); }
-
+		if (value)
+			showToast(
+				"Credential: " + key + " = " + value.substring(0, 20) + "...",
+				"success",
+			);
+		else showToast("Credential not found", "error");
+	} catch (err) {
+		showToast("Failed to retrieve: " + err, "error");
+	}
 }
 
 // ===== PROFILE EXPORT/IMPORT =====
 
 function exportProfiles() {
+	const d = JSON.stringify(savedProfiles, null, 2);
 
-  const d = JSON.stringify(savedProfiles, null, 2);
+	const blob = new Blob([d], { type: "application/json" });
 
-  const blob = new Blob([d], { type: 'application/json' });
+	const url = URL.createObjectURL(blob);
 
-  const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
 
-  const a = document.createElement('a');
+	a.href = url;
 
-  a.href = url;
+	a.download =
+		"tabby-profiles-" + new Date().toISOString().slice(0, 10) + ".json";
 
-  a.download = 'tabby-profiles-' + new Date().toISOString().slice(0,10) + '.json';
+	a.click();
 
-  a.click();
+	URL.revokeObjectURL(url);
 
-  URL.revokeObjectURL(url);
-
-  showToast('Profiles exported', 'success');
-
+	showToast("Profiles exported", "success");
 }
 
 function importProfiles() {
+	const input = document.createElement("input");
 
-  const input = document.createElement('input');
+	input.type = "file";
 
-  input.type = 'file';
+	input.accept = ".json";
 
-  input.accept = '.json';
+	input.onchange = (e) => {
+		const file = e.target.files[0];
 
-  input.onchange = (e) => {
+		if (!file) return;
 
-    const file = e.target.files[0];
+		const reader = new FileReader();
 
-    if (!file) return;
+		reader.onload = (ev) => {
+			try {
+				const imported = JSON.parse(ev.target.result);
 
-    const reader = new FileReader();
+				if (!Array.isArray(imported)) throw new Error("Invalid format");
 
-    reader.onload = (ev) => {
+				let count = 0;
 
-      try {
+				imported.forEach((p) => {
+					if (!savedProfiles.find((sp) => sp.id === p.id)) {
+						savedProfiles.push(p);
 
-        const imported = JSON.parse(ev.target.result);
+						count++;
+					}
+				});
 
-        if (!Array.isArray(imported)) throw new Error('Invalid format');
+				SaveProfiles(savedProfiles).catch(() => {});
 
-        let count = 0;
+				renderProfiles();
 
-        imported.forEach(p => {
+				showToast("Imported " + count + " profiles", "success");
+			} catch (err) {
+				showToast("Import failed: " + err.message, "error");
+			}
+		};
 
-          if (!savedProfiles.find(sp => sp.id === p.id)) {
+		reader.readAsText(file);
+	};
 
-            savedProfiles.push(p);
-
-            count++;
-
-          }
-
-        });
-
-        SaveProfiles(savedProfiles).catch(() => {});
-
-        renderProfiles();
-
-        showToast('Imported ' + count + ' profiles', 'success');
-
-      } catch (err) { showToast('Import failed: ' + err.message, 'error'); }
-
-    };
-
-    reader.readAsText(file);
-
-  };
-
-  input.click();
-
+	input.click();
 }
 
 // ===== PROFILES =====
 
-function renderProfiles() { const section = document.getElementById('profiles-section'); const list = document.getElementById('profiles-list'); const editor = document.getElementById('profiles-editor-list'); if (!savedProfiles || savedProfiles.length === 0) { if (section) section.style.display = 'none'; if (editor) editor.innerHTML = '<div style="color:#666;font-size:12px;">No saved profiles yet.</div>'; return; } if (section) section.style.display = 'block'; if (list) { renderProfileGroups(); list.querySelectorAll('.profile-item').forEach(el => { el.ondblclick = () => { const p = savedProfiles.find(x => x.id === el.dataset.profileId); if (p) connectProfile(p); }; }); } if (editor) { editor.innerHTML = savedProfiles.map(p => { const icon = p.type === 'ssh' ? '🔐' : p.type === 'serial' ? '📡' : p.type === 'telnet' ? '🌐' : '⌘'; return `<div class="profile-editor-item"><span>${icon} ${p.name}</span><button class="btn-icon profile-edit" data-id="${p.id}" title="Edit">✎</button><button class="btn-icon profile-duplicate" data-id="${p.id}" title="Duplicate">➕</button>\u270e</button><button class="btn-icon profile-delete" data-id="${p.id}" title="Delete">\u00d7</button></div>`; }).join(''); editor.querySelectorAll('.profile-edit').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; const profile = savedProfiles.find(p => p.id === id); if (profile) editProfile(profile); }; }); editor.querySelectorAll('.profile-duplicate').forEach(btn => {
+function renderProfiles() {
+	const section = document.getElementById("profiles-section");
+	const list = document.getElementById("profiles-list");
+	const editor = document.getElementById("profiles-editor-list");
+	if (!savedProfiles || savedProfiles.length === 0) {
+		if (section) section.style.display = "none";
+		if (editor)
+			editor.innerHTML =
+				'<div style="color:#666;font-size:12px;">No saved profiles yet.</div>';
+		return;
+	}
+	if (section) section.style.display = "block";
+	if (list) {
+		renderProfileGroups();
+		list.querySelectorAll(".profile-item").forEach((el) => {
+			el.ondblclick = () => {
+				const p = savedProfiles.find((x) => x.id === el.dataset.profileId);
+				if (p) connectProfile(p);
+			};
+		});
+	}
+	if (editor) {
+		editor.innerHTML = savedProfiles
+			.map((p) => {
+				const icon =
+					p.type === "ssh"
+						? "🔐"
+						: p.type === "serial"
+							? "📡"
+							: p.type === "telnet"
+								? "🌐"
+								: "⌘";
+				return `<div class="profile-editor-item"><span>${icon} ${p.name}</span><button class="btn-icon profile-edit" data-id="${p.id}" title="Edit">✎</button><button class="btn-icon profile-duplicate" data-id="${p.id}" title="Duplicate">➕</button>\u270e</button><button class="btn-icon profile-delete" data-id="${p.id}" title="Delete">\u00d7</button></div>`;
+			})
+			.join("");
+		editor.querySelectorAll(".profile-edit").forEach((btn) => {
+			btn.onclick = (e) => {
+				e.stopPropagation();
+				const id = btn.dataset.id;
+				const profile = savedProfiles.find((p) => p.id === id);
+				if (profile) editProfile(profile);
+			};
+		});
+		editor.querySelectorAll(".profile-duplicate").forEach((btn) => {
+			btn.onclick = (e) => {
+				e.stopPropagation();
 
-    btn.onclick = (e) => {
+				const id = btn.dataset.id;
 
-      e.stopPropagation();
+				const profile = savedProfiles.find((p) => p.id === id);
 
-      const id = btn.dataset.id;
+				if (profile) {
+					const dup = JSON.parse(JSON.stringify(profile));
 
-      const profile = savedProfiles.find(p => p.id === id);
+					dup.id = "profile-" + Date.now();
 
-      if (profile) {
+					dup.name = profile.name + " (copy)";
 
-        const dup = JSON.parse(JSON.stringify(profile));
+					dup.createdAt = new Date().toISOString();
 
-        dup.id = 'profile-' + Date.now();
+					dup.updatedAt = new Date().toISOString();
 
-        dup.name = profile.name + ' (copy)';
+					savedProfiles.push(dup);
 
-        dup.createdAt = new Date().toISOString();
+					SaveProfiles(savedProfiles).catch(() => {});
 
-        dup.updatedAt = new Date().toISOString();
+					renderProfiles();
 
-        savedProfiles.push(dup);
+					showToast("Duplicated: " + dup.name, "success");
+				}
+			};
+		});
 
-        SaveProfiles(savedProfiles).catch(() => {});
+		editor.querySelectorAll(".profile-delete").forEach((btn) => {
+			btn.onclick = (e) => {
+				e.stopPropagation();
+				const id = btn.dataset.id;
+				savedProfiles = savedProfiles.filter((p) => p.id !== id);
+				SaveProfiles(savedProfiles).catch(() => {});
+				renderProfiles();
+			};
+		});
+	}
+}
 
-        renderProfiles();
+async function connectProfile(profile) {
+	if (profile.type === "ssh") {
+		const opts = profile.options;
+		openSSHDialog();
+		document.getElementById("ssh-host").value = opts.host || "";
+		document.getElementById("ssh-port").value = opts.port || 22;
+		document.getElementById("ssh-user").value = opts.user || "";
+		document.getElementById("ssh-auth").value = opts.auth || "agent";
+		document.getElementById("ssh-auth").dispatchEvent(new Event("change"));
+		if (opts.auth === "password")
+			document.getElementById("ssh-password").value = opts.password || "";
+		if (
+			opts.auth === "publicKey" &&
+			opts.privateKeys &&
+			opts.privateKeys.length
+		)
+			document.getElementById("ssh-key-path").value = opts.privateKeys[0];
+	} else if (profile.type === "serial") {
+		openSerialDialog();
 
-        showToast('Duplicated: ' + dup.name, 'success');
+		setTimeout(() => {
+			const opts = profile.options;
 
-      }
+			refreshSerialPorts();
 
-    };
+			document.getElementById("serial-baud").value = opts.baudRate || 115200;
 
-  });
+			document.getElementById("serial-data-bits").value = opts.dataBits || 8;
 
-  editor.querySelectorAll('.profile-delete').forEach(btn => { btn.onclick = (e) => { e.stopPropagation(); const id = btn.dataset.id; savedProfiles = savedProfiles.filter(p => p.id !== id); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); }; }); } }
+			document.getElementById("serial-stop-bits").value = opts.stopBits || 1;
 
-async function connectProfile(profile) { if (profile.type === 'ssh') { const opts = profile.options; openSSHDialog(); document.getElementById('ssh-host').value = opts.host || ''; document.getElementById('ssh-port').value = opts.port || 22; document.getElementById('ssh-user').value = opts.user || ''; document.getElementById('ssh-auth').value = opts.auth || 'agent'; document.getElementById('ssh-auth').dispatchEvent(new Event('change')); if (opts.auth === 'password') document.getElementById('ssh-password').value = opts.password || ''; if (opts.auth === 'publicKey' && opts.privateKeys && opts.privateKeys.length) document.getElementById('ssh-key-path').value = opts.privateKeys[0]; } else if (profile.type === 'serial') {
+			document.getElementById("serial-parity").value = opts.parity || "none";
+		}, 300);
+	} else if (profile.type === "telnet") {
+		openTelnetDialog();
 
-    openSerialDialog();
+		const opts = profile.options;
 
-    setTimeout(() => {
+		document.getElementById("telnet-host").value = opts.host || "";
 
-      const opts = profile.options;
+		document.getElementById("telnet-port").value = opts.port || 23;
+	} else if (profile.type === "local") {
+		newTab(
+			(profile.options && profile.options.shell) ||
+				(profile.options && profile.options.command),
+		);
+	}
+}
 
-      refreshSerialPorts();
-
-      document.getElementById('serial-baud').value = opts.baudRate || 115200;
-
-      document.getElementById('serial-data-bits').value = opts.dataBits || 8;
-
-      document.getElementById('serial-stop-bits').value = opts.stopBits || 1;
-
-      document.getElementById('serial-parity').value = opts.parity || 'none';
-
-    }, 300);
-
-  } else if (profile.type === 'telnet') {
-
-    openTelnetDialog();
-
-    const opts = profile.options;
-
-    document.getElementById('telnet-host').value = opts.host || '';
-
-    document.getElementById('telnet-port').value = opts.port || 23;
-
-  } else if (profile.type === 'local') { newTab(profile.options && profile.options.shell || profile.options && profile.options.command); } }
-
-function addProfile() { const id = 'profile-' + Date.now(); savedProfiles.push({ id, type: 'ssh', name: 'New SSH Profile', group: '', options: { host: '', port: 22, user: '', auth: 'agent' }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }); SaveProfiles(savedProfiles).catch(() => {}); renderProfiles(); showToast('Profile added', 'info'); }
+function addProfile() {
+	const id = "profile-" + Date.now();
+	savedProfiles.push({
+		id,
+		type: "ssh",
+		name: "New SSH Profile",
+		group: "",
+		options: { host: "", port: 22, user: "", auth: "agent" },
+		createdAt: new Date().toISOString(),
+		updatedAt: new Date().toISOString(),
+	});
+	SaveProfiles(savedProfiles).catch(() => {});
+	renderProfiles();
+	showToast("Profile added", "info");
+}
 
 // ===== BUILD UI =====
 
 function buildUI() {
-
-    document.querySelector('#app').innerHTML = `
+	document.querySelector("#app").innerHTML = `
 
     <div id="sidebar">
 
@@ -3490,602 +4102,767 @@ function buildUI() {
 
     </div>`;
 
-    // Populate color scheme dropdown
+	// Populate color scheme dropdown
 
-    const schemeSelect = document.getElementById('s-color-scheme');
+	const schemeSelect = document.getElementById("s-color-scheme");
 
-    schemeNames.forEach(name => { const opt = document.createElement('option'); opt.value = name; opt.textContent = name; schemeSelect.appendChild(opt); });
+	schemeNames.forEach((name) => {
+		const opt = document.createElement("option");
+		opt.value = name;
+		opt.textContent = name;
+		schemeSelect.appendChild(opt);
+	});
 
-    schemeSelect.onchange = () => applyColorScheme(schemeSelect.value);
+	schemeSelect.onchange = () => applyColorScheme(schemeSelect.value);
 
-    // Populate shell dropdown
+	// Populate shell dropdown
 
-    const shellSelect = document.getElementById('s-shell');
+	const shellSelect = document.getElementById("s-shell");
 
-    availableShells.forEach(s => {
+	availableShells.forEach((s) => {
+		const opt = document.createElement("option");
 
-        const opt = document.createElement('option');
+		opt.value = s;
 
-        opt.value = s;
+		opt.textContent = `${s.split(/[/\\]/).pop().replace(".exe", "")}  (${s})`;
 
-        opt.textContent = `${s.split(/[/\\]/).pop().replace('.exe', '')}  (${s})`;
+		shellSelect.appendChild(opt);
+	});
 
-        shellSelect.appendChild(opt);
+	// Render profiles
 
-    });
+	renderProfiles();
 
-    // Render profiles
+	// Settings tab navigation
 
-    renderProfiles();
+	document.querySelectorAll(".settings-tab").forEach((btn) => {
+		btn.onclick = () => {
+			document
+				.querySelectorAll(".settings-tab")
+				.forEach((b) => b.classList.remove("active"));
 
-    // Settings tab navigation
+			document
+				.querySelectorAll(".settings-page")
+				.forEach((p) => p.classList.remove("active"));
 
-    document.querySelectorAll('.settings-tab').forEach(btn => {
+			btn.classList.add("active");
 
-        btn.onclick = () => {
+			document
+				.getElementById(`settings-${btn.dataset.tab}`)
+				.classList.add("active");
+		};
+	});
 
-            document.querySelectorAll('.settings-tab').forEach(b => b.classList.remove('active'));
+	// Live-update sliders
 
-            document.querySelectorAll('.settings-page').forEach(p => p.classList.remove('active'));
+	document.getElementById("s-font-size").oninput = (e) => {
+		document.getElementById("s-font-size-val").textContent = e.target.value;
 
-            btn.classList.add('active');
+		applyFontSize(parseInt(e.target.value));
+	};
 
-            document.getElementById(`settings-${btn.dataset.tab}`).classList.add('active');
+	document.getElementById("s-line-height").oninput = (e) => {
+		document.getElementById("s-line-height-val").textContent = parseFloat(
+			e.target.value,
+		).toFixed(2);
 
-        };
+		tabs.forEach((t) => {
+			if (t.term) {
+				t.term.options.lineHeight = parseFloat(e.target.value);
+				t.fitAddon.fit();
+			}
+		});
+	};
 
-    });
+	document.getElementById("s-opacity").oninput = (e) => {
+		document.getElementById("s-opacity-val").textContent = parseFloat(
+			e.target.value,
+		).toFixed(2);
 
-    // Live-update sliders
+		document.getElementById("main-content").style.opacity = parseFloat(
+			e.target.value,
+		);
+	};
 
-    document.getElementById('s-font-size').oninput = (e) => {
+	// SSH auth toggle
 
-        document.getElementById('s-font-size-val').textContent = e.target.value;
+	document.getElementById("ssh-auth").onchange = (e) => {
+		document.getElementById("ssh-password-group").style.display =
+			e.target.value === "password" ? "block" : "none";
+		document.getElementById("ssh-key-group").style.display =
+			e.target.value === "publicKey" ? "block" : "none";
+		document.getElementById("ssh-passphrase-group").style.display =
+			e.target.value === "publicKey" ? "block" : "none";
+	};
 
-        applyFontSize(parseInt(e.target.value));
+	// Button bindings
 
-    };
+	document.getElementById("btn-new-tab").onclick = (e) => showNewTabDropdown(e);
 
-    document.getElementById('s-line-height').oninput = (e) => {
+	document.getElementById("btn-settings").onclick = () => toggleSettings();
 
-        document.getElementById('s-line-height-val').textContent = parseFloat(e.target.value).toFixed(2);
+	document.getElementById("serial-refresh").onclick = () =>
+		refreshSerialPorts();
 
-        tabs.forEach(t => { if (t.term) { t.term.options.lineHeight = parseFloat(e.target.value); t.fitAddon.fit(); } });
+	document.getElementById("serial-cancel").onclick = () => closeSerialDialog();
 
-    };
+	document.getElementById("serial-connect").onclick = () => doSerialConnect();
 
-    document.getElementById('s-opacity').oninput = (e) => {
+	document.getElementById("telnet-cancel").onclick = () => closeTelnetDialog();
 
-        document.getElementById('s-opacity-val').textContent = parseFloat(e.target.value).toFixed(2);
+	document.getElementById("telnet-connect").onclick = () => doTelnetConnect();
 
-        document.getElementById('main-content').style.opacity = parseFloat(e.target.value);
+	document.getElementById("forward-cancel").onclick = () =>
+		closeForwardDialog();
 
-    };
+	document.getElementById("forward-add").onclick = () => doAddForward();
 
-    // SSH auth toggle
+	document.getElementById("forward-type").onchange = () =>
+		toggleForwardFields();
 
-    document.getElementById('ssh-auth').onchange = (e) => { document.getElementById('ssh-password-group').style.display = e.target.value === 'password' ? 'block' : 'none'; document.getElementById('ssh-key-group').style.display = e.target.value === 'publicKey' ? 'block' : 'none'; document.getElementById('ssh-passphrase-group').style.display = e.target.value === 'publicKey' ? 'block' : 'none'; };
+	document.getElementById("hostkey-accept").onclick = () =>
+		closeHostKeyDialog(true);
 
-    // Button bindings
+	document.getElementById("hostkey-reject").onclick = () =>
+		closeHostKeyDialog(false);
 
-    document.getElementById('btn-new-tab').onclick = (e) => showNewTabDropdown(e);
+	document.getElementById("sftp-go-up").onclick = () => sftpGoUp();
 
-                document.getElementById('btn-settings').onclick = () => toggleSettings();
+	document.getElementById("sftp-refresh").onclick = () =>
+		sftpNavigate(sftpCurrentPath);
 
-    document.getElementById('serial-refresh').onclick = () => refreshSerialPorts();
+	document.getElementById("sftp-go").onclick = () =>
+		sftpNavigate(document.getElementById("sftp-path").value.trim());
 
-    document.getElementById('serial-cancel').onclick = () => closeSerialDialog();
+	document.getElementById("sftp-path").onkeydown = (e) => {
+		if (e.key === "Enter")
+			sftpNavigate(document.getElementById("sftp-path").value.trim());
+	};
 
-    document.getElementById('serial-connect').onclick = () => doSerialConnect();
+	document.getElementById("sftp-mkdir-btn").onclick = () => sftpMkdir();
 
-    document.getElementById('telnet-cancel').onclick = () => closeTelnetDialog();
+	document.getElementById("sftp-upload-btn").onclick = () =>
+		document.getElementById("sftp-upload-input").click();
 
-    document.getElementById('telnet-connect').onclick = () => doTelnetConnect();
+	document.getElementById("sftp-upload-input").onchange = (e) =>
+		sftpUploadFile(e);
 
-    document.getElementById('forward-cancel').onclick = () => closeForwardDialog();
+	document.getElementById("sftp-download-btn").onclick = () =>
+		sftpDownloadSelected();
 
-    document.getElementById('forward-add').onclick = () => doAddForward();
+	document.getElementById("sftp-delete-btn").onclick = () =>
+		sftpDeleteSelected();
 
-    document.getElementById('forward-type').onchange = () => toggleForwardFields();
+	document.getElementById("sftp-dialog").ondragover = (e) => {
+		e.preventDefault();
+		e.dataTransfer.dropEffect = "copy";
+	};
 
-    document.getElementById('hostkey-accept').onclick = () => closeHostKeyDialog(true);
+	document.getElementById("sftp-dialog").ondrop = (e) => {
+		e.preventDefault();
+		sftpHandleDrop(e);
+	};
 
-    document.getElementById('hostkey-reject').onclick = () => closeHostKeyDialog(false);
+	document.getElementById("sftp-close-btn").onclick = () => closeSFTPBrowser();
 
-    document.getElementById('sftp-go-up').onclick = () => sftpGoUp();
+	// Import SSH config is available via Command Palette
 
-    document.getElementById('sftp-refresh').onclick = () => sftpNavigate(sftpCurrentPath);
+	document.getElementById("cmd-palette-input").oninput = () =>
+		filterCommandPalette();
 
-    document.getElementById('sftp-go').onclick = () => sftpNavigate(document.getElementById('sftp-path').value.trim());
+	document.getElementById("cmd-palette-input").onkeydown = (e) =>
+		handlePaletteKey(e);
 
-    document.getElementById('sftp-path').onkeydown = (e) => { if (e.key === 'Enter') sftpNavigate(document.getElementById('sftp-path').value.trim()); };
+	document.getElementById("settings-close").onclick = () => hideSettings();
 
-    document.getElementById('sftp-mkdir-btn').onclick = () => sftpMkdir();
+	document.getElementById("btn-save").onclick = () => saveSettingsFromUI();
 
-    document.getElementById('sftp-upload-btn').onclick = () => document.getElementById('sftp-upload-input').click();
+	document.getElementById("ssh-cancel").onclick = () => closeSSHDialog();
 
-    document.getElementById('sftp-upload-input').onchange = (e) => sftpUploadFile(e);
+	document.getElementById("ssh-connect").onclick = () => doSSHConnect();
 
-    document.getElementById('sftp-download-btn').onclick = () => sftpDownloadSelected();
+	document.getElementById("btn-add-profile").onclick = () => addProfile();
 
-    document.getElementById('sftp-delete-btn').onclick = () => sftpDeleteSelected();
+	document.getElementById("edit-profile-save").onclick = () =>
+		saveProfileEdit();
 
-    document.getElementById('sftp-dialog').ondragover = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; };
+	document.getElementById("edit-profile-cancel").onclick = () =>
+		closeProfileEditor();
 
-    document.getElementById('sftp-dialog').ondrop = (e) => { e.preventDefault(); sftpHandleDrop(e); };
+	document.getElementById("tab-search-input").oninput = () => filterTabs();
 
-    document.getElementById('sftp-close-btn').onclick = () => closeSFTPBrowser();
+	document.getElementById("tab-search-input").onkeydown = (e) => {
+		if (e.key === "Escape") toggleTabSearch();
+	};
 
-            // Import SSH config is available via Command Palette
-
-    document.getElementById('cmd-palette-input').oninput = () => filterCommandPalette();
-
-    document.getElementById('cmd-palette-input').onkeydown = (e) => handlePaletteKey(e);
-
-    document.getElementById('settings-close').onclick = () => hideSettings();
-
-    document.getElementById('btn-save').onclick = () => saveSettingsFromUI();
-
-    document.getElementById('ssh-cancel').onclick = () => closeSSHDialog();
-
-    document.getElementById('ssh-connect').onclick = () => doSSHConnect();
-
-    document.getElementById('btn-add-profile').onclick = () => addProfile();
-
-    document.getElementById('edit-profile-save').onclick = () => saveProfileEdit();
-
-    document.getElementById('edit-profile-cancel').onclick = () => closeProfileEditor();
-
-    document.getElementById('tab-search-input').oninput = () => filterTabs();
-
-    document.getElementById('tab-search-input').onkeydown = (e) => { if (e.key === 'Escape') toggleTabSearch(); };
-
-    document.getElementById('btn-reset').onclick = () => doResetSettings();
-
+	document.getElementById("btn-reset").onclick = () => doResetSettings();
 }
 
 // ===== SETTINGS APPLY/SAVE =====
 
 function applySettingsToUI() {
+	const s = settings;
 
-    const s = settings;
+	const set = (id, val) => {
+		const el = document.getElementById(id);
+		if (el) el.value = val ?? "";
+	};
 
-    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+	const check = (id, val) => {
+		const el = document.getElementById(id);
+		if (el) el.checked = !!val;
+	};
 
-    const check = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+	// Appearance
 
-    // Appearance
+	set("s-color-scheme", s.ColorScheme || "Tabby Default");
 
-    set('s-color-scheme', s.ColorScheme || 'Tabby Default');
+	if (s.ColorScheme) applyColorScheme(s.ColorScheme);
 
-    if (s.ColorScheme) applyColorScheme(s.ColorScheme);
+	set("s-font-family", s.FontFamily);
 
-    set('s-font-family', s.FontFamily);
+	set("s-font-size", s.FontSize || 14);
 
-    set('s-font-size', s.FontSize || 14);
+	document.getElementById("s-font-size-val").textContent = s.FontSize || 14;
 
-    document.getElementById('s-font-size-val').textContent = s.FontSize || 14;
+	if (s.FontSize) applyFontSize(s.FontSize);
 
-    if (s.FontSize) applyFontSize(s.FontSize);
+	set("s-fallback-font", s.FallbackFont);
 
-    set('s-fallback-font', s.FallbackFont);
+	set("s-font-weight", s.FontWeight || 400);
 
-    set('s-font-weight', s.FontWeight || 400);
+	set("s-font-weight-bold", s.FontWeightBold || 700);
 
-    set('s-font-weight-bold', s.FontWeightBold || 700);
+	set("s-line-height", s.LineHeight || 1.2);
 
-    set('s-line-height', s.LineHeight || 1.2);
+	document.getElementById("s-line-height-val").textContent =
+		s.LineHeight || 1.2;
 
-    document.getElementById('s-line-height-val').textContent = s.LineHeight || 1.2;
+	set("s-line-padding", s.LinePadding || 0);
 
-    set('s-line-padding', s.LinePadding || 0);
+	check("s-ligatures", s.Ligatures);
 
-    check('s-ligatures', s.Ligatures);
+	set("s-theme", s.Theme || "dark");
 
-    set('s-theme', s.Theme || 'dark');
+	applyTheme(s.Theme || "dark");
 
-    applyTheme(s.Theme || 'dark');
+	set("s-opacity", s.Opacity ?? 1.0);
 
-    set('s-opacity', s.Opacity ?? 1.0);
+	document.getElementById("s-opacity-val").textContent = (
+		s.Opacity ?? 1.0
+	).toFixed(2);
 
-    document.getElementById('s-opacity-val').textContent = (s.Opacity ?? 1.0).toFixed(2);
+	set("s-spaciness", s.Spaciness || 1);
 
-    set('s-spaciness', s.Spaciness || 1);
+	check("s-animations", s.Animations ?? true);
 
-    check('s-animations', s.Animations ?? true);
+	set("s-cursor-style", s.CursorStyle || "bar");
 
-    set('s-cursor-style', s.CursorStyle || 'bar');
+	check("s-cursor-blink", s.CursorBlink ?? true);
 
-    check('s-cursor-blink', s.CursorBlink ?? true);
+	set("s-frontend", s.Frontend || "xterm-webgl");
 
-    set('s-frontend', s.Frontend || 'xterm-webgl');
+	check("s-draw-bold-bright", s.DrawBoldTextInBrightColors ?? true);
 
-    check('s-draw-bold-bright', s.DrawBoldTextInBrightColors ?? true);
+	set("s-min-contrast", s.MinimumContrastRatio ?? 4);
 
-    set('s-min-contrast', s.MinimumContrastRatio ?? 4);
+	set("s-css", s.CSS || "");
 
-    set('s-css', s.CSS || '');
+	// Terminal
 
-    // Terminal
+	set("s-shell", s.Shell || "");
 
-    set('s-shell', s.Shell || '');
+	set("s-scrollback", s.Scrollback || 25000);
 
-    set('s-scrollback', s.Scrollback || 25000);
+	set("s-bell", s.Bell || "off");
 
-    set('s-bell', s.Bell || 'off');
+	check("s-alt-is-meta", s.AltIsMeta);
 
-    check('s-alt-is-meta', s.AltIsMeta);
+	check("s-scroll-on-input", s.ScrollOnInput ?? true);
 
-    check('s-scroll-on-input', s.ScrollOnInput ?? true);
+	check("s-use-conpty", s.UseConPTY ?? true);
 
-    check('s-use-conpty', s.UseConPTY ?? true);
+	check("s-set-comspec", s.SetComSpec);
 
-    check('s-set-comspec', s.SetComSpec);
+	// Clipboard
 
-    // Clipboard
+	check("s-copy-on-select", s.CopyOnSelect);
 
-    check('s-copy-on-select', s.CopyOnSelect);
+	check("s-copy-as-html", s.CopyAsHTML ?? true);
 
-    check('s-copy-as-html', s.CopyAsHTML ?? true);
+	check("s-bracketed-paste", s.BracketedPaste ?? true);
 
-    check('s-bracketed-paste', s.BracketedPaste ?? true);
+	check("s-warn-multiline", s.WarnOnMultilinePaste ?? true);
 
-    check('s-warn-multiline', s.WarnOnMultilinePaste ?? true);
+	check("s-replace-newlines", s.ReplaceNewlinesOnPaste);
 
-    check('s-replace-newlines', s.ReplaceNewlinesOnPaste);
+	check("s-trim-whitespace", s.TrimWhitespaceOnPaste ?? true);
 
-    check('s-trim-whitespace', s.TrimWhitespaceOnPaste ?? true);
+	// Mouse
 
-    // Mouse
+	set("s-right-click", s.RightClick || "menu");
 
-    set('s-right-click', s.RightClick || 'menu');
+	check("s-paste-middle-click", s.PasteOnMiddleClick ?? true);
 
-    check('s-paste-middle-click', s.PasteOnMiddleClick ?? true);
+	set("s-word-separator", s.WordSeparator || " ()[]{}'\"");
 
-    set('s-word-separator', s.WordSeparator || " ()[]{}'\"");
+	// Tabs
 
-    // Tabs
+	set("s-tab-position", s.TabPosition || "left");
 
-    set('s-tab-position', s.TabPosition || 'left');
+	check("s-last-tab-closes", s.LastTabClosesWindow);
 
-    check('s-last-tab-closes', s.LastTabClosesWindow);
+	check("s-cycle-tabs", s.CycleTabs ?? true);
 
-    check('s-cycle-tabs', s.CycleTabs ?? true);
+	check("s-hide-close-button", s.HideCloseButton);
 
-    check('s-hide-close-button', s.HideCloseButton);
+	set("s-pane-resize-step", s.PaneResizeStep ?? 0.1);
 
-    set('s-pane-resize-step', s.PaneResizeStep ?? 0.1);
+	check("s-focus-follows-mouse", s.FocusFollowsMouse);
 
-    check('s-focus-follows-mouse', s.FocusFollowsMouse);
+	// Startup
 
-    // Startup
+	check("s-auto-open", s.AutoOpen ?? true);
 
-    check('s-auto-open', s.AutoOpen ?? true);
+	check("s-recover-tabs", s.RecoverTabs ?? true);
 
-    check('s-recover-tabs', s.RecoverTabs ?? true);
+	set("s-frame", s.Frame || "thin");
 
-    set('s-frame', s.Frame || 'thin');
+	set("s-dock", s.Dock || "off");
 
-    set('s-dock', s.Dock || 'off');
+	check("s-dock-hide-blur", s.DockHideOnBlur);
 
-    check('s-dock-hide-blur', s.DockHideOnBlur);
+	check("s-dock-on-top", s.DockAlwaysOnTop ?? true);
 
-    check('s-dock-on-top', s.DockAlwaysOnTop ?? true);
+	check("s-hide-tray", s.HideTray);
 
-    check('s-hide-tray', s.HideTray);
+	set("s-language", s.Language || "");
 
-    set('s-language', s.Language || '');
+	check("s-analytics", s.EnableAnalytics ?? true);
 
-    check('s-analytics', s.EnableAnalytics ?? true);
+	check("s-auto-updates", s.EnableAutomaticUpdates ?? true);
 
-    check('s-auto-updates', s.EnableAutomaticUpdates ?? true);
+	check("s-experimental", s.EnableExperimentalFeatures);
 
-    check('s-experimental', s.EnableExperimentalFeatures);
+	// SSH
 
-    // SSH
+	check("s-ssh-warn-close", s.SSHWarnOnClose);
 
-    check('s-ssh-warn-close', s.SSHWarnOnClose);
+	check("s-ssh-verify-keys", s.SSHVerifyHostKeys ?? true);
 
-    check('s-ssh-verify-keys', s.SSHVerifyHostKeys ?? true);
+	check("s-ssh-disable-title", s.SSHDisableDynamicTitle ?? true);
 
-    check('s-ssh-disable-title', s.SSHDisableDynamicTitle ?? true);
+	set("s-ssh-agent-type", s.SSHAgentType || "auto");
 
-    set('s-ssh-agent-type', s.SSHAgentType || 'auto');
+	set("s-ssh-agent-path", s.SSHAgentPath || "");
 
-    set('s-ssh-agent-path', s.SSHAgentPath || '');
+	set("s-ssh-x11", s.SSHX11Display || "");
 
-    set('s-ssh-x11', s.SSHX11Display || '');
+	// Serial
 
-    // Serial
+	set("s-serial-baud", s.SerialBaudRate || 115200);
 
-    set('s-serial-baud', s.SerialBaudRate || 115200);
+	set("s-serial-data-bits", s.SerialDataBits || 8);
 
-    set('s-serial-data-bits', s.SerialDataBits || 8);
+	set("s-serial-stop-bits", s.SerialStopBits || 1);
 
-    set('s-serial-stop-bits', s.SerialStopBits || 1);
+	set("s-serial-parity", s.SerialParity || "none");
 
-    set('s-serial-parity', s.SerialParity || 'none');
-
-    set('s-serial-flow', s.SerialFlowControl || 'none');
-
+	set("s-serial-flow", s.SerialFlowControl || "none");
 }
 
 function applyFontSize(size) {
+	fontSize = size;
 
-    fontSize = size;
-
-    tabs.forEach(t => { if (t.term) { t.term.options.fontSize = size; t.fitAddon.fit(); if (t.ptyId) PTYResize(t.ptyId, t.term.cols, t.term.rows); if (t.isSSH && t.sshConnectionId && t.sshSessionId) SSHResize({ connectionId: t.sshConnectionId, sessionId: t.sshSessionId, columns: t.term.cols, rows: t.term.rows }); } });
-
+	tabs.forEach((t) => {
+		if (t.term) {
+			t.term.options.fontSize = size;
+			t.fitAddon.fit();
+			if (t.ptyId) PTYResize(t.ptyId, t.term.cols, t.term.rows);
+			if (t.isSSH && t.sshConnectionId && t.sshSessionId)
+				SSHResize({
+					connectionId: t.sshConnectionId,
+					sessionId: t.sshSessionId,
+					columns: t.term.cols,
+					rows: t.term.rows,
+				});
+		}
+	});
 }
 
 function applyTheme(theme) {
+	if (theme === "light") {
+		document.body.classList.add("light-theme");
+		document.body.classList.remove("dark-theme");
+	} else if (theme === "dark") {
+		document.body.classList.add("dark-theme");
+		document.body.classList.remove("light-theme");
+	} else {
+		document.body.classList.remove("light-theme");
+		document.body.classList.remove("dark-theme");
+	}
 
-    if (theme === 'light') { document.body.classList.add('light-theme'); document.body.classList.remove('dark-theme'); }
+	// Update xterm themes
 
-    else if (theme === 'dark') { document.body.classList.add('dark-theme'); document.body.classList.remove('light-theme'); }
+	const isDark = !isSchemeLight(settings.ColorScheme || "Tabby Default");
 
-    else { document.body.classList.remove('light-theme'); document.body.classList.remove('dark-theme'); }
-
-    // Update xterm themes
-
-    const isDark = !isSchemeLight(settings.ColorScheme || 'Tabby Default');
-
-    const schemeTheme = getColorSchemeTheme(settings.ColorScheme || 'Tabby Default'); tabs.forEach(t => { if (t.term && schemeTheme) t.term.options.theme = schemeTheme; });
-
+	const schemeTheme = getColorSchemeTheme(
+		settings.ColorScheme || "Tabby Default",
+	);
+	tabs.forEach((t) => {
+		if (t.term && schemeTheme) t.term.options.theme = schemeTheme;
+	});
 }
 
-const FALLBACK_DARK = { background: '#1e1e1e', foreground: '#cccccc', cursor: '#aeafad', selectionBackground: '#264f78', black: '#1e1e1e', red: '#f44747', green: '#6a9955', yellow: '#d7ba7d', blue: '#569cd6', magenta: '#c586c0', cyan: '#4ec9b0', white: '#cccccc', brightBlack: '#666666', brightRed: '#f44747', brightGreen: '#6a9955', brightYellow: '#d7ba7d', brightBlue: '#569cd6', brightMagenta: '#c586c0', brightCyan: '#4ec9b0', brightWhite: '#e0e0e0' };
+const FALLBACK_DARK = {
+	background: "#1e1e1e",
+	foreground: "#cccccc",
+	cursor: "#aeafad",
+	selectionBackground: "#264f78",
+	black: "#1e1e1e",
+	red: "#f44747",
+	green: "#6a9955",
+	yellow: "#d7ba7d",
+	blue: "#569cd6",
+	magenta: "#c586c0",
+	cyan: "#4ec9b0",
+	white: "#cccccc",
+	brightBlack: "#666666",
+	brightRed: "#f44747",
+	brightGreen: "#6a9955",
+	brightYellow: "#d7ba7d",
+	brightBlue: "#569cd6",
+	brightMagenta: "#c586c0",
+	brightCyan: "#4ec9b0",
+	brightWhite: "#e0e0e0",
+};
 
 async function saveSettingsFromUI() {
+	const s = {
+		ColorScheme:
+			document.getElementById("s-color-scheme").value || "Tabby Default",
 
-    const s = {
+		FontFamily: document.getElementById("s-font-family").value.trim(),
 
-        ColorScheme: document.getElementById('s-color-scheme').value || 'Tabby Default',
+		FontSize: parseInt(document.getElementById("s-font-size").value) || 14,
 
-        FontFamily: document.getElementById('s-font-family').value.trim(),
+		FallbackFont: document.getElementById("s-fallback-font").value.trim(),
 
-        FontSize: parseInt(document.getElementById('s-font-size').value) || 14,
+		FontWeight: parseInt(document.getElementById("s-font-weight").value) || 400,
 
-        FallbackFont: document.getElementById('s-fallback-font').value.trim(),
+		FontWeightBold:
+			parseInt(document.getElementById("s-font-weight-bold").value) || 700,
 
-        FontWeight: parseInt(document.getElementById('s-font-weight').value) || 400,
+		LineHeight:
+			parseFloat(document.getElementById("s-line-height").value) || 1.2,
 
-        FontWeightBold: parseInt(document.getElementById('s-font-weight-bold').value) || 700,
+		LinePadding: parseInt(document.getElementById("s-line-padding").value) || 0,
 
-        LineHeight: parseFloat(document.getElementById('s-line-height').value) || 1.2,
+		Ligatures: document.getElementById("s-ligatures").checked,
 
-        LinePadding: parseInt(document.getElementById('s-line-padding').value) || 0,
+		Theme: document.getElementById("s-theme").value || "dark",
 
-        Ligatures: document.getElementById('s-ligatures').checked,
+		Opacity: parseFloat(document.getElementById("s-opacity").value) || 1.0,
 
-        Theme: document.getElementById('s-theme').value || 'dark',
+		Spaciness: parseInt(document.getElementById("s-spaciness").value) || 1,
 
-        Opacity: parseFloat(document.getElementById('s-opacity').value) || 1.0,
+		Animations: document.getElementById("s-animations").checked,
 
-        Spaciness: parseInt(document.getElementById('s-spaciness').value) || 1,
+		CursorStyle: document.getElementById("s-cursor-style").value || "bar",
 
-        Animations: document.getElementById('s-animations').checked,
+		CursorBlink: document.getElementById("s-cursor-blink").checked,
 
-        CursorStyle: document.getElementById('s-cursor-style').value || 'bar',
+		Frontend: document.getElementById("s-frontend").value || "xterm-webgl",
 
-        CursorBlink: document.getElementById('s-cursor-blink').checked,
+		DrawBoldTextInBrightColors:
+			document.getElementById("s-draw-bold-bright").checked,
 
-        Frontend: document.getElementById('s-frontend').value || 'xterm-webgl',
+		MinimumContrastRatio:
+			parseFloat(document.getElementById("s-min-contrast").value) || 4,
 
-        DrawBoldTextInBrightColors: document.getElementById('s-draw-bold-bright').checked,
+		CSS: document.getElementById("s-css").value,
 
-        MinimumContrastRatio: parseFloat(document.getElementById('s-min-contrast').value) || 4,
+		Shell: document.getElementById("s-shell").value || "",
 
-        CSS: document.getElementById('s-css').value,
+		Scrollback:
+			parseInt(document.getElementById("s-scrollback").value) || 25000,
 
-        Shell: document.getElementById('s-shell').value || '',
+		Bell: document.getElementById("s-bell").value || "off",
 
-        Scrollback: parseInt(document.getElementById('s-scrollback').value) || 25000,
+		AltIsMeta: document.getElementById("s-alt-is-meta").checked,
 
-        Bell: document.getElementById('s-bell').value || 'off',
+		ScrollOnInput: document.getElementById("s-scroll-on-input").checked,
 
-        AltIsMeta: document.getElementById('s-alt-is-meta').checked,
+		UseConPTY: document.getElementById("s-use-conpty").checked,
 
-        ScrollOnInput: document.getElementById('s-scroll-on-input').checked,
+		SetComSpec: document.getElementById("s-set-comspec").checked,
 
-        UseConPTY: document.getElementById('s-use-conpty').checked,
+		CopyOnSelect: document.getElementById("s-copy-on-select").checked,
 
-        SetComSpec: document.getElementById('s-set-comspec').checked,
+		CopyAsHTML: document.getElementById("s-copy-as-html").checked,
 
-        CopyOnSelect: document.getElementById('s-copy-on-select').checked,
+		BracketedPaste: document.getElementById("s-bracketed-paste").checked,
 
-        CopyAsHTML: document.getElementById('s-copy-as-html').checked,
+		WarnOnMultilinePaste: document.getElementById("s-warn-multiline").checked,
 
-        BracketedPaste: document.getElementById('s-bracketed-paste').checked,
+		ReplaceNewlinesOnPaste:
+			document.getElementById("s-replace-newlines").checked,
 
-        WarnOnMultilinePaste: document.getElementById('s-warn-multiline').checked,
+		TrimWhitespaceOnPaste: document.getElementById("s-trim-whitespace").checked,
 
-        ReplaceNewlinesOnPaste: document.getElementById('s-replace-newlines').checked,
+		RightClick: document.getElementById("s-right-click").value || "menu",
 
-        TrimWhitespaceOnPaste: document.getElementById('s-trim-whitespace').checked,
+		PasteOnMiddleClick: document.getElementById("s-paste-middle-click").checked,
 
-        RightClick: document.getElementById('s-right-click').value || 'menu',
+		WordSeparator: document.getElementById("s-word-separator").value,
 
-        PasteOnMiddleClick: document.getElementById('s-paste-middle-click').checked,
+		TabPosition: document.getElementById("s-tab-position").value || "left",
 
-        WordSeparator: document.getElementById('s-word-separator').value,
+		LastTabClosesWindow: document.getElementById("s-last-tab-closes").checked,
 
-        TabPosition: document.getElementById('s-tab-position').value || 'left',
+		CycleTabs: document.getElementById("s-cycle-tabs").checked,
 
-        LastTabClosesWindow: document.getElementById('s-last-tab-closes').checked,
+		HideCloseButton: document.getElementById("s-hide-close-button").checked,
 
-        CycleTabs: document.getElementById('s-cycle-tabs').checked,
+		PaneResizeStep:
+			parseFloat(document.getElementById("s-pane-resize-step").value) || 0.1,
 
-        HideCloseButton: document.getElementById('s-hide-close-button').checked,
+		FocusFollowsMouse: document.getElementById("s-focus-follows-mouse").checked,
 
-        PaneResizeStep: parseFloat(document.getElementById('s-pane-resize-step').value) || 0.1,
+		AutoOpen: document.getElementById("s-auto-open").checked,
 
-        FocusFollowsMouse: document.getElementById('s-focus-follows-mouse').checked,
+		RecoverTabs: document.getElementById("s-recover-tabs").checked,
 
-        AutoOpen: document.getElementById('s-auto-open').checked,
+		Frame: document.getElementById("s-frame").value || "thin",
 
-        RecoverTabs: document.getElementById('s-recover-tabs').checked,
+		Dock: document.getElementById("s-dock").value || "off",
 
-        Frame: document.getElementById('s-frame').value || 'thin',
+		DockHideOnBlur: document.getElementById("s-dock-hide-blur").checked,
 
-        Dock: document.getElementById('s-dock').value || 'off',
+		DockAlwaysOnTop: document.getElementById("s-dock-on-top").checked,
 
-        DockHideOnBlur: document.getElementById('s-dock-hide-blur').checked,
+		HideTray: document.getElementById("s-hide-tray").checked,
 
-        DockAlwaysOnTop: document.getElementById('s-dock-on-top').checked,
+		Language: document.getElementById("s-language").value.trim(),
 
-        HideTray: document.getElementById('s-hide-tray').checked,
+		EnableAnalytics: document.getElementById("s-analytics").checked,
 
-        Language: document.getElementById('s-language').value.trim(),
+		EnableAutomaticUpdates: document.getElementById("s-auto-updates").checked,
 
-        EnableAnalytics: document.getElementById('s-analytics').checked,
+		EnableExperimentalFeatures:
+			document.getElementById("s-experimental").checked,
 
-        EnableAutomaticUpdates: document.getElementById('s-auto-updates').checked,
+		SSHWarnOnClose: document.getElementById("s-ssh-warn-close").checked,
 
-        EnableExperimentalFeatures: document.getElementById('s-experimental').checked,
+		SSHVerifyHostKeys: document.getElementById("s-ssh-verify-keys").checked,
 
-        SSHWarnOnClose: document.getElementById('s-ssh-warn-close').checked,
+		SSHDisableDynamicTitle: document.getElementById("s-ssh-disable-title")
+			.checked,
 
-        SSHVerifyHostKeys: document.getElementById('s-ssh-verify-keys').checked,
+		SSHAgentType: document.getElementById("s-ssh-agent-type").value || "auto",
 
-        SSHDisableDynamicTitle: document.getElementById('s-ssh-disable-title').checked,
+		SSHAgentPath: document.getElementById("s-ssh-agent-path").value.trim(),
 
-        SSHAgentType: document.getElementById('s-ssh-agent-type').value || 'auto',
+		SSHX11Display: document.getElementById("s-ssh-x11").value.trim(),
 
-        SSHAgentPath: document.getElementById('s-ssh-agent-path').value.trim(),
+		SerialBaudRate:
+			parseInt(document.getElementById("s-serial-baud").value) || 115200,
 
-        SSHX11Display: document.getElementById('s-ssh-x11').value.trim(),
+		SerialDataBits:
+			parseInt(document.getElementById("s-serial-data-bits").value) || 8,
 
-        SerialBaudRate: parseInt(document.getElementById('s-serial-baud').value) || 115200,
+		SerialStopBits:
+			parseInt(document.getElementById("s-serial-stop-bits").value) || 1,
 
-        SerialDataBits: parseInt(document.getElementById('s-serial-data-bits').value) || 8,
+		SerialParity: document.getElementById("s-serial-parity").value || "none",
 
-        SerialStopBits: parseInt(document.getElementById('s-serial-stop-bits').value) || 1,
+		SerialFlowControl: document.getElementById("s-serial-flow").value || "none",
+	};
 
-        SerialParity: document.getElementById('s-serial-parity').value || 'none',
+	try {
+		await SaveSettings(s);
+		settings = s;
+		applySettingsToUI();
+		showToast("Settings saved", "success");
+	} catch (_) {
+		showToast("Failed to save settings", "error");
+	}
 
-        SerialFlowControl: document.getElementById('s-serial-flow').value || 'none',
-
-    };
-
-    try { await SaveSettings(s); settings = s; applySettingsToUI(); showToast('Settings saved', 'success'); }
-
-    catch (_) { showToast('Failed to save settings', 'error'); }
-
-    hideSettings();
-
+	hideSettings();
 }
 
-GetUsername().then(u => { const el = document.getElementById('ssh-user'); if (el && !el.value) el.value = u; }).catch(() => {});
+GetUsername()
+	.then((u) => {
+		const el = document.getElementById("ssh-user");
+		if (el && !el.value) el.value = u;
+	})
+	.catch(() => {});
 
 function doResetSettings() {
+	ResetSettings()
+		.then(() => {
+			settings = {};
+			fontSize = 14;
+			applyFontSize(14);
+			applyTheme("dark");
+			applySettingsToUI();
+			showToast("Reset to defaults", "info");
+		})
 
-    ResetSettings().then(() => { settings = {}; fontSize = 14; applyFontSize(14); applyTheme('dark'); applySettingsToUI(); showToast('Reset to defaults', 'info'); })
-
-    .catch(() => { showToast('Failed to reset', 'error'); });
-
+		.catch(() => {
+			showToast("Failed to reset", "error");
+		});
 }
 
-function toggleSettings() { const p = document.getElementById('settings-panel'); if (p.classList.contains('active')) { hideSettings(); return; } applySettingsToUI(); p.classList.add('active'); }
+function toggleSettings() {
+	const p = document.getElementById("settings-panel");
+	if (p.classList.contains("active")) {
+		hideSettings();
+		return;
+	}
+	applySettingsToUI();
+	p.classList.add("active");
+}
 
-function hideSettings() { document.getElementById('settings-panel').classList.remove('active'); const tab = getActiveTab(); if (tab) tab.term.focus(); }
+function hideSettings() {
+	document.getElementById("settings-panel").classList.remove("active");
+	const tab = getActiveTab();
+	if (tab) tab.term.focus();
+}
 
 // ===== WINDOW CONTROLS =====
 
 let alwaysOnTop = false;
 
 async function toggleAlwaysOnTop() {
+	alwaysOnTop = !alwaysOnTop;
 
-  alwaysOnTop = !alwaysOnTop;
+	try {
+		await WindowSetAlwaysOnTop(alwaysOnTop);
 
-  try {
-
-    await WindowSetAlwaysOnTop(alwaysOnTop);
-
-    showToast(alwaysOnTop ? 'Always on top: ON' : 'Always on top: OFF', 'info');
-
-  } catch (e) {
-
-    showToast('Window control not available', 'error');
-
-  }
-
+		showToast(alwaysOnTop ? "Always on top: ON" : "Always on top: OFF", "info");
+	} catch (e) {
+		showToast("Window control not available", "error");
+	}
 }
 
 // ===== TOAST =====
 
-function showToast(message, type = 'info') { const existing = document.querySelector('.toast'); if (existing) existing.remove(); const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.textContent = message; document.body.appendChild(toast); requestAnimationFrame(() => toast.classList.add('visible')); setTimeout(() => { toast.classList.remove('visible'); setTimeout(() => toast.remove(), 300); }, 2500); }
+function showToast(message, type = "info") {
+	const existing = document.querySelector(".toast");
+	if (existing) existing.remove();
+	const toast = document.createElement("div");
+	toast.className = `toast ${type}`;
+	toast.textContent = message;
+	document.body.appendChild(toast);
+	requestAnimationFrame(() => toast.classList.add("visible"));
+	setTimeout(() => {
+		toast.classList.remove("visible");
+		setTimeout(() => toast.remove(), 300);
+	}, 2500);
+}
 
 // ===== NEW TAB DROPDOWN =====
 
 function showNewTabDropdown(e) {
-    e.stopPropagation();
-    document.querySelectorAll('#new-tab-dropdown').forEach(d => d.remove());
-    const dropdown = document.createElement('div'); dropdown.id = 'new-tab-dropdown';
-    let html = '';
-    // Connection types
-    html += '<div class="dropdown-section-label">New</div>';
-    html += '<div class="shell-item" data-action="new-tab"><span class="shell-name">⎘ Local Shell</span><span class="shell-path">' + defaultShell + '</span></div>';
-    availableShells.forEach(s => { const name = s.replace(String.fromCharCode(92),"/").split("/").pop().replace('.exe', ''); html += '<div class="shell-item" data-action="new-tab" data-shell="' + s + '"><span class="shell-name">' + name + '</span><span class="shell-path">' + s + '</span></div>'; });
-    html += '<div class="dropdown-separator"></div>';
-    html += '<div class="shell-item" data-action="ssh"><span class="shell-name">🔐 SSH Connect</span><span class="shell-path">Remote server</span></div>';
-    html += '<div class="shell-item" data-action="serial"><span class="shell-name">📡 Serial Port</span><span class="shell-path">Hardware device</span></div>';
-    html += '<div class="shell-item" data-action="telnet"><span class="shell-name">🌐 Telnet</span><span class="shell-path">Telnet server</span></div>';
-    html += '<div class="dropdown-separator"></div>';
-    html += '<div class="shell-item" data-action="command-palette"><span class="shell-name">⚙ Command Palette</span><span class="shell-path">Ctrl+Shift+P</span></div>';
-    html += '<div class="shell-item" data-action="notifications"><span class="shell-name">🔔 Notifications</span></div>';
-    html += '<div class="shell-item" data-action="settings"><span class="shell-name">⚙ Settings</span><span class="shell-path">Ctrl+,</span></div>';
-    dropdown.innerHTML = html;
-    const rect = e.currentTarget.getBoundingClientRect();
-    dropdown.style.position = 'fixed'; dropdown.style.left = rect.left + 'px'; dropdown.style.top = (rect.bottom + 4) + 'px';
-    document.body.appendChild(dropdown);
-    dropdown.onclick = (ev) => {
-        const item = ev.target.closest('.shell-item');
-        if (!item) return;
-        dropdown.remove();
-        const action = item.dataset.action;
-        const shell = item.dataset.shell;
-        if (action === 'new-tab') newTab(shell || undefined);
-        else if (action === 'ssh') openSSHDialog();
-        else if (action === 'serial') openSerialDialog();
-        else if (action === 'telnet') openTelnetDialog();
-        else if (action === 'command-palette') toggleCommandPalette();
-        else if (action === 'notifications') showNotificationCenter();
-        else if (action === 'settings') toggleSettings();
-    };
-    setTimeout(() => { document.addEventListener('click', function handler(ev) { if (!dropdown.contains(ev.target)) { dropdown.remove(); document.removeEventListener('click', handler); } }); }, 10);
+	e.stopPropagation();
+	document.querySelectorAll("#new-tab-dropdown").forEach((d) => d.remove());
+	const dropdown = document.createElement("div");
+	dropdown.id = "new-tab-dropdown";
+	let html = "";
+	// Connection types
+	html += '<div class="dropdown-section-label">New</div>';
+	html +=
+		'<div class="shell-item" data-action="new-tab"><span class="shell-name">⎘ Local Shell</span><span class="shell-path">' +
+		defaultShell +
+		"</span></div>";
+	availableShells.forEach((s) => {
+		const name = s
+			.replace(String.fromCharCode(92), "/")
+			.split("/")
+			.pop()
+			.replace(".exe", "");
+		html +=
+			'<div class="shell-item" data-action="new-tab" data-shell="' +
+			s +
+			'"><span class="shell-name">' +
+			name +
+			'</span><span class="shell-path">' +
+			s +
+			"</span></div>";
+	});
+	html += '<div class="dropdown-separator"></div>';
+	html +=
+		'<div class="shell-item" data-action="ssh"><span class="shell-name">🔐 SSH Connect</span><span class="shell-path">Remote server</span></div>';
+	html +=
+		'<div class="shell-item" data-action="serial"><span class="shell-name">📡 Serial Port</span><span class="shell-path">Hardware device</span></div>';
+	html +=
+		'<div class="shell-item" data-action="telnet"><span class="shell-name">🌐 Telnet</span><span class="shell-path">Telnet server</span></div>';
+	html += '<div class="dropdown-separator"></div>';
+	html +=
+		'<div class="shell-item" data-action="command-palette"><span class="shell-name">⚙ Command Palette</span><span class="shell-path">Ctrl+Shift+P</span></div>';
+	html +=
+		'<div class="shell-item" data-action="notifications"><span class="shell-name">🔔 Notifications</span></div>';
+	html +=
+		'<div class="shell-item" data-action="settings"><span class="shell-name">⚙ Settings</span><span class="shell-path">Ctrl+,</span></div>';
+	dropdown.innerHTML = html;
+	const rect = e.currentTarget.getBoundingClientRect();
+	dropdown.style.position = "fixed";
+	dropdown.style.left = rect.left + "px";
+	dropdown.style.top = rect.bottom + 4 + "px";
+	document.body.appendChild(dropdown);
+	dropdown.onclick = (ev) => {
+		const item = ev.target.closest(".shell-item");
+		if (!item) return;
+		dropdown.remove();
+		const action = item.dataset.action;
+		const shell = item.dataset.shell;
+		if (action === "new-tab") newTab(shell || undefined);
+		else if (action === "ssh") openSSHDialog();
+		else if (action === "serial") openSerialDialog();
+		else if (action === "telnet") openTelnetDialog();
+		else if (action === "command-palette") toggleCommandPalette();
+		else if (action === "notifications") showNotificationCenter();
+		else if (action === "settings") toggleSettings();
+	};
+	setTimeout(() => {
+		document.addEventListener("click", function handler(ev) {
+			if (!dropdown.contains(ev.target)) {
+				dropdown.remove();
+				document.removeEventListener("click", handler);
+			}
+		});
+	}, 10);
 }
 
 // ===== SCROLL TO BOTTOM =====
 
 function addScrollToBottom(term, container) {
+	const btn = document.createElement("button");
 
-  const btn = document.createElement('button');
+	btn.className = "scroll-to-bottom-btn";
 
-  btn.className = 'scroll-to-bottom-btn';
+	btn.textContent = "\u2193";
 
-  btn.textContent = '\u2193';
+	btn.title = "Scroll to bottom";
 
-  btn.title = 'Scroll to bottom';
+	btn.style.cssText =
+		"position:absolute;bottom:30px;right:20px;width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text);cursor:pointer;display:none;z-index:10;font-size:16px;line-height:32px;text-align:center;opacity:0.8;";
 
-  btn.style.cssText = 'position:absolute;bottom:30px;right:20px;width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text);cursor:pointer;display:none;z-index:10;font-size:16px;line-height:32px;text-align:center;opacity:0.8;';
+	container.style.position = "relative";
 
-  container.style.position = 'relative';
+	container.appendChild(btn);
 
-  container.appendChild(btn);
+	term.onScroll(() => {
+		const atBottom =
+			term.buffer.active.viewportY >= term.buffer.active.length - term.rows;
 
-  term.onScroll(() => {
+		btn.style.display = atBottom ? "none" : "block";
+	});
 
-    const atBottom = term.buffer.active.viewportY >= term.buffer.active.length - term.rows;
+	btn.onclick = () => term.scrollToBottom();
 
-    btn.style.display = atBottom ? 'none' : 'block';
-
-  });
-
-  btn.onclick = () => term.scrollToBottom();
-
-  return btn;
-
+	return btn;
 }
 
 // ===== ZMODEM =====
@@ -4093,1172 +4870,1778 @@ function addScrollToBottom(term, container) {
 const zmodemActive = false;
 
 function setupZmodem(term, tab) {
+	if (!term.zmodemAttach) return;
 
-  if (!term.zmodemAttach) return;
+	try {
+		term.zmodemAttach({
+			sendTerminal: (data) => {
+				if (tab.ptyId && !tab.exited) PTYWrite(tab.ptyId, btoa(data));
+				else if (tab.isSSH && tab.sshConnectionId)
+					SSHWrite({
+						connectionId: tab.sshConnectionId,
+						sessionId: tab.sshSessionId,
+						data: btoa(data),
+					});
+			},
 
-  try {
+			senderAction: (xfer) => {
+				const fileInput = document.createElement("input");
 
-    term.zmodemAttach({
+				fileInput.type = "file";
 
-      sendTerminal: (data) => {
+				fileInput.onchange = () => {
+					const file = fileInput.files[0];
 
-        if (tab.ptyId && !tab.exited) PTYWrite(tab.ptyId, btoa(data));
+					if (file) {
+						const reader = new FileReader();
 
-        else if (tab.isSSH && tab.sshConnectionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) });
+						reader.onload = () => {
+							const bytes = new Uint8Array(reader.result);
 
-      },
+							xfer.send(bytes);
 
-      senderAction: (xfer) => {
+							showToast("Sent: " + file.name, "success");
+						};
 
-        const fileInput = document.createElement('input');
+						reader.readAsArrayBuffer(file);
+					}
+				};
 
-        fileInput.type = 'file';
+				fileInput.click();
+			},
 
-        fileInput.onchange = () => {
+			receiverAction: (xfer) => {
+				const offered = xfer.files.map((f) => f.name).join(", ");
 
-          const file = fileInput.files[0];
+				if (confirm("Accept Zmodem file(s): " + offered + "?")) {
+					xfer.accept();
 
-          if (file) {
-
-            const reader = new FileReader();
-
-            reader.onload = () => {
-
-              const bytes = new Uint8Array(reader.result);
-
-              xfer.send(bytes);
-
-              showToast('Sent: ' + file.name, 'success');
-
-            };
-
-            reader.readAsArrayBuffer(file);
-
-          }
-
-        };
-
-        fileInput.click();
-
-      },
-
-      receiverAction: (xfer) => {
-
-        const offered = xfer.files.map(f => f.name).join(', ');
-
-        if (confirm('Accept Zmodem file(s): ' + offered + '?')) {
-
-          xfer.accept();
-
-          xfer.on('complete', () => {
-
-            showToast('Zmodem transfer complete', 'success');
-
-          });
-
-        } else {
-
-          xfer.skip();
-
-        }
-
-      }
-
-    });
-
-  } catch (e) { /* zmodem not available */ }
-
+					xfer.on("complete", () => {
+						showToast("Zmodem transfer complete", "success");
+					});
+				} else {
+					xfer.skip();
+				}
+			},
+		});
+	} catch (e) {
+		/* zmodem not available */
+	}
 }
 
 // ===== TAB CLASS =====
 
 class Tab {
+	constructor(shell) {
+		this.id = `tab-${Date.now()}-${tabCounter++}`;
+
+		this.ptyId = null;
+		this.title = "Shell";
+		this.shell = shell || defaultShell;
+		this.exited = false;
+		this.status = "disconnected";
+		this.connectionType = "local";
+		this.connectionLog = [];
+		this.lastActivity = Date.now();
+		this.isSSH = false;
+		this.sshConnectionId = null;
+		this.sshSessionId = null;
+		this.sshHost = "";
+		this.sshPort = 22;
+		this.sshUser = "";
+		this.isSerial = false;
+		this.serialId = null;
+		this.serialPort = "";
+		this.serialDataHandler = null;
+		this.serialExitHandler = null;
+		this.isTelnet = false;
+		this.telnetConnectionId = null;
+		this.telnetHost = "";
+		this.telnetPort = 23;
+		this.telnetDataHandler = null;
+		this.telnetExitHandler = null;
 
-    constructor(shell) {
+		const fontFamily =
+			settings.FontFamily ||
+			'"Cascadia Code","Fira Code",Consolas,"Courier New",monospace';
 
-        this.id = `tab-${Date.now()}-${tabCounter++}`;
+		const lineHeight = settings.LineHeight || 1.2;
 
-        this.ptyId = null; this.title = 'Shell'; this.shell = shell || defaultShell; this.exited = false; this.status = "disconnected"; this.connectionType = "local"; this.connectionLog = []; this.lastActivity = Date.now(); this.isSSH = false; this.sshConnectionId = null; this.sshSessionId = null; this.sshHost = ''; this.sshPort = 22; this.sshUser = ''; this.isSerial = false; this.serialId = null; this.serialPort = ''; this.serialDataHandler = null; this.serialExitHandler = null; this.isTelnet = false; this.telnetConnectionId = null; this.telnetHost = ''; this.telnetPort = 23; this.telnetDataHandler = null; this.telnetExitHandler = null;
+		const scrollback = settings.Scrollback || 25000;
 
-        const fontFamily = settings.FontFamily || '"Cascadia Code","Fira Code",Consolas,"Courier New",monospace';
+		const cursorStyle = settings.CursorStyle || "bar";
 
-        const lineHeight = settings.LineHeight || 1.2;
+		const cursorBlink = settings.CursorBlink ?? true;
 
-        const scrollback = settings.Scrollback || 25000;
+		const colorScheme = settings.ColorScheme || "Tabby Default";
+		const theme = getColorSchemeTheme(colorScheme);
 
-        const cursorStyle = settings.CursorStyle || 'bar';
+		const fontWeight = settings.FontWeight || 400;
 
-        const cursorBlink = settings.CursorBlink ?? true;
+		const fontWeightBold = settings.FontWeightBold || 700;
 
-        const colorScheme = settings.ColorScheme || 'Tabby Default'; const theme = getColorSchemeTheme(colorScheme);
+		this.term = new Terminal({
+			cursorBlink,
+			cursorStyle,
+			fontFamily,
+			fontSize,
+			fontWeight,
+			fontWeightBold,
 
-        const fontWeight = settings.FontWeight || 400;
+			lineHeight,
+			allowProposedApi: true,
+			scrollback,
 
-        const fontWeightBold = settings.FontWeightBold || 700;
+			bellStyle: settings.Bell || "off",
 
-        this.term = new Terminal({
+			theme: theme || FALLBACK_DARK,
+		});
 
-            cursorBlink, cursorStyle, fontFamily, fontSize, fontWeight, fontWeightBold,
+		this.fitAddon = new FitAddon();
+		this.searchAddon = new SearchAddon();
+		this.webLinksAddon = new WebLinksAddon();
 
-            lineHeight, allowProposedApi: true, scrollback,
+		this.term.loadAddon(this.fitAddon);
+		this.term.loadAddon(this.searchAddon);
+		this.term.loadAddon(this.webLinksAddon);
 
-            bellStyle: settings.Bell || 'off',
+		// Handle terminal resize events from xterm.js
+		this.term.onResize(({ cols, rows }) => {
+			if (this.ptyId && !this.exited) PTYResize(this.ptyId, cols, rows);
+			if (this.isSSH && this.sshConnectionId && this.sshSessionId) SSHResize({ connectionId: this.sshConnectionId, sessionId: this.sshSessionId, columns: cols, rows: rows });
+			if (this.isTelnet && this.telnetConnectionId) TelnetResize(this.telnetConnectionId, cols, rows);
+		});
 
-            theme: theme || FALLBACK_DARK,
+		this.term.registerLinkProvider({
+			provideLinks: (y, callback) => {
+				const line = this.term.buffer.active.getLine(y - 1);
 
-        });
+				if (!line) {
+					callback(undefined);
+					return;
+				}
 
-        this.fitAddon = new FitAddon(); this.searchAddon = new SearchAddon(); this.webLinksAddon = new WebLinksAddon();
+				const text = line.translateToString(true);
 
-        this.term.loadAddon(this.fitAddon); this.term.loadAddon(this.searchAddon); this.term.loadAddon(this.webLinksAddon);
+				const urlRegex = /https?:\/\/[^\s)\]}>]+/g;
 
-  this.term.registerLinkProvider({
+				let match;
+				const links = [];
 
-    provideLinks: (y, callback) => {
+				while ((match = urlRegex.exec(text)) !== null) {
+					links.push({
+						text: match[0],
 
-      const line = this.term.buffer.active.getLine(y - 1);
+						range: {
+							start: { x: match.index + 1, y },
+							end: { x: match.index + match[0].length, y },
+						},
 
-      if (!line) { callback(undefined); return; }
+						activate: () => OpenInBrowser(match[0]),
 
-      const text = line.translateToString(true);
+						decorations: { underline: true, cursorPointer: true },
+					});
+				}
 
-      const urlRegex = /https?:\/\/[^\s)\]}>]+/g;
+				callback(links.length ? links : undefined);
+			},
+		});
 
-      let match; const links = [];
+		this.wrapper = document.createElement("div");
+		this.wrapper.style.position = "relative";
+		this.wrapper.className = "terminal-wrapper";
 
-      while ((match = urlRegex.exec(text)) !== null) {
+		this.wrapper.onmouseenter = () => showToolbarForTab(this);
 
-        links.push({
+		this.wrapper.onmouseleave = () => hideToolbarForTab(this);
 
-          text: match[0],
+		this.pinToolbar = false;
 
-          range: { start: { x: match.index + 1, y }, end: { x: match.index + match[0].length, y } },
+		this.wrapper.id = this.id;
 
-          activate: () => OpenInBrowser(match[0]),
+		document.getElementById("main-content").appendChild(this.wrapper);
+		this.term.open(this.wrapper);
 
-          decorations: { underline: true, cursorPointer: true }
+		addScrollToBottom(this.term, this.wrapper);
 
-        });
+		this.tabEl = document.createElement("div");
+		this.tabEl.className = "tab-item";
+		this.tabEl.draggable = true;
 
-      }
+		this.tabEl.addEventListener("dragstart", (e) => {
+			e.dataTransfer.setData("text/plain", this.id);
 
-      callback(links.length ? links : undefined);
+			this.tabEl.classList.add("dragging");
+		});
 
-    }
+		this.tabEl.addEventListener("dragend", () => {
+			this.tabEl.classList.remove("dragging");
+		});
+		this.tabEl.dataset.tabId = this.id;
 
-  });
+		this.tabEl.innerHTML = `<span class="tab-status-dot status-disconnected" title="Disconnected"></span><span class="tab-icon">⌘</span><span class="tab-title">${this.title}</span><button class="tab-close">×</button>`;
 
-        this.wrapper = document.createElement('div'); this.wrapper.style.position = 'relative'; this.wrapper.className = 'terminal-wrapper';
+		document.getElementById("tab-list").appendChild(this.tabEl);
 
-    this.wrapper.onmouseenter = () => showToolbarForTab(this);
+		this.tabEl.onclick = (e) => {
+			if (!e.target.classList.contains("tab-close")) this.activate();
+		};
 
-    this.wrapper.onmouseleave = () => hideToolbarForTab(this);
+		this.tabEl.querySelector(".tab-close").onclick = (e) => {
+			e.stopPropagation();
+			this.close();
+		};
 
-    this.pinToolbar = false;
+		this.tabEl.oncontextmenu = (e) => {
+			e.preventDefault();
+			showTabContextMenu(e, this);
+		};
 
- this.wrapper.id = this.id;
+		this.term.element.addEventListener("contextmenu", (e) => {
+			e.preventDefault();
 
-        document.getElementById('main-content').appendChild(this.wrapper); this.term.open(this.wrapper);
+			const sel = this.term.getSelection();
 
-    addScrollToBottom(this.term, this.wrapper);
+			const m = document.createElement("div");
 
-        this.tabEl = document.createElement('div'); this.tabEl.className = 'tab-item'; this.tabEl.draggable = true;
+			m.className = "context-menu";
 
-    this.tabEl.addEventListener('dragstart', (e) => {
+			m.style.cssText =
+				"position:fixed;left:" +
+				e.clientX +
+				"px;top:" +
+				e.clientY +
+				"px;z-index:999;";
 
-      e.dataTransfer.setData('text/plain', this.id);
+			if (sel)
+				m.innerHTML +=
+					'<div class="context-menu-item" data-action="copy">Copy Selection</div>';
 
-      this.tabEl.classList.add('dragging');
+			m.innerHTML +=
+				'<div class="context-menu-item" data-action="paste">Paste</div>';
 
-    });
-
-    this.tabEl.addEventListener('dragend', () => {
-
-      this.tabEl.classList.remove('dragging');
-
-    }); this.tabEl.dataset.tabId = this.id;
-
-        this.tabEl.innerHTML = `<span class="tab-status-dot status-disconnected" title="Disconnected"></span><span class="tab-icon">⌘</span><span class="tab-title">${this.title}</span><button class="tab-close">×</button>`;
-
-        document.getElementById('tab-list').appendChild(this.tabEl);
-
-        this.tabEl.onclick = (e) => { if (!e.target.classList.contains('tab-close')) this.activate(); };
-
-        this.tabEl.querySelector('.tab-close').onclick = (e) => { e.stopPropagation(); this.close(); };
-
-        this.tabEl.oncontextmenu = (e) => { e.preventDefault(); showTabContextMenu(e, this); };
-
-        
-
-        this.term.element.addEventListener('contextmenu', (e) => {
-
-  e.preventDefault();
-
-  const sel = this.term.getSelection();
-
-  const m = document.createElement('div');
-
-  m.className = 'context-menu';
-
-  m.style.cssText = 'position:fixed;left:' + e.clientX + 'px;top:' + e.clientY + 'px;z-index:999;';
-
-  if (sel) m.innerHTML += '<div class="context-menu-item" data-action="copy">Copy Selection</div>';
-
-  m.innerHTML += '<div class="context-menu-item" data-action="paste">Paste</div>';
-
-  if (sel) m.innerHTML += '<div class="context-menu-item" data-action="search">Search Web</div>';
-
-  m.innerHTML += '<div class="context-menu-item" data-action="clear">Clear Terminal</div>';
-
-  m.innerHTML += '<div class="context-menu-item" data-action="select-all">Select All</div>';
-
- m.innerHTML += '<div class="context-menu-item" data-action="reset">Reset Terminal</div>';
-
-  document.body.appendChild(m);
-
-  const rm = () => m.remove();
-
-  m.querySelectorAll('.context-menu-item').forEach(it => {
-
-    it.onclick = () => {
-
-      const a = it.dataset.action;
-
-      if (a === 'copy' && sel) navigator.clipboard.writeText(sel);
-
-      if (a === 'paste') navigator.clipboard.readText().then(t => this.term.paste(t)).catch(() => {});
-
-      if (a === 'search' && sel) OpenInBrowser('https://www.google.com/search?q=' + encodeURIComponent(sel));
-
-      if (a === 'clear') this.term.clear();
-
-      if (a === 'select-all') this.term.selectAll();
-
-      if (a === 'reset') this.term.reset();
-
-      
-
-      
-
-      rm();
-
-    };
-
-  });
-
-  setTimeout(() => document.addEventListener('click', rm, { once: true }), 10);
-
-});
-
-this.term.onTitleChange((title) => {
-
-  if (title && title.trim()) {
-
-    this.setTitle(title.trim());
-
-    SetWindowTitle(title.trim());
-
-  }
-
-});
-
-this.lastActivity = Date.now(); this.term.onData((data) => { if (this.ptyId && !this.exited) PTYWrite(this.ptyId, btoa(data)); });
-
-  setupInputProcessing(this.term, this);
-
-        
-
-        this.dataHandler = (params) => { const pid = params.ptyId ?? params.PTYID; const sid = params.sessionId ?? params.SessionID; const serid = params.serialId ?? params.SerialID; const cid = params.connectionId ?? params.ConnectionID; if (pid && pid === this.ptyId) { this.term.write(atob(params.data)); this.lastActivity = Date.now(); } else if (this.isSSH && sid && sid === this.sshSessionId) { this.term.write(atob(params.data)); this.lastActivity = Date.now(); } else if (this.isSerial && serid && serid === this.serialId) { this.term.write(atob(params.data)); this.lastActivity = Date.now(); } else if (this.isTelnet && cid && cid === this.telnetConnectionId) { this.term.write(atob(params.data)); this.lastActivity = Date.now(); } };
-
-        this.exitHandler = (params) => { const pid = params.ptyId ?? params.PTYID; const sid = params.sessionId ?? params.SessionID; const cid = params.connectionId ?? params.ConnectionID; let matched = false; if (pid && pid === this.ptyId) matched = true; else if (this.isSSH && sid && sid === this.sshSessionId) matched = true; else if (this.isSSH && cid && cid === this.sshConnectionId) matched = true; if (matched) { this.exited = true; setTabStatus(this, 'disconnected'); const code = params.exitCode ?? 0; this.term.writeln(`\r\n\x1b[1;33m[Process exited — code ${code}]\x1b[0m`); this.setTitle(`Exit (${code})`); this.tabEl.querySelector('.tab-icon').textContent = '✕'; this.tabEl.querySelector('.tab-icon').style.color = '#f44747'; } };
-
-        window.__ptyDataHandlers = window.__ptyDataHandlers || []; window.__ptyExitHandlers = window.__ptyExitHandlers || [];
-
-        window.__ptyDataHandlers = window.__ptyDataHandlers || []; window.__ptyDataHandlers.push(this.dataHandler); window.__ptyExitHandlers = window.__ptyExitHandlers || []; window.__ptyExitHandlers.push(this.exitHandler);
-
-    }
-
-    async spawn() {
-
-        try { setTabStatus(this, 'connecting'); logConnection(this, 'Spawning shell: ' + this.shell); console.log('[spawn] Calling PTYSpawn with:', { command: this.shell, args: [], env: {}, columns: this.term.cols, rows: this.term.rows }); const result = await PTYSpawn({ command: this.shell, args: [], env: {}, columns: this.term.cols, rows: this.term.rows }); console.log('[spawn] PTYSpawn result:', result); this.ptyId = result.id; setTabStatus(this, 'connected'); logConnection(this, 'Shell started: ' + this.shell); const name = this.shell.split(/[/\\]/).pop().replace('.exe', ''); this.setTitle(name); showStatus(`Connected — ${name}`); }
-
-        catch (err) { this.term.writeln(`\x1b[1;31mFailed to spawn shell: ${err}\x1b[0m`); showToast(`Shell spawn failed: ${err}`, 'error'); }
-
-    }
-
-    activate() {
-
-        const w = document.getElementById('welcome'); if (w) w.style.display = 'none';
-
-        tabs.forEach(t => { t.wrapper.classList.remove('active'); t.tabEl.classList.remove('active'); });
-
-        this.wrapper.classList.add('active'); this.tabEl.classList.add('active'); activeTabId = this.id; updateToolbar(this);
-
-        this.term.focus();
-
-        requestAnimationFrame(() => { this.fitAddon.fit(); if (this.ptyId && !this.exited) PTYResize(this.ptyId, this.term.cols, this.term.rows);
-
-      if (this.isTelnet && this.telnetConnectionId) TelnetResize(this.telnetConnectionId, this.term.cols, this.term.rows); });
-
-        saveSession();
-
-    }
-
-    close() {
-
-        window.__ptyDataHandlers = (window.__ptyDataHandlers || []).filter(h => h !== this.dataHandler);
-
-        window.__ptyExitHandlers = (window.__ptyExitHandlers || []).filter(h => h !== this.exitHandler);
-
-        if (this.ptyId) PTYKill(this.ptyId, '').catch(() => {}); if (this.isSSH && this.sshConnectionId) SSHClose({ connectionId: this.sshConnectionId, sessionId: this.sshSessionId }).catch(() => {});
-
-    if (this.isSerial && this.serialId) { SerialClose(this.serialId).catch(() => {}); window.__serialDataHandlers = (window.__serialDataHandlers || []).filter(h => h !== this.serialDataHandler);
-
-      window.__serialExitHandlers = (window.__serialExitHandlers || []).filter(h => h !== this.serialExitHandler); }
-
-    if (this.isTelnet && this.telnetConnectionId) { TelnetClose(this.telnetConnectionId).catch(() => {}); window.__telnetDataHandlers = (window.__telnetDataHandlers || []).filter(h => h !== this.telnetDataHandler);
-
-      window.__telnetExitHandlers = (window.__telnetExitHandlers || []).filter(h => h !== this.telnetExitHandler); }
-
-        this.term.dispose(); this.wrapper.remove(); this.tabEl.remove();
-
-        const idx = tabs.indexOf(this); if (idx > -1) tabs.splice(idx, 1);
-
-        if (activeTabId === this.id) { if (tabs.length > 0) tabs[Math.min(idx, tabs.length - 1)].activate(); else { activeTabId = null; const w = document.getElementById('welcome'); if (w) w.style.display = 'flex'; } }
-
-        saveSession();
-
-    }
-
-    setTitle(title) { this.title = title; const el = this.tabEl.querySelector('.tab-title'); if (el) el.textContent = title; if (activeTabId === this.id) SetWindowTitle(`Tabby — ${title}`); }
-
-    findNext(q) { if (q) this.searchAddon.findNext(q); }
-
-    findPrevious(q) { if (q) this.searchAddon.findPrevious(q); }
-
-    copySelection() { const sel = this.term.getSelection(); if (sel) navigator.clipboard.writeText(sel).then(() => showToast('Copied', 'success')); }
-
-    async pasteFromClipboard() { try { const text = await navigator.clipboard.readText(); if (text) { if (this.isSSH && this.sshConnectionId && this.sshSessionId) SSHWrite({ connectionId: this.sshConnectionId, sessionId: this.sshSessionId, data: btoa(text) }); else if (this.isSerial && this.serialId) SerialWrite(this.serialId, btoa(text)); else if (this.isTelnet && this.telnetConnectionId) TelnetWrite(this.telnetConnectionId, btoa(text)); else if (this.ptyId && !this.exited) PTYWrite(this.ptyId, btoa(text)); } } catch (_) { showToast('Clipboard access denied', 'error'); } }
-
+			if (sel)
+				m.innerHTML +=
+					'<div class="context-menu-item" data-action="search">Search Web</div>';
+
+			m.innerHTML +=
+				'<div class="context-menu-item" data-action="clear">Clear Terminal</div>';
+
+			m.innerHTML +=
+				'<div class="context-menu-item" data-action="select-all">Select All</div>';
+
+			m.innerHTML +=
+				'<div class="context-menu-item" data-action="reset">Reset Terminal</div>';
+
+			document.body.appendChild(m);
+
+			const rm = () => m.remove();
+
+			m.querySelectorAll(".context-menu-item").forEach((it) => {
+				it.onclick = () => {
+					const a = it.dataset.action;
+
+					if (a === "copy" && sel) navigator.clipboard.writeText(sel);
+
+					if (a === "paste")
+						navigator.clipboard
+							.readText()
+							.then((t) => this.term.paste(t))
+							.catch(() => {});
+
+					if (a === "search" && sel)
+						OpenInBrowser(
+							"https://www.google.com/search?q=" + encodeURIComponent(sel),
+						);
+
+					if (a === "clear") this.term.clear();
+
+					if (a === "select-all") this.term.selectAll();
+
+					if (a === "reset") this.term.reset();
+
+					rm();
+				};
+			});
+
+			setTimeout(
+				() => document.addEventListener("click", rm, { once: true }),
+				10,
+			);
+		});
+
+		this.term.onTitleChange((title) => {
+			if (title && title.trim()) {
+				this.setTitle(title.trim());
+
+				SetWindowTitle(title.trim());
+			}
+		});
+
+		this.lastActivity = Date.now();
+		this.term.onData((data) => {
+			if (this.ptyId && !this.exited) PTYWrite(this.ptyId, btoa(data));
+		});
+
+		setupInputProcessing(this.term, this);
+
+		this.dataHandler = (params) => {
+			const pid = params.ptyId ?? params.PTYID;
+			const sid = params.sessionId ?? params.SessionID;
+			const serid = params.serialId ?? params.SerialID;
+			const cid = params.connectionId ?? params.ConnectionID;
+			if (pid && pid === this.ptyId) {
+				this.term.write(atob(params.data));
+				this.lastActivity = Date.now();
+			} else if (this.isSSH && sid && sid === this.sshSessionId) {
+				this.term.write(atob(params.data));
+				this.lastActivity = Date.now();
+			} else if (this.isSerial && serid && serid === this.serialId) {
+				this.term.write(atob(params.data));
+				this.lastActivity = Date.now();
+			} else if (this.isTelnet && cid && cid === this.telnetConnectionId) {
+				this.term.write(atob(params.data));
+				this.lastActivity = Date.now();
+			}
+		};
+
+		this.exitHandler = (params) => {
+			const pid = params.ptyId ?? params.PTYID;
+			const sid = params.sessionId ?? params.SessionID;
+			const cid = params.connectionId ?? params.ConnectionID;
+			let matched = false;
+			if (pid && pid === this.ptyId) matched = true;
+			else if (this.isSSH && sid && sid === this.sshSessionId) matched = true;
+			else if (this.isSSH && cid && cid === this.sshConnectionId)
+				matched = true;
+			if (matched) {
+				this.exited = true;
+				setTabStatus(this, "disconnected");
+				const code = params.exitCode ?? 0;
+				this.term.writeln(
+					`\r\n\x1b[1;33m[Process exited — code ${code}]\x1b[0m`,
+				);
+				this.setTitle(`Exit (${code})`);
+				this.tabEl.querySelector(".tab-icon").textContent = "✕";
+				this.tabEl.querySelector(".tab-icon").style.color = "#f44747";
+			}
+		};
+
+		window.__ptyDataHandlers = window.__ptyDataHandlers || [];
+		window.__ptyExitHandlers = window.__ptyExitHandlers || [];
+
+		window.__ptyDataHandlers = window.__ptyDataHandlers || [];
+		window.__ptyDataHandlers.push(this.dataHandler);
+		window.__ptyExitHandlers = window.__ptyExitHandlers || [];
+		window.__ptyExitHandlers.push(this.exitHandler);
+	}
+
+	async spawn() {
+		try {
+			setTabStatus(this, "connecting");
+			logConnection(this, "Spawning shell: " + this.shell);
+			// Fit first to get correct cols/rows
+			this.fitAddon.fit();
+			console.log("[spawn] PTYSpawn:", { command: this.shell, cols: this.term.cols, rows: this.term.rows });
+			const result = await PTYSpawn({
+				command: this.shell,
+				args: [],
+				env: {},
+				columns: this.term.cols,
+				rows: this.term.rows,
+			});
+			console.log("[spawn] PTYSpawn result:", result);
+			this.ptyId = result.id;
+			setTabStatus(this, "connected");
+			logConnection(this, "Shell started: " + this.shell);
+			const name = this.shell.split(/[/\\]/).pop().replace(".exe", "");
+			this.setTitle(name);
+			showStatus(`Connected — ${name}`);
+			// Delayed fit to ensure correct dimensions after DOM layout
+			setTimeout(() => {
+				this.fitAddon.fit();
+				if (this.ptyId && !this.exited) PTYResize(this.ptyId, this.term.cols, this.term.rows);
+			}, 100);
+		} catch (err) {
+			this.term.writeln(`\x1b[1;31mFailed to spawn shell: ${err}\x1b[0m`);
+			showToast(`Shell spawn failed: ${err}`, "error");
+		}
+	}
+
+	activate() {
+		const w = document.getElementById("welcome");
+		if (w) w.style.display = "none";
+
+		tabs.forEach((t) => {
+			t.wrapper.classList.remove("active");
+			t.tabEl.classList.remove("active");
+		});
+
+		this.wrapper.classList.add("active");
+		this.tabEl.classList.add("active");
+		activeTabId = this.id;
+		updateToolbar(this);
+
+		this.term.focus();
+
+		// Fit synchronously so cols/rows are correct for spawn()
+		this.fitAddon.fit();
+		if (this.ptyId && !this.exited)
+			PTYResize(this.ptyId, this.term.cols, this.term.rows);
+
+		if (this.isTelnet && this.telnetConnectionId)
+			TelnetResize(this.telnetConnectionId, this.term.cols, this.term.rows);
+
+		saveSession();
+	}
+
+	close() {
+		window.__ptyDataHandlers = (window.__ptyDataHandlers || []).filter(
+			(h) => h !== this.dataHandler,
+		);
+
+		window.__ptyExitHandlers = (window.__ptyExitHandlers || []).filter(
+			(h) => h !== this.exitHandler,
+		);
+
+		if (this.ptyId) PTYKill(this.ptyId, "").catch(() => {});
+		if (this.isSSH && this.sshConnectionId)
+			SSHClose({
+				connectionId: this.sshConnectionId,
+				sessionId: this.sshSessionId,
+			}).catch(() => {});
+
+		if (this.isSerial && this.serialId) {
+			SerialClose(this.serialId).catch(() => {});
+			window.__serialDataHandlers = (window.__serialDataHandlers || []).filter(
+				(h) => h !== this.serialDataHandler,
+			);
+
+			window.__serialExitHandlers = (window.__serialExitHandlers || []).filter(
+				(h) => h !== this.serialExitHandler,
+			);
+		}
+
+		if (this.isTelnet && this.telnetConnectionId) {
+			TelnetClose(this.telnetConnectionId).catch(() => {});
+			window.__telnetDataHandlers = (window.__telnetDataHandlers || []).filter(
+				(h) => h !== this.telnetDataHandler,
+			);
+
+			window.__telnetExitHandlers = (window.__telnetExitHandlers || []).filter(
+				(h) => h !== this.telnetExitHandler,
+			);
+		}
+
+		this.term.dispose();
+		this.wrapper.remove();
+		this.tabEl.remove();
+
+		const idx = tabs.indexOf(this);
+		if (idx > -1) tabs.splice(idx, 1);
+
+		if (activeTabId === this.id) {
+			if (tabs.length > 0) tabs[Math.min(idx, tabs.length - 1)].activate();
+			else {
+				activeTabId = null;
+				const w = document.getElementById("welcome");
+				if (w) w.style.display = "flex";
+			}
+		}
+
+		saveSession();
+	}
+
+	setTitle(title) {
+		this.title = title;
+		const el = this.tabEl.querySelector(".tab-title");
+		if (el) el.textContent = title;
+		if (activeTabId === this.id) SetWindowTitle(`Tabby — ${title}`);
+	}
+
+	findNext(q) {
+		if (q) this.searchAddon.findNext(q);
+	}
+
+	findPrevious(q) {
+		if (q) this.searchAddon.findPrevious(q);
+	}
+
+	copySelection() {
+		const sel = this.term.getSelection();
+		if (sel)
+			navigator.clipboard
+				.writeText(sel)
+				.then(() => showToast("Copied", "success"));
+	}
+
+	async pasteFromClipboard() {
+		try {
+			const text = await navigator.clipboard.readText();
+			if (text) {
+				if (this.isSSH && this.sshConnectionId && this.sshSessionId)
+					SSHWrite({
+						connectionId: this.sshConnectionId,
+						sessionId: this.sshSessionId,
+						data: btoa(text),
+					});
+				else if (this.isSerial && this.serialId)
+					SerialWrite(this.serialId, btoa(text));
+				else if (this.isTelnet && this.telnetConnectionId)
+					TelnetWrite(this.telnetConnectionId, btoa(text));
+				else if (this.ptyId && !this.exited) PTYWrite(this.ptyId, btoa(text));
+			}
+		} catch (_) {
+			showToast("Clipboard access denied", "error");
+		}
+	}
 }
 
 // ===== PTY EVENTS =====
 
-EventsOn('pty.data', (params) => { (window.__ptyDataHandlers || []).forEach(h => h(params)); });
+EventsOn("pty.data", (params) => {
+	(window.__ptyDataHandlers || []).forEach((h) => h(params));
+});
 
-EventsOn('pty.exit', (params) => { (window.__ptyExitHandlers || []).forEach(h => h(params)); });
+EventsOn("pty.exit", (params) => {
+	(window.__ptyExitHandlers || []).forEach((h) => h(params));
+});
 
-EventsOn('ssh.data', (params) => { (window.__ptyDataHandlers || []).forEach(h => h(params)); });
+EventsOn("ssh.data", (params) => {
+	(window.__ptyDataHandlers || []).forEach((h) => h(params));
+});
 
-EventsOn('ssh.exit', (params) => { (window.__ptyExitHandlers || []).forEach(h => h(params)); });
+EventsOn("ssh.exit", (params) => {
+	(window.__ptyExitHandlers || []).forEach((h) => h(params));
+});
 
-EventsOn('serial.data', (params) => { (window.__serialDataHandlers || []).forEach(h => h(params)); });
+EventsOn("serial.data", (params) => {
+	(window.__serialDataHandlers || []).forEach((h) => h(params));
+});
 
-EventsOn('serial.exit', (params) => { (window.__serialExitHandlers || []).forEach(h => h(params)); });
+EventsOn("serial.exit", (params) => {
+	(window.__serialExitHandlers || []).forEach((h) => h(params));
+});
 
-EventsOn('telnet.data', (params) => { (window.__telnetDataHandlers || []).forEach(h => h(params)); });
+EventsOn("telnet.data", (params) => {
+	(window.__telnetDataHandlers || []).forEach((h) => h(params));
+});
 
-EventsOn('telnet.exit', (params) => { (window.__telnetExitHandlers || []).forEach(h => h(params)); });
+EventsOn("telnet.exit", (params) => {
+	(window.__telnetExitHandlers || []).forEach((h) => h(params));
+});
 
-EventsOn('ssh.keyboardInteractive', (params) => { handleKeyboardInteractive(params); });
+EventsOn("ssh.keyboardInteractive", (params) => {
+	handleKeyboardInteractive(params);
+});
 
-EventsOn('ssh.hostKeyPrompt', (params) => { handleHostKeyPrompt(params); });
+EventsOn("ssh.hostKeyPrompt", (params) => {
+	handleHostKeyPrompt(params);
+});
 
-EventsOn('ssh.banner', (params) => { handleSSHBanner(params); });
+EventsOn("ssh.banner", (params) => {
+	handleSSHBanner(params);
+});
 
-EventsOn('ssh.serviceMessage', (params) => { handleSSHServiceMessage(params); });
+EventsOn("ssh.serviceMessage", (params) => {
+	handleSSHServiceMessage(params);
+});
 
-EventsOn('telnet.serviceMessage', (params) => { handleTelnetServiceMessage(params); });
+EventsOn("telnet.serviceMessage", (params) => {
+	handleTelnetServiceMessage(params);
+});
 
-EventsOn('menu:new-tab', () => newTab());
+EventsOn("menu:new-tab", () => newTab());
 
-EventsOn('menu:settings', () => openSettingsPanel());
+EventsOn("menu:settings", () => openSettingsPanel());
 
-EventsOn('menu:copy', () => { const t = getActiveTab(); if (t && t.term) document.execCommand('copy'); });
+EventsOn("menu:copy", () => {
+	const t = getActiveTab();
+	if (t && t.term) document.execCommand("copy");
+});
 
-EventsOn('menu:paste', () => { const t = getActiveTab(); if (t && t.term) navigator.clipboard.readText().then(text => t.term.paste(text)); });
+EventsOn("menu:paste", () => {
+	const t = getActiveTab();
+	if (t && t.term)
+		navigator.clipboard.readText().then((text) => t.term.paste(text));
+});
 
-EventsOn('menu:select-all', () => { const t = getActiveTab(); if (t && t.term) t.term.selectAll(); });
+EventsOn("menu:select-all", () => {
+	const t = getActiveTab();
+	if (t && t.term) t.term.selectAll();
+});
 
-EventsOn('menu:command-palette', () => toggleCommandPalette());
+EventsOn("menu:command-palette", () => toggleCommandPalette());
 
-EventsOn('menu:about', () => showAboutDialog());
+EventsOn("menu:about", () => showAboutDialog());
 
 // ===== TAB MANAGEMENT =====
 
 function newTab(shell) {
- const effectiveShell = shell || defaultShell;
- console.log('[newTab] Creating tab with shell:', effectiveShell, 'defaultShell:', defaultShell);
- const tab = new Tab(effectiveShell);
- tabs.push(tab);
- tab.activate();
- tab.spawn();
- console.log('[newTab] Tab created:', tab.id, 'tabs count:', tabs.length);
- return tab;
+	const effectiveShell = shell || defaultShell;
+	console.log(
+		"[newTab] Creating tab with shell:",
+		effectiveShell,
+		"defaultShell:",
+		defaultShell,
+	);
+	const tab = new Tab(effectiveShell);
+	tabs.push(tab);
+	tab.activate();
+	tab.spawn();
+	console.log("[newTab] Tab created:", tab.id, "tabs count:", tabs.length);
+	return tab;
 }
 
-function getActiveTab() { return tabs.find(t => t.id === activeTabId); }
+function getActiveTab() {
+	return tabs.find((t) => t.id === activeTabId);
+}
 
-function switchToTab(i) { if (i >= 0 && i < tabs.length) tabs[i].activate(); }
+function switchToTab(i) {
+	if (i >= 0 && i < tabs.length) tabs[i].activate();
+}
 
-function nextTab() { const i = tabs.findIndex(t => t.id === activeTabId); tabs[(i + 1) % tabs.length].activate(); }
+function nextTab() {
+	const i = tabs.findIndex((t) => t.id === activeTabId);
+	tabs[(i + 1) % tabs.length].activate();
+}
 
-function prevTab() { const i = tabs.findIndex(t => t.id === activeTabId); tabs[(i - 1 + tabs.length) % tabs.length].activate(); }
+function prevTab() {
+	const i = tabs.findIndex((t) => t.id === activeTabId);
+	tabs[(i - 1 + tabs.length) % tabs.length].activate();
+}
 
 function reorderTab(draggedId, targetId) {
+	const fromIdx = tabs.findIndex((t) => t.id === draggedId);
+	const toIdx = tabs.findIndex((t) => t.id === targetId);
 
-    const fromIdx = tabs.findIndex(t => t.id === draggedId); const toIdx = tabs.findIndex(t => t.id === targetId);
+	if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
 
-    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+	const [moved] = tabs.splice(fromIdx, 1);
+	tabs.splice(toIdx, 0, moved);
 
-    const [moved] = tabs.splice(fromIdx, 1); tabs.splice(toIdx, 0, moved);
+	const list = document.getElementById("tab-list");
+	list.innerHTML = "";
+	tabs.forEach((t) => list.appendChild(t.tabEl));
 
-    const list = document.getElementById('tab-list'); list.innerHTML = ''; tabs.forEach(t => list.appendChild(t.tabEl));
-
-    saveSession();
-
+	saveSession();
 }
 
 // ===== TERMINAL RESIZE =====
 
 function resizeAllTerminals() {
-
-  tabs.forEach(tab => {
-
-    if (tab.term && !tab.exited) {
-
-      setTimeout(() => tab.term.fitAddon.fit(), 50);
-
-    }
-
-  });
-
+	tabs.forEach((tab) => {
+		if (tab.term && !tab.exited) {
+			setTimeout(() => tab.term.fitAddon.fit(), 50);
+		}
+	});
 }
 
 // ===== SPLIT PANE =====
 
 class SplitPane {
+	constructor(orientation) {
+		this.orientation = orientation;
+		this.panes = [];
+		this.element = document.createElement("div");
+		this.element.className = `split-container ${orientation}`;
+		this.dividers = [];
+	}
 
-    constructor(orientation) { this.orientation = orientation; this.panes = []; this.element = document.createElement('div'); this.element.className = `split-container ${orientation}`; this.dividers = []; }
+	addPane(tab, flex) {
+		const pe = document.createElement("div");
+		pe.className = "pane";
+		pe.style.flex = `${flex} 1 0%`;
+		pe.appendChild(tab.wrapper);
+		tab.wrapper.classList.add("active");
+		this.panes.push({ tab, element: pe, flex });
+		this.element.appendChild(pe);
+		if (this.panes.length > 1) this._addDivider();
+		return pe;
+	}
 
-    addPane(tab, flex) { const pe = document.createElement('div'); pe.className = 'pane'; pe.style.flex = `${flex} 1 0%`; pe.appendChild(tab.wrapper); tab.wrapper.classList.add('active'); this.panes.push({ tab, element: pe, flex }); this.element.appendChild(pe); if (this.panes.length > 1) this._addDivider(); return pe; }
+	_addDivider() {
+		const d = document.createElement("div");
+		d.className = "splitter";
+		if (this.orientation === "vertical") d.classList.add("horizontal");
+		this.element.appendChild(d);
+		this.dividers.push(d);
 
-    _addDivider() { const d = document.createElement('div'); d.className = 'splitter'; if (this.orientation === 'vertical') d.classList.add('horizontal'); this.element.appendChild(d); this.dividers.push(d);
+		let dragging = false,
+			startPos = 0,
+			sf0 = 50,
+			sf1 = 50;
 
-        let dragging = false, startPos = 0, sf0 = 50, sf1 = 50;
+		const onStart = (e) => {
+			if (this.panes.length !== 2) return;
+			e.preventDefault();
+			dragging = true;
+			startPos = this.orientation === "vertical" ? e.clientY : e.clientX;
+			sf0 = this.panes[0].flex;
+			sf1 = this.panes[1].flex;
+			d.classList.add("dragging");
+		};
 
-        const onStart = (e) => { if (this.panes.length !== 2) return; e.preventDefault(); dragging = true; startPos = this.orientation === 'vertical' ? e.clientY : e.clientX; sf0 = this.panes[0].flex; sf1 = this.panes[1].flex; d.classList.add('dragging'); };
+		const onMove = (e) => {
+			if (!dragging) return;
+			e.preventDefault();
+			const pos = this.orientation === "vertical" ? e.clientY : e.clientX;
+			const rect = this.element.getBoundingClientRect();
+			const total = this.orientation === "vertical" ? rect.height : rect.width;
+			const pct = ((pos - startPos) / total) * 100;
+			const f0 = Math.max(20, Math.min(80, sf0 + pct));
+			this.panes[0].flex = f0;
+			this.panes[1].flex = 100 - f0;
+			this.panes[0].element.style.flex = `${f0} 1 0%`;
+			this.panes[1].element.style.flex = `${100 - f0} 1 0%`;
+		};
 
-        const onMove = (e) => { if (!dragging) return; e.preventDefault(); const pos = this.orientation === 'vertical' ? e.clientY : e.clientX; const rect = this.element.getBoundingClientRect(); const total = this.orientation === 'vertical' ? rect.height : rect.width; const pct = ((pos - startPos) / total) * 100; const f0 = Math.max(20, Math.min(80, sf0 + pct)); this.panes[0].flex = f0; this.panes[1].flex = 100 - f0; this.panes[0].element.style.flex = `${f0} 1 0%`; this.panes[1].element.style.flex = `${100 - f0} 1 0%`; };
+		const onEnd = () => {
+			if (!dragging) return;
+			dragging = false;
+			d.classList.remove("dragging");
+			this.panes.forEach((p) => {
+				p.tab.fitAddon.fit();
+				if (p.tab.ptyId)
+					PTYResize(p.tab.ptyId, p.tab.term.cols, p.tab.term.rows);
+				if (p.tab.isSSH && p.tab.sshConnectionId && p.tab.sshSessionId)
+					SSHResize({
+						connectionId: p.tab.sshConnectionId,
+						sessionId: p.tab.sshSessionId,
+						columns: p.tab.term.cols,
+						rows: p.tab.term.rows,
+					});
+			});
+		};
 
-        const onEnd = () => { if (!dragging) return; dragging = false; d.classList.remove('dragging'); this.panes.forEach(p => { p.tab.fitAddon.fit(); if (p.tab.ptyId) PTYResize(p.tab.ptyId, p.tab.term.cols, p.tab.term.rows); if (p.tab.isSSH && p.tab.sshConnectionId && p.tab.sshSessionId) SSHResize({ connectionId: p.tab.sshConnectionId, sessionId: p.tab.sshSessionId, columns: p.tab.term.cols, rows: p.tab.term.rows }); }); };
+		d.addEventListener("mousedown", onStart);
+		document.addEventListener("mousemove", onMove);
+		document.addEventListener("mouseup", onEnd);
+	}
 
-        d.addEventListener('mousedown', onStart); document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onEnd); }
-
-    removePane(tab) { const idx = this.panes.findIndex(p => p.tab === tab); if (idx === -1) return null; this.panes[idx].element.remove(); this.panes.splice(idx, 1); if (this.dividers.length > 0) this.dividers.pop()?.remove(); if (this.panes.length === 1) { this.element.remove(); return this.panes[0].tab; } return null; }
-
+	removePane(tab) {
+		const idx = this.panes.findIndex((p) => p.tab === tab);
+		if (idx === -1) return null;
+		this.panes[idx].element.remove();
+		this.panes.splice(idx, 1);
+		if (this.dividers.length > 0) this.dividers.pop()?.remove();
+		if (this.panes.length === 1) {
+			this.element.remove();
+			return this.panes[0].tab;
+		}
+		return null;
+	}
 }
 
 function splitPane(orientation) {
-
-  if (orientation === 'horizontal') splitHorizontally();
-
-  else splitVertically();
-
+	if (orientation === "horizontal") splitHorizontally();
+	else splitVertically();
 }
 
-function splitVertically() { const tab = getActiveTab(); if (!tab) return; const mc = document.getElementById('main-content'); const w = document.getElementById('welcome'); if (w) w.style.display = 'none'; const idx = tabs.indexOf(tab); if (idx > -1) tabs.splice(idx, 1); tab.wrapper.remove(); tab.tabEl.remove(); const sp = new SplitPane('vertical'); sp.addPane(tab, 50); const t2 = new Tab(tab.shell); tabs.push(t2); sp.addPane(t2, 50); mc.appendChild(sp.element); activeSplitPane = sp; t2.spawn(); tab.activate(); showToast('Split vertically', 'info'); }
+function splitVertically() {
+	const tab = getActiveTab();
+	if (!tab) return;
+	const mc = document.getElementById("main-content");
+	const w = document.getElementById("welcome");
+	if (w) w.style.display = "none";
+	const idx = tabs.indexOf(tab);
+	if (idx > -1) tabs.splice(idx, 1);
+	tab.wrapper.remove();
+	tab.tabEl.remove();
+	const sp = new SplitPane("vertical");
+	sp.addPane(tab, 50);
+	const t2 = new Tab(tab.shell);
+	tabs.push(t2);
+	sp.addPane(t2, 50);
+	mc.appendChild(sp.element);
+	activeSplitPane = sp;
+	t2.spawn();
+	tab.activate();
+	showToast("Split vertically", "info");
+}
 
-function splitHorizontally() { const tab = getActiveTab(); if (!tab) return; const mc = document.getElementById('main-content'); const w = document.getElementById('welcome'); if (w) w.style.display = 'none'; const idx = tabs.indexOf(tab); if (idx > -1) tabs.splice(idx, 1); tab.wrapper.remove(); tab.tabEl.remove(); const sp = new SplitPane('horizontal'); sp.addPane(tab, 50); const t2 = new Tab(tab.shell); tabs.push(t2); sp.addPane(t2, 50); mc.appendChild(sp.element); activeSplitPane = sp; t2.spawn(); tab.activate(); showToast('Split horizontally', 'info'); }
+function splitHorizontally() {
+	const tab = getActiveTab();
+	if (!tab) return;
+	const mc = document.getElementById("main-content");
+	const w = document.getElementById("welcome");
+	if (w) w.style.display = "none";
+	const idx = tabs.indexOf(tab);
+	if (idx > -1) tabs.splice(idx, 1);
+	tab.wrapper.remove();
+	tab.tabEl.remove();
+	const sp = new SplitPane("horizontal");
+	sp.addPane(tab, 50);
+	const t2 = new Tab(tab.shell);
+	tabs.push(t2);
+	sp.addPane(t2, 50);
+	mc.appendChild(sp.element);
+	activeSplitPane = sp;
+	t2.spawn();
+	tab.activate();
+	showToast("Split horizontally", "info");
+}
 
-function removeSplit() { if (!activeSplitPane) return; const tab = getActiveTab(); if (!tab) return; const remaining = activeSplitPane.removePane(tab); if (tab.ptyId) PTYKill(tab.ptyId, '').catch(() => {}); tab.term.dispose(); const idx = tabs.indexOf(tab); if (idx > -1) tabs.splice(idx, 1); const mc = document.getElementById('main-content'); if (remaining) { mc.appendChild(remaining.wrapper); document.getElementById('tab-list').appendChild(remaining.tabEl); tabs.push(remaining); activeSplitPane = null; remaining.activate(); } else if (tabs.length === 0) { activeSplitPane = null; const w = document.getElementById('welcome'); if (w) w.style.display = 'flex'; } }
+function removeSplit() {
+	if (!activeSplitPane) return;
+	const tab = getActiveTab();
+	if (!tab) return;
+	const remaining = activeSplitPane.removePane(tab);
+	if (tab.ptyId) PTYKill(tab.ptyId, "").catch(() => {});
+	tab.term.dispose();
+	const idx = tabs.indexOf(tab);
+	if (idx > -1) tabs.splice(idx, 1);
+	const mc = document.getElementById("main-content");
+	if (remaining) {
+		mc.appendChild(remaining.wrapper);
+		document.getElementById("tab-list").appendChild(remaining.tabEl);
+		tabs.push(remaining);
+		activeSplitPane = null;
+		remaining.activate();
+	} else if (tabs.length === 0) {
+		activeSplitPane = null;
+		const w = document.getElementById("welcome");
+		if (w) w.style.display = "flex";
+	}
+}
 
-function closeAllSplits() { if (!activeSplitPane) return; [...activeSplitPane.panes].forEach(p => { if (p.tab.ptyId) PTYKill(p.tab.ptyId, '').catch(() => {}); p.tab.term.dispose(); const idx = tabs.indexOf(p.tab); if (idx > -1) tabs.splice(idx, 1); }); activeSplitPane.element.remove(); activeSplitPane = null; if (tabs.length === 0) { const w = document.getElementById('welcome'); if (w) w.style.display = 'flex'; } else tabs[0].activate(); showToast('All splits closed', 'info'); }
+function closeAllSplits() {
+	if (!activeSplitPane) return;
+	[...activeSplitPane.panes].forEach((p) => {
+		if (p.tab.ptyId) PTYKill(p.tab.ptyId, "").catch(() => {});
+		p.tab.term.dispose();
+		const idx = tabs.indexOf(p.tab);
+		if (idx > -1) tabs.splice(idx, 1);
+	});
+	activeSplitPane.element.remove();
+	activeSplitPane = null;
+	if (tabs.length === 0) {
+		const w = document.getElementById("welcome");
+		if (w) w.style.display = "flex";
+	} else tabs[0].activate();
+	showToast("All splits closed", "info");
+}
 
 // ===== TAB CONTEXT MENU =====
 
 function showTabContextMenu(e, tab) {
+	document.querySelectorAll(".context-menu").forEach((m) => m.remove());
 
-    document.querySelectorAll('.context-menu').forEach(m => m.remove());
+	const menu = document.createElement("div");
+	menu.className = "context-menu";
 
-    const menu = document.createElement('div'); menu.className = 'context-menu';
+	menu.innerHTML =
+		'<div class="context-menu-item" data-action="rename">Rename</div>' +
+		'<div class="context-menu-item" data-action="duplicate">Duplicate</div>' +
+		'<div class="context-menu-separator"></div>' +
+		'<div class="context-menu-item" data-action="reconnect">Reconnect</div>' +
+		'<div class="context-menu-separator"></div>' +
+		'<div class="context-menu-item" data-action="sftp" style="display:none;">SFTP</div>' +
+		'<div class="context-menu-item" data-action="forward" style="display:none;">Port Forward</div>' +
+		'<div class="context-menu-separator"></div>' +
+		'<div class="context-menu-item" data-action="color-red">Red</div>' +
+		'<div class="context-menu-item" data-action="color-green">Green</div>' +
+		'<div class="context-menu-item" data-action="color-blue">Blue</div>' +
+		'<div class="context-menu-item" data-action="color-yellow">Yellow</div>' +
+		'<div class="context-menu-item" data-action="color-reset">Reset Color</div>' +
+		'<div class="context-menu-separator"></div>' +
+		'<div class="context-menu-item" data-action="close-others">Close Others</div>' +
+		'<div class="context-menu-item" data-action="close-right">Close to Right</div>' +
+		'<div class="context-menu-item" data-action="close-all">Close All</div>' +
+		'<div class="context-menu-item" data-action="close">Close</div>';
 
-    menu.innerHTML = '<div class="context-menu-item" data-action="rename">Rename</div>'+ '<div class="context-menu-item" data-action="duplicate">Duplicate</div>'+ '<div class="context-menu-separator"></div>'+ '<div class="context-menu-item" data-action="reconnect">Reconnect</div>'+ '<div class="context-menu-separator"></div>'+ '<div class="context-menu-item" data-action="sftp" style="display:none;">SFTP</div>'+ '<div class="context-menu-item" data-action="forward" style="display:none;">Port Forward</div>'+ '<div class="context-menu-separator"></div>'+ '<div class="context-menu-item" data-action="color-red">Red</div>'+ '<div class="context-menu-item" data-action="color-green">Green</div>'+ '<div class="context-menu-item" data-action="color-blue">Blue</div>'+ '<div class="context-menu-item" data-action="color-yellow">Yellow</div>'+ '<div class="context-menu-item" data-action="color-reset">Reset Color</div>'+ '<div class="context-menu-separator"></div>'+ '<div class="context-menu-item" data-action="close-others">Close Others</div>'+ '<div class="context-menu-item" data-action="close-right">Close to Right</div>'+ '<div class="context-menu-item" data-action="close-all">Close All</div>'+ '<div class="context-menu-item" data-action="close">Close</div>';
+	document.body.appendChild(menu);
 
-    document.body.appendChild(menu);
+	menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + "px";
+	menu.style.top = Math.min(e.clientY, window.innerHeight - 200) + "px";
 
-    menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px'; menu.style.top = Math.min(e.clientY, window.innerHeight - 200) + 'px';
+	const close = () => menu.remove();
 
-    const close = () => menu.remove();
+	menu.onclick = (ev) => {
+		const item = ev.target.closest(".context-menu-item");
+		if (!item) return;
+		close();
 
-    menu.onclick = (ev) => { const item = ev.target.closest('.context-menu-item'); if (!item) return; close();
+		switch (item.dataset.action) {
+			case "rename": {
+				const n = prompt("Tab name:", tab.title);
+				if (n) tab.setTitle(n);
+				break;
+			}
 
-        switch (item.dataset.action) {
+			case "duplicate":
+				newTab(tab.shell);
+				break;
 
-            case 'rename': { const n = prompt('Tab name:', tab.title); if (n) tab.setTitle(n); break; }
+			case "close-others": {
+				[...tabs].forEach((t) => {
+					if (t !== tab) t.close();
+				});
+				tab.activate();
+				break;
+			}
 
-            case 'duplicate': newTab(tab.shell); break;
+			case "close-right": {
+				const idx = tabs.indexOf(tab);
+				for (let i = tabs.length - 1; i > idx; i--) tabs[i].close();
+				break;
+			}
 
-            case 'close-others': { [...tabs].forEach(t => { if (t !== tab) t.close(); }); tab.activate(); break; }
+			case "forward":
+				if (tab.isSSH && tab.sshConnectionId)
+					openForwardDialog(tab.sshConnectionId);
+				break;
 
-            case 'close-right': { const idx = tabs.indexOf(tab); for (let i = tabs.length - 1; i > idx; i--) tabs[i].close(); break; }
+			case "sftp":
+				if (tab.isSSH && tab.sshConnectionId)
+					openSFTPBrowser(tab.sshConnectionId);
+				break;
 
-            case 'forward': if (tab.isSSH && tab.sshConnectionId) openForwardDialog(tab.sshConnectionId); break;
+			case "reconnect":
+				reconnectTab(tab);
+				break;
 
-      case 'sftp': if (tab.isSSH && tab.sshConnectionId) openSFTPBrowser(tab.sshConnectionId); break;
+			case "close-all":
+				closeAllTabs();
+				break;
 
-      case 'reconnect': reconnectTab(tab); break;
+			case "color-red":
+				setTabColor(tab, "#f44747");
+				break;
 
- 
+			case "color-green":
+				setTabColor(tab, "#4caf50");
+				break;
 
- 
+			case "color-blue":
+				setTabColor(tab, "#4ca8e8");
+				break;
 
- case 'close-all': closeAllTabs(); break;
+			case "color-yellow":
+				setTabColor(tab, "#e8a84c");
+				break;
 
- case 'color-red': setTabColor(tab, '#f44747'); break;
+			case "color-reset":
+				setTabColor(tab, "");
+				break;
 
- case 'color-green': setTabColor(tab, '#4caf50'); break;
+			case "close":
+				tab.close();
+				break;
+		}
+	};
 
- case 'color-blue': setTabColor(tab, '#4ca8e8'); break;
-
- case 'color-yellow': setTabColor(tab, '#e8a84c'); break;
-
- case 'color-reset': setTabColor(tab, ''); break;
-
- case 'close': tab.close(); break;
-
-        }
-
-    };
-
-    setTimeout(() => document.addEventListener('click', close, { once: true }), 10);
-
+	setTimeout(
+		() => document.addEventListener("click", close, { once: true }),
+		10,
+	);
 }
 
 // ===== TAB BADGES =====
 
 function setTabBadge(tab, count) {
+	if (!tab || !tab.tabEl) return;
 
-  if (!tab || !tab.tabEl) return;
+	let badge = tab.tabEl.querySelector(".tab-badge");
 
-  let badge = tab.tabEl.querySelector('.tab-badge');
+	if (count > 0) {
+		if (!badge) {
+			badge = document.createElement("span");
 
-  if (count > 0) {
+			badge.className = "tab-badge";
 
-    if (!badge) {
+			badge.style.cssText =
+				"position:absolute;top:-4px;right:16px;min-width:16px;height:16px;border-radius:8px;background:#f44747;color:#fff;font-size:10px;line-height:16px;text-align:center;padding:0 4px;z-index:5;";
 
-      badge = document.createElement('span');
+			tab.tabEl.style.position = "relative";
 
-      badge.className = 'tab-badge';
+			tab.tabEl.appendChild(badge);
+		}
 
-      badge.style.cssText = 'position:absolute;top:-4px;right:16px;min-width:16px;height:16px;border-radius:8px;background:#f44747;color:#fff;font-size:10px;line-height:16px;text-align:center;padding:0 4px;z-index:5;';
-
-      tab.tabEl.style.position = 'relative';
-
-      tab.tabEl.appendChild(badge);
-
-    }
-
-    badge.textContent = count > 99 ? '99+' : count;
-
-  } else if (badge) {
-
-    badge.remove();
-
-  }
-
+		badge.textContent = count > 99 ? "99+" : count;
+	} else if (badge) {
+		badge.remove();
+	}
 }
 
 // ===== FIND BAR =====
 
 function toggleFind() {
+	let bar = document.getElementById("find-bar");
+	if (bar) {
+		bar.remove();
+		findVisible = false;
+		const t = getActiveTab();
+		if (t) t.term.focus();
+		return;
+	}
 
-    let bar = document.getElementById('find-bar'); if (bar) { bar.remove(); findVisible = false; const t = getActiveTab(); if (t) t.term.focus(); return; }
+	findVisible = true;
+	bar = document.createElement("div");
+	bar.id = "find-bar";
 
-    findVisible = true; bar = document.createElement('div'); bar.id = 'find-bar';
+	bar.style.cssText =
+		"position:absolute;top:0;right:0;z-index:100;background:#2d2d2d;border-bottom:1px solid #3a3a3a;border-left:1px solid #3a3a3a;padding:6px 12px;display:flex;gap:8px;align-items:center;border-radius:0 0 0 8px;";
 
-    bar.style.cssText = 'position:absolute;top:0;right:0;z-index:100;background:#2d2d2d;border-bottom:1px solid #3a3a3a;border-left:1px solid #3a3a3a;padding:6px 12px;display:flex;gap:8px;align-items:center;border-radius:0 0 0 8px;';
+	bar.innerHTML = `<input type="text" id="find-input" placeholder="Find..." style="background:#1e1e1e;border:1px solid #3a3a3a;color:#ccc;padding:4px 8px;border-radius:4px;font-size:13px;width:200px;outline:none;"><button class="btn-icon" id="find-prev">↑</button><button class="btn-icon" id="find-next">↓</button><button class="btn-icon" id="find-close">×</button>`;
 
-    bar.innerHTML = `<input type="text" id="find-input" placeholder="Find..." style="background:#1e1e1e;border:1px solid #3a3a3a;color:#ccc;padding:4px 8px;border-radius:4px;font-size:13px;width:200px;outline:none;"><button class="btn-icon" id="find-prev">↑</button><button class="btn-icon" id="find-next">↓</button><button class="btn-icon" id="find-close">×</button>`;
+	document.getElementById("main-content").appendChild(bar);
 
-    document.getElementById('main-content').appendChild(bar);
+	const input = document.getElementById("find-input");
+	input.focus();
 
-    const input = document.getElementById('find-input'); input.focus();
+	input.onkeydown = (e) => {
+		const t = getActiveTab();
+		if (!t) return;
+		if (e.key === "Enter") {
+			e.preventDefault();
+			e.shiftKey ? t.findPrevious(input.value) : t.findNext(input.value);
+		}
+		if (e.key === "Escape") toggleFind();
+	};
 
-    input.onkeydown = (e) => { const t = getActiveTab(); if (!t) return; if (e.key === 'Enter') { e.preventDefault(); e.shiftKey ? t.findPrevious(input.value) : t.findNext(input.value); } if (e.key === 'Escape') toggleFind(); };
+	document.getElementById("find-next").onclick = () => {
+		const t = getActiveTab();
+		if (t) t.findNext(input.value);
+		input.focus();
+	};
 
-    document.getElementById('find-next').onclick = () => { const t = getActiveTab(); if (t) t.findNext(input.value); input.focus(); };
+	document.getElementById("find-prev").onclick = () => {
+		const t = getActiveTab();
+		if (t) t.findPrevious(input.value);
+		input.focus();
+	};
 
-    document.getElementById('find-prev').onclick = () => { const t = getActiveTab(); if (t) t.findPrevious(input.value); input.focus(); };
-
-    document.getElementById('find-close').onclick = () => toggleFind();
-
+	document.getElementById("find-close").onclick = () => toggleFind();
 }
 
 // ===== RECONNECT =====
 
 async function reconnectTab(tab) {
+	tab.exited = false;
 
- tab.exited = false;
+	tab.tabEl.querySelector(".tab-icon").textContent = "...";
 
- tab.tabEl.querySelector('.tab-icon').textContent = '...';
+	tab.tabEl.querySelector(".tab-icon").style.color = "";
 
- tab.tabEl.querySelector('.tab-icon').style.color = '';
+	if (tab.sessionData) {
+		try {
+			const session = JSON.parse(tab.sessionData);
 
- if (tab.sessionData) {
+			if (session.type === "ssh") {
+				showToast("Reconnecting to " + session.host + "...", "info");
 
- try {
+				setTabStatus(tab, "connecting");
 
- const session = JSON.parse(tab.sessionData);
+				const result = await SSHConnect({
+					host: session.host,
 
- if (session.type === 'ssh') {
+					port: session.port || 22,
 
- showToast('Reconnecting to ' + session.host + '...', 'info');
+					user: session.user,
 
- setTabStatus(tab, 'connecting');
+					auth: session.auth,
 
- const result = await SSHConnect({
+					keepaliveInterval: 30,
 
- host: session.host,
+					keepaliveCountMax: 3,
 
- port: session.port || 22,
+					readyTimeout: 15000,
+				});
 
- user: session.user,
+				tab.sshConnectionId = result.connectionId;
 
- auth: session.auth,
+				tab.isSSH = true;
 
- keepaliveInterval: 30,
+				tab.sshHost = session.host;
 
- keepaliveCountMax: 3,
+				tab.sshPort = session.port || 22;
 
- readyTimeout: 15000
+				tab.sshUser = session.user;
 
- });
+				const shellResult = await SSHStartShell({
+					connectionId: result.connectionId,
 
- tab.sshConnectionId = result.connectionId;
+					columns: tab.term.cols,
 
- tab.isSSH = true;
+					rows: tab.term.rows,
 
- tab.sshHost = session.host;
+					terminal: "xterm-256color",
+				});
 
- tab.sshPort = session.port || 22;
+				tab.sshSessionId = shellResult.sessionId;
 
- tab.sshUser = session.user;
+				setTabStatus(tab, "connected");
 
- const shellResult = await SSHStartShell({
+				let jumpLabel = "";
 
- connectionId: result.connectionId,
+				if (result.jumpChain && result.jumpChain.length > 0)
+					jumpLabel = " (via " + result.jumpChain.join(" -> ") + ")";
 
- columns: tab.term.cols,
+				tab.setTitle(session.user + "@" + session.host + jumpLabel);
 
- rows: tab.term.rows,
+				tab.tabEl.querySelector(".tab-icon").textContent = "U0001f510";
 
- terminal: 'xterm-256color'
+				tab.term.onData((data) => {
+					if (tab.sshConnectionId && tab.sshSessionId)
+						SSHWrite({
+							connectionId: tab.sshConnectionId,
+							sessionId: tab.sshSessionId,
+							data: btoa(data),
+						});
+				});
 
- });
+				setupInputProcessing(tab.term, tab);
 
- tab.sshSessionId = shellResult.sessionId;
+				showStatus("SSH - " + session.user + "@" + session.host);
 
- setTabStatus(tab, 'connected');
+				showToast("Reconnected to " + session.host, "success");
+			} else if (session.type === "telnet") {
+				showToast("Reconnecting to " + session.host + "...", "info");
 
- let jumpLabel = '';
+				setTabStatus(tab, "connecting");
 
- if (result.jumpChain && result.jumpChain.length > 0) jumpLabel = ' (via ' + result.jumpChain.join(' -> ') + ')';
+				const result = await TelnetConnect(session.host, session.port || 23);
 
- tab.setTitle(session.user + '@' + session.host + jumpLabel);
+				tab.telnetConnectionId = result.ConnectionID || result.connectionId;
 
- tab.tabEl.querySelector('.tab-icon').textContent = 'U0001f510';
+				tab.isTelnet = true;
 
- tab.term.onData((data) => {
+				tab.telnetHost = session.host;
 
- if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) });
+				tab.telnetPort = session.port || 23;
 
- });
+				setTabStatus(tab, "connected");
 
- setupInputProcessing(tab.term, tab);
+				tab.setTitle(session.host + ":" + (session.port || 23));
 
- showStatus('SSH - ' + session.user + '@' + session.host);
+				tab.tabEl.querySelector(".tab-icon").textContent = "U0001f310";
 
- showToast('Reconnected to ' + session.host, 'success');
+				tab.telnetDataHandler = (params) => {
+					const cid = params.ConnectionID || params.connectionId;
 
- } else if (session.type === 'telnet') {
+					if (cid === tab.telnetConnectionId)
+						tab.term.write(atob(params.Data || params.data));
+				};
 
- showToast('Reconnecting to ' + session.host + '...', 'info');
+				window.__telnetDataHandlers = window.__telnetDataHandlers || [];
 
- setTabStatus(tab, 'connecting');
+				window.__telnetDataHandlers.push(tab.telnetDataHandler);
 
- const result = await TelnetConnect(session.host, session.port || 23);
+				tab.telnetExitHandler = (params) => {
+					const cid = params.ConnectionID || params.connectionId;
 
- tab.telnetConnectionId = result.ConnectionID || result.connectionId;
+					if (cid === tab.telnetConnectionId) {
+						tab.exited = true;
 
- tab.isTelnet = true;
+						setTabStatus(tab, "disconnected");
 
- tab.telnetHost = session.host;
+						tab.term.writeln("\x1b[1;33m[Telnet connection closed]\x1b[0m");
 
- tab.telnetPort = session.port || 23;
+						tab.setTitle(tab.title + " [disconnected]");
 
- setTabStatus(tab, 'connected');
+						tab.tabEl.querySelector(".tab-icon").textContent = "\u2715";
 
- tab.setTitle(session.host + ':' + (session.port || 23));
+						tab.tabEl.querySelector(".tab-icon").style.color = "#f44747";
+					}
+				};
 
- tab.tabEl.querySelector('.tab-icon').textContent = 'U0001f310';
+				window.__telnetExitHandlers = window.__telnetExitHandlers || [];
 
- tab.telnetDataHandler = (params) => {
+				window.__telnetExitHandlers.push(tab.telnetExitHandler);
 
- const cid = params.ConnectionID || params.connectionId;
+				tab.term.onData((data) => {
+					if (tab.telnetConnectionId)
+						TelnetWrite(tab.telnetConnectionId, btoa(data));
+				});
 
- if (cid === tab.telnetConnectionId) tab.term.write(atob(params.Data || params.data));
+				setupInputProcessing(tab.term, tab);
 
- };
+				showStatus("Telnet - " + session.host + ":" + (session.port || 23));
 
- window.__telnetDataHandlers = window.__telnetDataHandlers || [];
+				showToast("Reconnected to " + session.host, "success");
+			} else if (session.type === "serial") {
+				showToast("Reconnecting to " + session.port + "...", "info");
 
- window.__telnetDataHandlers.push(tab.telnetDataHandler);
+				setTabStatus(tab, "connecting");
 
- tab.telnetExitHandler = (params) => {
+				const result = await SerialOpen({
+					port: session.port,
+					baudRate: session.baudRate || 115200,
+					dataBits: 8,
+					stopBits: 1,
+					parity: "none",
+				});
 
- const cid = params.ConnectionID || params.connectionId;
+				tab.serialId = result.ID || result.id;
 
- if (cid === tab.telnetConnectionId) {
+				tab.isSerial = true;
 
- tab.exited = true;
+				tab.serialPort = session.port;
 
- setTabStatus(tab, 'disconnected');
+				tab.serialBaud = session.baudRate || 115200;
 
- tab.term.writeln('\x1b[1;33m[Telnet connection closed]\x1b[0m');
+				setTabStatus(tab, "connected");
 
- tab.setTitle(tab.title + ' [disconnected]');
+				tab.setTitle(
+					session.port.split("/").pop().split("\\").pop() +
+						" @ " +
+						(session.baudRate || 115200) +
+						" baud",
+				);
 
- tab.tabEl.querySelector('.tab-icon').textContent = '\u2715';
+				tab.tabEl.querySelector(".tab-icon").textContent = "U0001f4e1";
 
- tab.tabEl.querySelector('.tab-icon').style.color = '#f44747';
+				tab.serialDataHandler = (params) => {
+					if ((params.serialId || params.SerialID) === tab.serialId)
+						tab.term.write(atob(params.data || params.Data));
+				};
 
- }
+				window.__serialDataHandlers = window.__serialDataHandlers || [];
 
- };
+				window.__serialDataHandlers.push(tab.serialDataHandler);
 
- window.__telnetExitHandlers = window.__telnetExitHandlers || [];
+				tab.serialExitHandler = (params) => {
+					if ((params.serialId || params.SerialID) === tab.serialId) {
+						tab.exited = true;
 
- window.__telnetExitHandlers.push(tab.telnetExitHandler);
+						setTabStatus(tab, "disconnected");
 
- tab.term.onData((data) => {
+						tab.term.writeln("\x1b[1;33m[Serial port closed]\x1b[0m");
 
- if (tab.telnetConnectionId) TelnetWrite(tab.telnetConnectionId, btoa(data));
+						tab.setTitle(tab.title + " [disconnected]");
 
- });
+						tab.tabEl.querySelector(".tab-icon").textContent = "\u2715";
 
- setupInputProcessing(tab.term, tab);
+						tab.tabEl.querySelector(".tab-icon").style.color = "#f44747";
+					}
+				};
 
- showStatus('Telnet - ' + session.host + ':' + (session.port || 23));
+				window.__serialExitHandlers = window.__serialExitHandlers || [];
 
- showToast('Reconnected to ' + session.host, 'success');
+				window.__serialExitHandlers.push(tab.serialExitHandler);
 
- } else if (session.type === 'serial') {
+				tab.term.onData((data) => {
+					if (tab.serialId) SerialWrite(tab.serialId, btoa(data));
+				});
 
- showToast('Reconnecting to ' + session.port + '...', 'info');
+				setupInputProcessing(tab.term, tab);
 
- setTabStatus(tab, 'connecting');
+				showStatus(
+					"Serial - " + session.port + " @ " + (session.baudRate || 115200),
+				);
 
- const result = await SerialOpen({ port: session.port, baudRate: session.baudRate || 115200, dataBits: 8, stopBits: 1, parity: 'none' });
+				showToast("Reconnected to " + session.port, "success");
+			} else {
+				tab.spawn();
 
- tab.serialId = result.ID || result.id;
+				showToast("Reconnecting local shell...", "info");
+			}
+		} catch (e) {
+			showToast("Reconnect failed: " + e.message, "error");
 
- tab.isSerial = true;
+			setTabStatus(tab, "disconnected");
 
- tab.serialPort = session.port;
+			tab.exited = true;
 
- tab.serialBaud = session.baudRate || 115200;
+			tab.tabEl.querySelector(".tab-icon").textContent = "\u2715";
 
- setTabStatus(tab, 'connected');
+			tab.tabEl.querySelector(".tab-icon").style.color = "#f44747";
+		}
+	} else {
+		tab.spawn();
+	}
 
- tab.setTitle(session.port.split('/').pop().split('\\').pop() + ' @ ' + (session.baudRate || 115200) + ' baud');
-
- tab.tabEl.querySelector('.tab-icon').textContent = 'U0001f4e1';
-
- tab.serialDataHandler = (params) => {
-
- if ((params.serialId || params.SerialID) === tab.serialId) tab.term.write(atob(params.data || params.Data));
-
- };
-
- window.__serialDataHandlers = window.__serialDataHandlers || [];
-
- window.__serialDataHandlers.push(tab.serialDataHandler);
-
- tab.serialExitHandler = (params) => {
-
- if ((params.serialId || params.SerialID) === tab.serialId) {
-
- tab.exited = true;
-
- setTabStatus(tab, 'disconnected');
-
- tab.term.writeln('\x1b[1;33m[Serial port closed]\x1b[0m');
-
- tab.setTitle(tab.title + ' [disconnected]');
-
- tab.tabEl.querySelector('.tab-icon').textContent = '\u2715';
-
- tab.tabEl.querySelector('.tab-icon').style.color = '#f44747';
-
- }
-
- };
-
- window.__serialExitHandlers = window.__serialExitHandlers || [];
-
- window.__serialExitHandlers.push(tab.serialExitHandler);
-
- tab.term.onData((data) => {
-
- if (tab.serialId) SerialWrite(tab.serialId, btoa(data));
-
- });
-
- setupInputProcessing(tab.term, tab);
-
- showStatus('Serial - ' + session.port + ' @ ' + (session.baudRate || 115200));
-
- showToast('Reconnected to ' + session.port, 'success');
-
- } else {
-
- tab.spawn();
-
- showToast('Reconnecting local shell...', 'info');
-
- }
-
- } catch (e) {
-
- showToast('Reconnect failed: ' + e.message, 'error');
-
- setTabStatus(tab, 'disconnected');
-
- tab.exited = true;
-
- tab.tabEl.querySelector('.tab-icon').textContent = '\u2715';
-
- tab.tabEl.querySelector('.tab-icon').style.color = '#f44747';
-
- }
-
- } else {
-
- tab.spawn();
-
- }
-
- saveSession();
-
+	saveSession();
 }
 
 // ===== SESSION PERSISTENCE =====
 
 function saveSession() {
+	try {
+		const tabStates = tabs.map((t) => ({
+			Shell: t.shell,
 
-  try {
+			Title: t.title,
 
-    const tabStates = tabs.map((t) => ({
+			Active: t.id === activeTabId,
 
-      Shell: t.shell,
+			Type: t.isSSH
+				? "ssh"
+				: t.isSerial
+					? "serial"
+					: t.isTelnet
+						? "telnet"
+						: "local",
 
-      Title: t.title,
+			Host: t.isSSH
+				? t.sshHost
+				: t.isTelnet
+					? t.telnetHost
+					: t.isSerial
+						? t.serialPort
+						: "",
 
-      Active: t.id === activeTabId,
+			Port: t.isSSH ? t.sshPort : t.isTelnet ? t.telnetPort : 0,
 
-      Type: t.isSSH ? 'ssh' : (t.isSerial ? 'serial' : (t.isTelnet ? 'telnet' : 'local')),
+			User: t.isSSH ? t.sshUser : "",
 
-      Host: t.isSSH ? t.sshHost : (t.isTelnet ? t.telnetHost : (t.isSerial ? t.serialPort : '')),
+			BaudRate: t.isSerial ? t.serialBaud : 0,
 
-      Port: t.isSSH ? t.sshPort : (t.isTelnet ? t.telnetPort : 0),
+			SerialPort: t.isSerial ? t.serialPort : "",
 
-      User: t.isSSH ? t.sshUser : '',
+			Exited: t.exited,
+		}));
 
- BaudRate: t.isSerial ? t.serialBaud : 0,
-
- SerialPort: t.isSerial ? t.serialPort : '',
-
- Exited: t.exited,
-
-    }));
-
-    SaveSessionState(tabStates).catch(() => {});
-
-  } catch (_) {}
-
+		SaveSessionState(tabStates).catch(() => {});
+	} catch (_) {}
 }
 
 async function restoreSession() {
+	try {
+		const state = await LoadSessionState();
+
+		if (!state || !state.Tabs || state.Tabs.length === 0) return false;
+
+		let activated = false;
+
+		for (const saved of state.Tabs) {
+			const tabType = saved.Type || "local";
+
+			if (tabType === "ssh" && saved.Host && !saved.Exited) {
+				const tab = new Tab(saved.Shell || defaultShell);
+
+				tabs.push(tab);
+				tab.activate();
 
-  try {
+				tab.setTitle(
+					(saved.User || "root") + "@" + saved.Host + " [reconnecting...]",
+				);
+
+				tab.term.writeln(
+					"\x1b[1;33m[Reconnecting to " +
+						(saved.User || "root") +
+						"@" +
+						saved.Host +
+						"...]\x1b[0m",
+				);
+
+				try {
+					setTabStatus(tab, "connecting");
+					logConnection(
+						tab,
+						"SSH connecting to " + saved.Host + ":" + (saved.Port || 22),
+					);
+					const result = await SSHConnect({
+						host: saved.Host,
+						port: saved.Port || 22,
+						user: saved.User || "root",
+						auth: { type: "agent" },
+						keepaliveInterval: 30,
+						keepaliveCountMax: 3,
+						readyTimeout: 15000,
+					});
+					setTabStatus(tab, "connected");
+					logConnection(tab, "SSH connected");
 
-    const state = await LoadSessionState();
+					tab.sshConnectionId = result.connectionId;
 
-    if (!state || !state.Tabs || state.Tabs.length === 0) return false;
+					tab.sshHost = saved.Host;
+					tab.sshPort = saved.Port || 22;
+					tab.sshUser = saved.User || "root";
+					tab.isSSH = true;
 
-    let activated = false;
+					const shellResult = await SSHStartShell({
+						connectionId: result.connectionId,
+						columns: tab.term.cols,
+						rows: tab.term.rows,
+						terminal: "xterm-256color",
+					});
 
-    for (const saved of state.Tabs) {
+					tab.sshSessionId = shellResult.sessionId;
 
-      const tabType = saved.Type || "local";
+					let jumpLabel = "";
 
-      if (tabType === "ssh" && saved.Host && !saved.Exited) {
+					if (result.jumpChain && result.jumpChain.length > 0)
+						jumpLabel = " (via " + result.jumpChain.join(" -> ") + ")";
 
-        const tab = new Tab(saved.Shell || defaultShell);
+					tab.setTitle((saved.User || "root") + "@" + saved.Host + jumpLabel);
 
-        tabs.push(tab); tab.activate();
+					tab.term.writeln("\x1b[1;32m[Reconnected]\x1b[0m");
 
-        tab.setTitle((saved.User || "root") + "@" + saved.Host + " [reconnecting...]");
+					tab.term.onData((data) => {
+						if (tab.sshConnectionId && tab.sshSessionId)
+							SSHWrite({
+								connectionId: tab.sshConnectionId,
+								sessionId: tab.sshSessionId,
+								data: btoa(data),
+							});
+					});
 
-        tab.term.writeln("\x1b[1;33m[Reconnecting to " + (saved.User || "root") + "@" + saved.Host + "...]\x1b[0m");
+					showStatus("SSH - " + (saved.User || "root") + "@" + saved.Host);
 
-        try {
+					showToast("Reconnected to " + saved.Host, "success");
+				} catch (err) {
+					tab.term.writeln("\x1b[1;31m[Reconnect failed: " + err + "]\x1b[0m");
 
-          setTabStatus(tab, 'connecting'); logConnection(tab, 'SSH connecting to ' + saved.Host + ':' + (saved.Port || 22)); const result = await SSHConnect({ host: saved.Host, port: saved.Port || 22, user: saved.User || "root", auth: { type: "agent" }, keepaliveInterval: 30, keepaliveCountMax: 3, readyTimeout: 15000 }); setTabStatus(tab, 'connected'); logConnection(tab, 'SSH connected');
+					tab.setTitle(
+						(saved.User || "root") + "@" + saved.Host + " [disconnected]",
+					);
 
-          tab.sshConnectionId = result.connectionId;
+					tab.exited = true;
+				}
 
-          tab.sshHost = saved.Host; tab.sshPort = saved.Port || 22; tab.sshUser = saved.User || "root"; tab.isSSH = true;
+				if (saved.Active) activated = true;
+			} else if (tabType === "telnet" && saved.Host && !saved.Exited) {
+				const tab = new Tab(saved.Shell || defaultShell);
 
-          const shellResult = await SSHStartShell({ connectionId: result.connectionId, columns: tab.term.cols, rows: tab.term.rows, terminal: "xterm-256color" });
+				tabs.push(tab);
+				tab.activate();
 
-          tab.sshSessionId = shellResult.sessionId;
+				tab.setTitle(
+					saved.Host + ":" + (saved.Port || 23) + " [reconnecting...]",
+				);
 
-          let jumpLabel = "";
+				try {
+					const result = await TelnetConnect(saved.Host, saved.Port || 23);
 
-          if (result.jumpChain && result.jumpChain.length > 0) jumpLabel = " (via " + result.jumpChain.join(" -> ") + ")";
+					tab.telnetConnectionId = result.ConnectionID || result.connectionId;
 
-          tab.setTitle((saved.User || "root") + "@" + saved.Host + jumpLabel);
+					tab.telnetHost = saved.Host;
+					tab.telnetPort = saved.Port || 23;
+					tab.isTelnet = true;
 
-          tab.term.writeln("\x1b[1;32m[Reconnected]\x1b[0m");
+					tab.setTitle(saved.Host + ":" + (saved.Port || 23));
 
-          tab.term.onData((data) => { if (tab.sshConnectionId && tab.sshSessionId) SSHWrite({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, data: btoa(data) }); });
+					tab.telnetDataHandler = (params) => {
+						const cid = params.ConnectionID || params.connectionId;
+						if (cid === tab.telnetConnectionId)
+							tab.term.write(atob(params.Data || params.data));
+					};
 
-          showStatus("SSH - " + (saved.User || "root") + "@" + saved.Host);
+					window.__telnetDataHandlers.push(tab.telnetDataHandler);
 
-          showToast("Reconnected to " + saved.Host, "success");
+					tab.term.onData((data) => {
+						if (tab.telnetConnectionId)
+							TelnetWrite(tab.telnetConnectionId, btoa(data));
+					});
 
-        } catch (err) {
+					showStatus("Telnet - " + saved.Host + ":" + (saved.Port || 23));
 
-          tab.term.writeln("\x1b[1;31m[Reconnect failed: " + err + "]\x1b[0m");
+					showToast("Reconnected to " + saved.Host, "success");
+				} catch (err) {
+					tab.term.writeln("\x1b[1;31m[Reconnect failed: " + err + "]\x1b[0m");
 
-          tab.setTitle((saved.User || "root") + "@" + saved.Host + " [disconnected]");
+					tab.exited = true;
+				}
 
-          tab.exited = true;
+				if (saved.Active) activated = true;
+			} else if (tabType === "serial" && saved.Host && !saved.Exited) {
+				const tab = new Tab(saved.Shell || defaultShell);
 
-        }
+				tabs.push(tab);
 
-        if (saved.Active) activated = true;
+				tab.activate();
 
-      } else if (tabType === "telnet" && saved.Host && !saved.Exited) {
+				tab.setTitle(saved.Host + " [reconnecting...]");
 
-        const tab = new Tab(saved.Shell || defaultShell);
+				try {
+					const result = await SerialOpen({
+						port: saved.Host,
+						baudRate: saved.BaudRate || 115200,
+						dataBits: 8,
+						stopBits: 1,
+						parity: "none",
+					});
 
-        tabs.push(tab); tab.activate();
+					tab.serialId = result.id || result.ID;
 
-        tab.setTitle(saved.Host + ":" + (saved.Port || 23) + " [reconnecting...]");
+					tab.serialPort = saved.Host;
 
-        try {
+					tab.serialBaud = saved.BaudRate || 115200;
 
-          const result = await TelnetConnect(saved.Host, saved.Port || 23);
+					tab.isSerial = true;
 
-          tab.telnetConnectionId = result.ConnectionID || result.connectionId;
+					tab.setTitle(
+						saved.Host + " @ " + (saved.BaudRate || 115200) + " baud",
+					);
 
-          tab.telnetHost = saved.Host; tab.telnetPort = saved.Port || 23; tab.isTelnet = true;
+					tab.term.writeln("[1;32m[Reconnected][0m");
 
-          tab.setTitle(saved.Host + ":" + (saved.Port || 23));
+					tab.term.onData((data) => {
+						if (tab.serialId) SerialWrite(tab.serialId, btoa(data));
+					});
 
-          tab.telnetDataHandler = (params) => { const cid = params.ConnectionID || params.connectionId; if (cid === tab.telnetConnectionId) tab.term.write(atob(params.Data || params.data)); };
+					showStatus("Serial - " + saved.Host);
 
-          window.__telnetDataHandlers.push(tab.telnetDataHandler);
+					showToast("Reconnected to " + saved.Host, "success");
+				} catch (err) {
+					tab.term.writeln("[1;31m[Reconnect failed: " + err + "][0m");
 
-          tab.term.onData((data) => { if (tab.telnetConnectionId) TelnetWrite(tab.telnetConnectionId, btoa(data)); });
+					tab.exited = true;
+				}
 
-          showStatus("Telnet - " + saved.Host + ":" + (saved.Port || 23));
+				if (saved.Active) activated = true;
+			} else {
+				const tab = new Tab(saved.Shell);
 
-          showToast("Reconnected to " + saved.Host, "success");
+				tabs.push(tab);
+				tab.spawn();
 
-        } catch (err) {
+				if (saved.Active) {
+					tab.activate();
+					activated = true;
+				} else if (saved.Title) tab.setTitle(saved.Title);
+			}
+		}
 
-          tab.term.writeln("\x1b[1;31m[Reconnect failed: " + err + "]\x1b[0m");
+		if (!activated && tabs.length > 0) tabs[0].activate();
 
-          tab.exited = true;
-
-        }
-
-        if (saved.Active) activated = true;
-
-      } else if (tabType === "serial" && saved.Host && !saved.Exited) {
-
- const tab = new Tab(saved.Shell || defaultShell);
-
- tabs.push(tab);
-
- tab.activate();
-
- tab.setTitle(saved.Host + " [reconnecting...]");
-
- try {
-
- const result = await SerialOpen({ port: saved.Host, baudRate: saved.BaudRate || 115200, dataBits: 8, stopBits: 1, parity: 'none' });
-
- tab.serialId = result.id || result.ID;
-
- tab.serialPort = saved.Host;
-
- tab.serialBaud = saved.BaudRate || 115200;
-
- tab.isSerial = true;
-
- tab.setTitle(saved.Host + " @ " + (saved.BaudRate || 115200) + " baud");
-
- tab.term.writeln("[1;32m[Reconnected][0m");
-
- tab.term.onData((data) => {
-
- if (tab.serialId) SerialWrite(tab.serialId, btoa(data));
-
- });
-
- showStatus("Serial - " + saved.Host);
-
- showToast("Reconnected to " + saved.Host, "success");
-
- } catch (err) {
-
- tab.term.writeln("[1;31m[Reconnect failed: " + err + "][0m");
-
- tab.exited = true;
-
- }
-
- if (saved.Active) activated = true;
-
-} else {
-
-        const tab = new Tab(saved.Shell);
-
-        tabs.push(tab); tab.spawn();
-
-        if (saved.Active) { tab.activate(); activated = true; }
-
-        else if (saved.Title) tab.setTitle(saved.Title);
-
-      }
-
-    }
-
-    if (!activated && tabs.length > 0) tabs[0].activate();
-
-    return true;
-
-  } catch (_) { return false; }
-
+		return true;
+	} catch (_) {
+		return false;
+	}
 }
 
-function showStatus(msg) { const el = document.getElementById('status-text'); if (el) { el.textContent = msg; clearTimeout(window.__statusTimeout); window.__statusTimeout = setTimeout(() => { el.textContent = `${tabs.length} tab${tabs.length !== 1 ? 's' : ''}`; }, 3000); } }
+function showStatus(msg) {
+	const el = document.getElementById("status-text");
+	if (el) {
+		el.textContent = msg;
+		clearTimeout(window.__statusTimeout);
+		window.__statusTimeout = setTimeout(() => {
+			el.textContent = `${tabs.length} tab${tabs.length !== 1 ? "s" : ""}`;
+		}, 3000);
+	}
+}
 
 // ===== KEYBOARD SHORTCUTS =====
 
 function bindGlobalKeys() {
+	document.addEventListener("keydown", (e) => {
+		const ctrl = e.ctrlKey || e.metaKey;
+		const shift = e.shiftKey;
 
-    document.addEventListener('keydown', (e) => {
+		const inInput =
+			document.activeElement &&
+			(document.activeElement.tagName === "INPUT" ||
+				document.activeElement.tagName === "TEXTAREA" ||
+				document.activeElement.tagName === "SELECT");
 
-        const ctrl = e.ctrlKey || e.metaKey; const shift = e.shiftKey;
+		if (ctrl && shift && e.key === "P") {
+			e.preventDefault();
+			toggleCommandPalette();
+			return;
+		}
 
-        const inInput = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT');
+		if (ctrl && shift && e.key === "F") {
+			e.preventDefault();
+			toggleTabSearch();
+			return;
+		}
 
-        if (ctrl && shift && e.key === 'P') { e.preventDefault(); toggleCommandPalette(); return; }
+		if (ctrl && shift && e.key === "S") {
+			e.preventDefault();
+			openSerialDialog();
+			return;
+		}
 
-    if (ctrl && shift && e.key === 'F') { e.preventDefault(); toggleTabSearch(); return; }
+		if (ctrl && shift && e.key === "N") {
+			e.preventDefault();
+			openTelnetDialog();
+			return;
+		}
 
-      if (ctrl && shift && e.key === 'S') { e.preventDefault(); openSerialDialog(); return; }
+		if (ctrl && !shift && e.key === ",") {
+			e.preventDefault();
+			toggleSettings();
+			return;
+		}
 
-    if (ctrl && shift && e.key === 'N') { e.preventDefault(); openTelnetDialog(); return; }
+		if (ctrl && shift && (e.key === "T" || e.key === "t")) {
+			e.preventDefault();
+			newTab();
+			return;
+		}
 
-    if (ctrl && !shift && e.key === ',') { e.preventDefault(); toggleSettings(); return; }
+		if (ctrl && !shift && e.key === "w" && !inInput) {
+			e.preventDefault();
+			const t = getActiveTab();
+			if (t) t.close();
+			return;
+		}
 
-        if (ctrl && shift && (e.key === 'T' || e.key === 't')) { e.preventDefault(); newTab(); return; }
+		if (ctrl && e.key === "Tab" && !shift) {
+			e.preventDefault();
+			nextTab();
+			return;
+		}
 
-        if (ctrl && !shift && e.key === 'w' && !inInput) { e.preventDefault(); const t = getActiveTab(); if (t) t.close(); return; }
+		if (ctrl && e.key === "Tab" && shift) {
+			e.preventDefault();
+			prevTab();
+			return;
+		}
 
-        if (ctrl && e.key === 'Tab' && !shift) { e.preventDefault(); nextTab(); return; }
+		if (e.altKey && e.key >= "1" && e.key <= "9") {
+			e.preventDefault();
+			switchToTab(parseInt(e.key) - 1);
+			return;
+		}
 
-        if (ctrl && e.key === 'Tab' && shift) { e.preventDefault(); prevTab(); return; }
+		if (ctrl && shift && e.key === "L") {
+			e.preventDefault();
+			showConnectionLog();
+		}
 
-        if (e.altKey && e.key >= '1' && e.key <= '9') { e.preventDefault(); switchToTab(parseInt(e.key) - 1); return; }
+		if (ctrl && shift && e.key === "O") {
+			e.preventDefault();
+			openSettingsPanel();
+		}
 
-  if (ctrl && shift && e.key === 'L') { e.preventDefault(); showConnectionLog(); }
+		if (ctrl && shift && e.key === "E") {
+			e.preventDefault();
+			exportProfiles();
+		}
 
-    if (ctrl && shift && e.key === 'O') { e.preventDefault(); openSettingsPanel(); }
+		if (ctrl && shift && e.key === "B") {
+			e.preventDefault();
+			const tab = getActiveTab();
+			if (tab) setTabBadge(tab, Math.floor(Math.random() * 10));
+		}
 
-  if (ctrl && shift && e.key === 'E') { e.preventDefault(); exportProfiles(); }
+		if (ctrl && !shift && e.key === "\\") {
+			e.preventDefault();
+			splitVertically();
+			return;
+		}
 
-  if (ctrl && shift && e.key === 'B') { e.preventDefault(); const tab = getActiveTab(); if (tab) setTabBadge(tab, Math.floor(Math.random()*10)); }
+		if (ctrl && shift && e.key === "\\") {
+			e.preventDefault();
+			splitHorizontally();
+			return;
+		}
 
-        if (ctrl && !shift && e.key === '\\') { e.preventDefault(); splitVertically(); return; }
+		if (ctrl && shift && e.key === "W") {
+			e.preventDefault();
+			removeSplit();
+			return;
+		}
 
-        if (ctrl && shift && e.key === '\\') { e.preventDefault(); splitHorizontally(); return; }
+		if (ctrl && shift && (e.key === "F" || e.key === "f")) {
+			e.preventDefault();
+			toggleFind();
+			return;
+		}
 
-        if (ctrl && shift && e.key === 'W') { e.preventDefault(); removeSplit(); return; }
+		if (ctrl && shift && (e.key === "C" || e.key === "c") && !inInput) {
+			e.preventDefault();
+			const t = getActiveTab();
+			if (t) t.copySelection();
+			return;
+		}
 
-        if (ctrl && shift && (e.key === 'F' || e.key === 'f')) { e.preventDefault(); toggleFind(); return; }
+		if (ctrl && shift && (e.key === "V" || e.key === "v") && !inInput) {
+			e.preventDefault();
+			const t = getActiveTab();
+			if (t) t.pasteFromClipboard();
+			return;
+		}
 
-        if (ctrl && shift && (e.key === 'C' || e.key === 'c') && !inInput) { e.preventDefault(); const t = getActiveTab(); if (t) t.copySelection(); return; }
+		if (ctrl && (e.key === "=" || e.key === "+")) {
+			e.preventDefault();
+			applyFontSize(Math.min(48, fontSize + 1));
+			return;
+		}
 
-        if (ctrl && shift && (e.key === 'V' || e.key === 'v') && !inInput) { e.preventDefault(); const t = getActiveTab(); if (t) t.pasteFromClipboard(); return; }
+		if (ctrl && e.key === "-") {
+			e.preventDefault();
+			applyFontSize(Math.max(8, fontSize - 1));
+			return;
+		}
 
-        if (ctrl && (e.key === '=' || e.key === '+')) { e.preventDefault(); applyFontSize(Math.min(48, fontSize + 1)); return; }
+		if (ctrl && e.key === "0") {
+			e.preventDefault();
+			applyFontSize(14);
+			return;
+		}
+	});
 
-        if (ctrl && e.key === '-') { e.preventDefault(); applyFontSize(Math.max(8, fontSize - 1)); return; }
-
-        if (ctrl && e.key === '0') { e.preventDefault(); applyFontSize(14); return; }
-
-    });
-
-    window.addEventListener('focus', () => { const tab = getActiveTab(); if (tab && !tab.exited) tab.term.focus(); });
-
+	window.addEventListener("focus", () => {
+		const tab = getActiveTab();
+		if (tab && !tab.exited) tab.term.focus();
+	});
 }
 
-window.addEventListener('resize', () => {
+window.addEventListener("resize", () => {
+	const tab = getActiveTab();
+	if (tab) {
+		tab.fitAddon.fit();
+		if (tab.ptyId && !tab.exited)
+			PTYResize(tab.ptyId, tab.term.cols, tab.term.rows);
+		if (tab.isSSH && tab.sshConnectionId && tab.sshSessionId)
+			SSHResize({
+				connectionId: tab.sshConnectionId,
+				sessionId: tab.sshSessionId,
+				columns: tab.term.cols,
+				rows: tab.term.rows,
+			});
 
-    const tab = getActiveTab(); if (tab) { tab.fitAddon.fit(); if (tab.ptyId && !tab.exited) PTYResize(tab.ptyId, tab.term.cols, tab.term.rows); if (tab.isSSH && tab.sshConnectionId && tab.sshSessionId) SSHResize({ connectionId: tab.sshConnectionId, sessionId: tab.sshSessionId, columns: tab.term.cols, rows: tab.term.rows });
+		if (tab.isTelnet && tab.telnetConnectionId)
+			TelnetResize(tab.telnetConnectionId, tab.term.cols, tab.term.rows);
+	}
 
-    if (tab.isTelnet && tab.telnetConnectionId) TelnetResize(tab.telnetConnectionId, tab.term.cols, tab.term.rows); }
+	if (activeSplitPane)
+		activeSplitPane.panes.forEach((p) => {
+			p.tab.fitAddon.fit();
+			if (p.tab.ptyId && !p.tab.exited)
+				PTYResize(p.tab.ptyId, p.tab.term.cols, p.tab.term.rows);
 
-    if (activeSplitPane) activeSplitPane.panes.forEach(p => { p.tab.fitAddon.fit(); if (p.tab.ptyId && !p.tab.exited) PTYResize(p.tab.ptyId, p.tab.term.cols, p.tab.term.rows);
+			if (p.tab.isSSH && p.tab.sshConnectionId && p.tab.sshSessionId)
+				SSHResize({
+					connectionId: p.tab.sshConnectionId,
+					sessionId: p.tab.sshSessionId,
+					columns: p.tab.term.cols,
+					rows: p.tab.term.rows,
+				});
 
-    if (p.tab.isSSH && p.tab.sshConnectionId && p.tab.sshSessionId) SSHResize({ connectionId: p.tab.sshConnectionId, sessionId: p.tab.sshSessionId, columns: p.tab.term.cols, rows: p.tab.term.rows });
-
-    if (p.tab.isTelnet && p.tab.telnetConnectionId) TelnetResize(p.tab.telnetConnectionId, p.tab.term.cols, p.tab.term.rows); });
-
+			if (p.tab.isTelnet && p.tab.telnetConnectionId)
+				TelnetResize(
+					p.tab.telnetConnectionId,
+					p.tab.term.cols,
+					p.tab.term.rows,
+				);
+		});
 });
+
+// ResizeObserver for reliable terminal fitting when main-content changes size
+const resizeObserver = new ResizeObserver(() => {
+	const tab = getActiveTab();
+	if (tab && tab.term) {
+		tab.fitAddon.fit();
+	}
+});
+// Will observe main-content once buildUI runs
+setTimeout(() => {
+	const mc = document.getElementById('main-content');
+	if (mc) resizeObserver.observe(mc);
+}, 100);
 
 // Idle connection monitor
 
 setInterval(() => {
+	const timeout = settings.IdleTimeout || 0;
 
-  const timeout = settings.IdleTimeout || 0;
+	if (timeout <= 0) return;
 
-  if (timeout <= 0) return;
+	tabs.forEach((tab) => {
+		if (tab.lastActivity && Date.now() - tab.lastActivity > timeout * 60000) {
+			if (tab.status === "connected" && (tab.isSSH || tab.telnetConnectionId)) {
+				showToast("Idle timeout: " + tab.title, "info");
 
-  tabs.forEach(tab => {
-
-    if (tab.lastActivity && Date.now() - tab.lastActivity > timeout * 60000) {
-
-      if (tab.status === 'connected' && (tab.isSSH || tab.telnetConnectionId)) {
-
-        showToast('Idle timeout: ' + tab.title, 'info');
-
-        tab.close();
-
-      }
-
-    }
-
-  });
-
+				tab.close();
+			}
+		}
+	});
 }, 60000);
 
 init();
