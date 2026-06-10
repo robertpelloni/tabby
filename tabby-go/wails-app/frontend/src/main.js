@@ -3,6 +3,10 @@ import './style.css';
 import './app.css';
 
 import '@xterm/xterm/css/xterm.css';
+import { Terminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
+import { SearchAddon } from '@xterm/addon-search';
+import { WebLinksAddon } from '@xterm/addon-web-links';
 
 import {
 
@@ -3572,9 +3576,7 @@ function buildUI() {
 
     // Button bindings
 
-    document.getElementById('btn-new-tab').onclick = (e) => {
- if (e.shiftKey || e.ctrlKey) { showNewTabDropdown(e); } else { newTab(); }
- };
+    document.getElementById('btn-new-tab').onclick = (e) => showNewTabDropdown(e);
 
     document.getElementById('btn-ssh').onclick = () => openSSHDialog();
 
