@@ -119,6 +119,14 @@ let settings = {};
 
 let savedProfiles = [];
 
+// Decode base64 string to Uint8Array for proper UTF-8 handling
+function b64ToBytes(b64) {
+	const binary = atob(b64);
+	const bytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+	return bytes;
+}
+
 // ===== INIT =====
 
 // Idle connection monitor
@@ -689,7 +697,7 @@ async function doSerialConnect() {
 
 		tab.serialDataHandler = (params) => {
 			if ((params.serialId || params.SerialID) === tab.serialId)
-				tab.term.write(atob(params.data || params.Data));
+				tab.term.write(b64ToBytes(params.data || params.Data));
 		};
 
 		window.__serialDataHandlers = window.__serialDataHandlers || [];
@@ -806,7 +814,7 @@ async function doTelnetConnect() {
 			const cid = params.ConnectionID || params.connectionId;
 
 			if (cid === tab.telnetConnectionId)
-				tab.term.write(atob(params.Data || params.data));
+				tab.term.write(b64ToBytes(params.Data || params.data));
 		};
 
 		window.__telnetDataHandlers = window.__telnetDataHandlers || [];
@@ -5228,16 +5236,16 @@ class Tab {
 			const serid = params.serialId ?? params.SerialID;
 			const cid = params.connectionId ?? params.ConnectionID;
 			if (pid && pid === this.ptyId) {
-				this.term.write(atob(params.data));
+				this.term.write(b64ToBytes(params.data));
 				this.lastActivity = Date.now();
 			} else if (this.isSSH && sid && sid === this.sshSessionId) {
-				this.term.write(atob(params.data));
+				this.term.write(b64ToBytes(params.data));
 				this.lastActivity = Date.now();
 			} else if (this.isSerial && serid && serid === this.serialId) {
-				this.term.write(atob(params.data));
+				this.term.write(b64ToBytes(params.data));
 				this.lastActivity = Date.now();
 			} else if (this.isTelnet && cid && cid === this.telnetConnectionId) {
-				this.term.write(atob(params.data));
+				this.term.write(b64ToBytes(params.data));
 				this.lastActivity = Date.now();
 			}
 		};
@@ -6062,7 +6070,7 @@ async function reconnectTab(tab) {
 					const cid = params.ConnectionID || params.connectionId;
 
 					if (cid === tab.telnetConnectionId)
-						tab.term.write(atob(params.Data || params.data));
+						tab.term.write(b64ToBytes(params.Data || params.data));
 				};
 
 				window.__telnetDataHandlers = window.__telnetDataHandlers || [];
@@ -6135,7 +6143,7 @@ async function reconnectTab(tab) {
 
 				tab.serialDataHandler = (params) => {
 					if ((params.serialId || params.SerialID) === tab.serialId)
-						tab.term.write(atob(params.data || params.Data));
+						tab.term.write(b64ToBytes(params.data || params.Data));
 				};
 
 				window.__serialDataHandlers = window.__serialDataHandlers || [];
@@ -6357,7 +6365,7 @@ async function restoreSession() {
 					tab.telnetDataHandler = (params) => {
 						const cid = params.ConnectionID || params.connectionId;
 						if (cid === tab.telnetConnectionId)
-							tab.term.write(atob(params.Data || params.data));
+							tab.term.write(b64ToBytes(params.Data || params.data));
 					};
 
 					window.__telnetDataHandlers.push(tab.telnetDataHandler);
