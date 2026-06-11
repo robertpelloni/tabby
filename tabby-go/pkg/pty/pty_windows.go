@@ -60,7 +60,8 @@ func (m *Manager) Spawn(params api.PTYSpawnParams) (*api.PTYSpawnResult, error) 
 
 	// Wrap command to set UTF-8 code page inside the ConPTY
 	// SetConsoleOutputCP from Go only affects Go's console, not the child's
-	cmdLine = "cmd.exe /c \"chcp 65001 >nul & " + cmdLine + "\""
+	// /S tells cmd.exe to strip first and last quote after /c
+	cmdLine = `cmd.exe /S /c "chcp 65001 >nul & ` + cmdLine + `"`
 
 	// Build environment with UTF-8 settings
 	env := os.Environ()

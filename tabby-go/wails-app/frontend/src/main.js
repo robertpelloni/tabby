@@ -1667,7 +1667,8 @@ function formatBytes(bytes) {
 // ===== TERMINAL TOOLBAR =====
 
 function buildToolbar(tab) {
-	let html = '<div class="terminal-toolbar" id="toolbar-' + tab.id + '">';
+	const autohideClass = (settings.ToolbarAutoHide === false) ? ' no-autohide' : '';
+	let html = '<div class="terminal-toolbar' + autohideClass + '" id="toolbar-' + tab.id + '">';
 
 	if (tab.isSSH) {
 		html += '<span class="toolbar-badge ssh">SSH</span>';
@@ -1771,17 +1772,16 @@ function clearTerminal() {
 
 function showToolbarForTab(tab) {
 	if (!tab || !tab.wrapper || tab.pinToolbar) return;
-
+	// If auto-hide is disabled, toolbar is always visible via pinned class
+	if (settings.ToolbarAutoHide === false) return;
 	const toolbar = tab.wrapper.querySelector(".terminal-toolbar");
-
 	if (toolbar) toolbar.classList.add("visible");
 }
 
 function hideToolbarForTab(tab) {
 	if (!tab || !tab.wrapper || tab.pinToolbar) return;
-
+	if (settings.ToolbarAutoHide === false) return;
 	const toolbar = tab.wrapper.querySelector(".terminal-toolbar");
-
 	if (toolbar) toolbar.classList.remove("visible");
 }
 
@@ -3902,6 +3902,10 @@ function buildUI() {
 
                 <div class="setting-group"><label>Set Tabby as %COMSPEC%</label><div class="toggle-container"><input type="checkbox" id="s-set-comspec"><label for="s-set-comspec" class="toggle-label"></label></div></div>
 
+                <h3>Toolbar</h3>
+
+                <div class="setting-group"><label>Auto-hide Toolbar</label><div class="toggle-container"><input type="checkbox" id="s-toolbar-autohide" checked><label for="s-toolbar-autohide" class="toggle-label"></label></div></div>
+
             </div>
 
             <!-- Clipboard -->
@@ -4390,6 +4394,8 @@ function applySettingsToUI() {
 
 	check("s-set-comspec", s.SetComSpec);
 
+	check("s-toolbar-autohide", s.ToolbarAutoHide ?? true);
+
 	// Clipboard
 
 	check("s-copy-on-select", s.CopyOnSelect);
@@ -4602,6 +4608,8 @@ async function saveSettingsFromUI() {
 		UseConPTY: document.getElementById("s-use-conpty").checked,
 
 		SetComSpec: document.getElementById("s-set-comspec").checked,
+
+		ToolbarAutoHide: document.getElementById("s-toolbar-autohide").checked,
 
 		CopyOnSelect: document.getElementById("s-copy-on-select").checked,
 
