@@ -8,6 +8,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
+import { WebglAddon } from "@xterm/addon-webgl";
 
 import {
 	PTYSpawn,
@@ -5026,6 +5027,13 @@ class Tab {
 		this.term.loadAddon(this.webLinksAddon);
 		this.term.loadAddon(new Unicode11Addon());
 		this.term.unicode.activeVersion = "11";
+
+		// WebGL renderer for better Unicode/emoji support
+		try {
+			this.term.loadAddon(new WebglAddon());
+		} catch (e) {
+			console.warn("WebGL addon failed, falling back to canvas:", e);
+		}
 
 		// Handle terminal resize events from xterm.js
 		this.term.onResize(({ cols, rows }) => {

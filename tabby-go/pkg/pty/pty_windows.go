@@ -58,10 +58,6 @@ func (m *Manager) Spawn(params api.PTYSpawnParams) (*api.PTYSpawnResult, error) 
 		cmdLine += " " + arg
 	}
 
-	// Wrap command to set UTF-8 code page inside the ConPTY
-	// /S strips outer quotes, inner quotes are preserved for paths with spaces
-	cmdLine = `cmd.exe /S /c "chcp 65001 >nul & ` + `"` + cmdLine + `"` + `"`
-
 	// Build environment with UTF-8 settings
 	env := os.Environ()
 	if params.Env != nil {
