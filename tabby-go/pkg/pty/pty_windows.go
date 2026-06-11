@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"runtime"
 	"sync"
 	"time"
 
@@ -50,11 +51,16 @@ func (m *Manager) nextID(prefix string) string {
 	return fmt.Sprintf("%s-%d-%d", prefix, time.Now().UnixMilli(), m.idCounter)
 }
 
-// Spawn creates a new ConPTY process
+// Spawn creates a new ConPTY process with UTF-8 support
 func (m *Manager) Spawn(params api.PTYSpawnParams) (*api.PTYSpawnResult, error) {
 	cmdLine := params.Command
 	for _, arg := range params.Args {
 		cmdLine += " " + arg
+	}
+
+	// On Windows, configure UTF-8 output for proper Unicode/emoji rendering
+	if runtime.GOOS == "windows" {
+		cmdLine = "chcp.com 65001 >nul & " + cmdLine
 	}
 
 	cpty, err := conpty.Start(cmdLine)

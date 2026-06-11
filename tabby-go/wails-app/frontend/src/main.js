@@ -4964,7 +4964,7 @@ class Tab {
 
 		const fontFamily =
 			settings.FontFamily ||
-			'"Cascadia Code","Fira Code",Consolas,"Courier New",monospace';
+			'"Cascadia Code","Fira Code",Consolas,"Courier New","Segoe UI Emoji",monospace';
 
 		const lineHeight = settings.LineHeight || 1.2;
 
