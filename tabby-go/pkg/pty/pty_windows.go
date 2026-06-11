@@ -9,24 +9,11 @@ import (
 	"io"
 	"os"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/UserExistsError/conpty"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/api"
 )
-
-var (
-	kernel32            = syscall.NewLazyDLL("kernel32.dll")
-	procSetConsoleOutputCP = kernel32.NewProc("SetConsoleOutputCP")
-	procSetConsoleCP       = kernel32.NewProc("SetConsoleCP")
-)
-
-func setConsoleUTF8() {
-	// Set console code page to UTF-8 (65001)
-	procSetConsoleOutputCP.Call(65001)
-	procSetConsoleCP.Call(65001)
-}
 
 // Manager manages PTY processes on Windows using ConPTY
 type Manager struct {
@@ -71,6 +58,10 @@ func (m *Manager) Spawn(params api.PTYSpawnParams) (*api.PTYSpawnResult, error) 
 		cmdLine += " " + arg
 	}
 
+	// Wrap command to set UTF-8 code page inside the ConPTY
+	// SetConsoleOutputCP from Go only affects Go's console, not the child's
+	cmdLine = "cmd.exe /c \"chcp 65001 >nul & " + cmdLine + "\""
+
 	// Build environment with UTF-8 settings
 	env := os.Environ()
 	if params.Env != nil {
@@ -87,9 +78,6 @@ func (m *Manager) Spawn(params api.PTYSpawnParams) (*api.PTYSpawnResult, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to start ConPTY: %w", err)
 	}
-
-	// Set console code page to UTF-8
-	setConsoleUTF8()
 
 	id := params.ID
 	if id == "" {
