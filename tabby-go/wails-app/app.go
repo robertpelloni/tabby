@@ -218,10 +218,10 @@ func (a *App) SFTPMkdirAll(sessionID, dirPath string) error {
 // GetDefaultShell returns the default shell for the current OS.
 func (a *App) GetDefaultShell() string {
 	if runtime.GOOS == "windows" {
-		if path, err := exec.LookPath("powershell.exe"); err == nil {
+		if path, err := exec.LookPath("pwsh.exe"); err == nil {
 			return path
 		}
-		if path, err := exec.LookPath("pwsh.exe"); err == nil {
+		if path, err := exec.LookPath("powershell.exe"); err == nil {
 			return path
 		}
 		return "cmd.exe"
@@ -236,7 +236,7 @@ func (a *App) GetDefaultShell() string {
 func (a *App) GetAvailableShells() []string {
 	var shells []string
 	if runtime.GOOS == "windows" {
-		candidates := []string{"powershell.exe", "pwsh.exe", "cmd.exe", "bash.exe", "wsl.exe"}
+		candidates := []string{"pwsh.exe", "powershell.exe", "cmd.exe", "bash.exe", "wsl.exe"}
 		for _, c := range candidates {
 			if path, err := exec.LookPath(c); err == nil {
 				shells = append(shells, path)

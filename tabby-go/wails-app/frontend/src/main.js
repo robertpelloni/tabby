@@ -5008,8 +5008,15 @@ class Tab {
 		// Handle terminal resize events from xterm.js
 		this.term.onResize(({ cols, rows }) => {
 			if (this.ptyId && !this.exited) PTYResize(this.ptyId, cols, rows);
-			if (this.isSSH && this.sshConnectionId && this.sshSessionId) SSHResize({ connectionId: this.sshConnectionId, sessionId: this.sshSessionId, columns: cols, rows: rows });
-			if (this.isTelnet && this.telnetConnectionId) TelnetResize(this.telnetConnectionId, cols, rows);
+			if (this.isSSH && this.sshConnectionId && this.sshSessionId)
+				SSHResize({
+					connectionId: this.sshConnectionId,
+					sessionId: this.sshSessionId,
+					columns: cols,
+					rows: rows,
+				});
+			if (this.isTelnet && this.telnetConnectionId)
+				TelnetResize(this.telnetConnectionId, cols, rows);
 		});
 
 		this.term.registerLinkProvider({
@@ -5242,7 +5249,11 @@ class Tab {
 			logConnection(this, "Spawning shell: " + this.shell);
 			// Fit first to get correct cols/rows
 			this.fitAddon.fit();
-			console.log("[spawn] PTYSpawn:", { command: this.shell, cols: this.term.cols, rows: this.term.rows });
+			console.log("[spawn] PTYSpawn:", {
+				command: this.shell,
+				cols: this.term.cols,
+				rows: this.term.rows,
+			});
 			const result = await PTYSpawn({
 				command: this.shell,
 				args: [],
@@ -5260,7 +5271,8 @@ class Tab {
 			// Delayed fit to ensure correct dimensions after DOM layout
 			setTimeout(() => {
 				this.fitAddon.fit();
-				if (this.ptyId && !this.exited) PTYResize(this.ptyId, this.term.cols, this.term.rows);
+				if (this.ptyId && !this.exited)
+					PTYResize(this.ptyId, this.term.cols, this.term.rows);
 			}, 100);
 		} catch (err) {
 			this.term.writeln(`\x1b[1;31mFailed to spawn shell: ${err}\x1b[0m`);
@@ -6622,7 +6634,7 @@ const resizeObserver = new ResizeObserver(() => {
 });
 // Will observe main-content once buildUI runs
 setTimeout(() => {
-	const mc = document.getElementById('main-content');
+	const mc = document.getElementById("main-content");
 	if (mc) resizeObserver.observe(mc);
 }, 100);
 
