@@ -1,6 +1,17 @@
 {
-  "files": {},
+  "files": {
+    "tabby-go/wails-app/frontend/src/main.js": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 6667
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-06-11T02:56:53.187Z"
+    }
+  },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-06-11T02:30:32.407Z"
+  "lastUpdated": "2026-06-11T02:56:53.188Z"
 }

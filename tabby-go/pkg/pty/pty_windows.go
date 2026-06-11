@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"runtime"
+	"os"
 	"sync"
 	"time"
 
@@ -51,19 +51,26 @@ func (m *Manager) nextID(prefix string) string {
 	return fmt.Sprintf("%s-%d-%d", prefix, time.Now().UnixMilli(), m.idCounter)
 }
 
-// Spawn creates a new ConPTY process with UTF-8 support
+// Spawn creates a new ConPTY process
 func (m *Manager) Spawn(params api.PTYSpawnParams) (*api.PTYSpawnResult, error) {
 	cmdLine := params.Command
 	for _, arg := range params.Args {
 		cmdLine += " " + arg
 	}
 
-	// On Windows, configure UTF-8 output for proper Unicode/emoji rendering
-	if runtime.GOOS == "windows" {
-		cmdLine = "chcp.com 65001 >nul & " + cmdLine
+	// Build environment with UTF-8 settings
+	env := os.Environ()
+	if params.Env != nil {
+		for k, v := range params.Env {
+			env = append(env, k+"="+v)
+		}
 	}
+	// Ensure UTF-8 locale and terminal type
+	env = append(env, "LANG=en_US.UTF-8")
+	env = append(env, "PYTHONIOENCODING=utf-8")
+	env = append(env, "TERM=xterm-256color")
 
-	cpty, err := conpty.Start(cmdLine)
+	cpty, err := conpty.Start(cmdLine, conpty.ConPtyEnv(env))
 	if err != nil {
 		return nil, fmt.Errorf("failed to start ConPTY: %w", err)
 	}

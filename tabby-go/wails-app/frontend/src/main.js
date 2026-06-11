@@ -79,7 +79,12 @@ import {
 	OpenInBrowser,
 } from "../wailsjs/go/main/App";
 
-import { EventsOn, WindowSetAlwaysOnTop } from "../wailsjs/runtime/runtime";
+import {
+	EventsOn,
+	WindowSetAlwaysOnTop,
+	ClipboardSetText,
+	ClipboardGetText,
+} from "../wailsjs/runtime/runtime";
 
 // ===== GLOBALS =====
 
@@ -2579,7 +2584,7 @@ function setupInputProcessing(term, tab) {
 		term.onSelectionChange(() => {
 			const sel = term.getSelection();
 
-			if (sel) navigator.clipboard.writeText(sel).catch(() => {});
+			if (sel) ClipboardSetText(sel).catch(() => {});
 		});
 	}
 }
@@ -5151,7 +5156,7 @@ class Tab {
 				it.onclick = () => {
 					const a = it.dataset.action;
 
-					if (a === "copy" && sel) navigator.clipboard.writeText(sel);
+					if (a === "copy" && sel) ClipboardSetText(sel);
 
 					if (a === "paste")
 						navigator.clipboard
@@ -5392,7 +5397,7 @@ class Tab {
 
 	async pasteFromClipboard() {
 		try {
-			const text = await navigator.clipboard.readText();
+			const text = await ClipboardGetText();
 			if (text) {
 				if (this.isSSH && this.sshConnectionId && this.sshSessionId)
 					SSHWrite({
@@ -5477,8 +5482,7 @@ EventsOn("menu:copy", () => {
 
 EventsOn("menu:paste", () => {
 	const t = getActiveTab();
-	if (t && t.term)
-		navigator.clipboard.readText().then((text) => t.term.paste(text));
+	if (t && t.term) ClipboardGetText().then((text) => t.term.paste(text));
 });
 
 EventsOn("menu:select-all", () => {
