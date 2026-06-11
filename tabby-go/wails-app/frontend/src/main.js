@@ -325,6 +325,18 @@ function applyColorScheme(name) {
 	renderColorSchemePreview(name);
 }
 
+function applyBackgroundColor(color) {
+	// Apply to main-content background
+	const mc = document.getElementById("main-content");
+	if (mc) mc.style.background = color;
+	// Apply to all terminal themes
+	tabs.forEach((t) => {
+		if (t.term && t.term.options.theme) {
+			t.term.options.theme = { ...t.term.options.theme, background: color };
+		}
+	});
+}
+
 function renderColorSchemePreview(name) {
 	const container = document.getElementById("color-scheme-preview");
 	if (!container) return;
@@ -3845,6 +3857,8 @@ function buildUI() {
 
                 </div>
 
+                <div class="setting-group"><label>Background Color</label><input type="color" id="s-bg-color" value="#000000" style="width:60px;height:30px;border:1px solid #3a3a3a;border-radius:4px;cursor:pointer;"></div>
+
                 <div class="setting-group"><label>UI Spacing</label>
 
                     <select id="s-spaciness"><option value="1">Compact</option><option value="2">Normal</option><option value="3">Spacious</option></select>
@@ -4209,6 +4223,11 @@ function buildUI() {
 		);
 	};
 
+	// Background color picker
+	document.getElementById("s-bg-color").oninput = (e) => {
+		applyBackgroundColor(e.target.value);
+	};
+
 	// SSH auth toggle
 
 	document.getElementById("ssh-auth").onchange = (e) => {
@@ -4376,6 +4395,12 @@ function applySettingsToUI() {
 	document.getElementById("s-opacity-val").textContent = (
 		s.Opacity ?? 1.0
 	).toFixed(2);
+
+	// Background color
+	const bgColor = s.BackgroundColor || "#000000";
+	const bgInput = document.getElementById("s-bg-color");
+	if (bgInput) bgInput.value = bgColor;
+	applyBackgroundColor(bgColor);
 
 	set("s-spaciness", s.Spaciness || 1);
 
@@ -4590,6 +4615,7 @@ async function saveSettingsFromUI() {
 		Theme: document.getElementById("s-theme").value || "dark",
 
 		Opacity: parseFloat(document.getElementById("s-opacity").value) || 1.0,
+		BackgroundColor: document.getElementById("s-bg-color").value || "#000000",
 
 		Spaciness: parseInt(document.getElementById("s-spaciness").value) || 1,
 
