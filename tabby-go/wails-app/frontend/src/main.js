@@ -7,6 +7,7 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
 import { WebLinksAddon } from "@xterm/addon-web-links";
+import { Unicode11Addon } from "@xterm/addon-unicode11";
 
 import {
 	PTYSpawn,
@@ -5004,6 +5005,8 @@ class Tab {
 		this.term.loadAddon(this.fitAddon);
 		this.term.loadAddon(this.searchAddon);
 		this.term.loadAddon(this.webLinksAddon);
+		this.term.loadAddon(new Unicode11Addon());
+		this.term.unicode.activeVersion = "11";
 
 		// Handle terminal resize events from xterm.js
 		this.term.onResize(({ cols, rows }) => {
