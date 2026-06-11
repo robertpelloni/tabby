@@ -58,6 +58,17 @@ func (m *Manager) Spawn(params api.PTYSpawnParams) (*api.PTYSpawnResult, error) 
 		cmdLine += " " + arg
 	}
 
+	// Create a startup script that sets UTF-8 code page then runs the shell
+	// This avoids cmd.exe quoting issues with paths containing spaces
+	startupScript := "@echo off\r\nchcp 65001 >nul\r\n" + cmdLine
+	tmpFile, err := os.CreateTemp("", "tabby-startup-*.bat")
+	if err == nil {
+		tmpFile.WriteString(startupScript)
+		tmpFile.Close()
+		cmdLine = tmpFile.Name()
+		defer os.Remove(tmpFile.Name())
+	}
+
 	// Build environment with UTF-8 settings
 	env := os.Environ()
 	if params.Env != nil {

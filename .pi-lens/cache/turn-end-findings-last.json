@@ -1,6 +1,6 @@
 {
-  "signature": "tabby-go/wails-app/frontend/src/main.js::Unresolved from this turn — tabby-go/wails-app/frontend/src/main.js:\n🔴 STOP — 20 issue(s) must be fixed:\n  L325: [slop] Avoid innerHTML/outerHTML — use textContent or a sanitizer to prevent XSS\n    💡 Fix: innerHTML and outerHTML can introduce XSS vulnerabilities when used with user-supplied data. Use textContent for plain text or a library like DOMPurify for sanitized HTML.\n  L330: [slop] Avoid innerHTML/outerHTML — use textContent or a sanitizer to prevent XSS\n    💡 Fix: innerHTML and outerHTML can introduce XSS vulnerabilities when used with user-supplied data. Use textContent for plain text or a library like DOMPurify for sanitized HTML.\n  L603: [slop] Avoid innerHTML/outerHTML — use textContent or a sanitizer to prevent XSS\n    💡 Fix: innerHTML and outerHTML can introduce XSS vulnerabilities when used with user-supplied data. Use textContent for plain text or a library like DOMPurify for sanitized HTML.\n  L608: [slop] Avoid innerHTML/outerHTML — use textContent or a sanitizer t\n... (truncated)",
+  "signature": "tabby-go/pkg/pty/pty_windows.go::Unresolved from this turn — tabby-go/pkg/pty/pty_windows.go:\n🔴 STOP — 1 issue(s) must be fixed:\n  L11: \"strings\" imported and not used",
   "sessionId": "lens-mq8gq6uj-b474e484",
-  "projectSeqStart": 57,
-  "projectSeqEnd": 58
+  "projectSeqStart": 61,
+  "projectSeqEnd": 62
 }
