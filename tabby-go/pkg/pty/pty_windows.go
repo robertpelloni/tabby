@@ -65,7 +65,8 @@ func (m *Manager) Spawn(params api.PTYSpawnParams) (*api.PTYSpawnResult, error) 
 	if err == nil {
 		tmpFile.WriteString(startupScript)
 		tmpFile.Close()
-		cmdLine = tmpFile.Name()
+		// Quote the path to handle spaces in temp directory
+		cmdLine = `"` + tmpFile.Name() + `"`
 		defer os.Remove(tmpFile.Name())
 	}
 
