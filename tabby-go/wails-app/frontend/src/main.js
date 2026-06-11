@@ -1667,8 +1667,14 @@ function formatBytes(bytes) {
 // ===== TERMINAL TOOLBAR =====
 
 function buildToolbar(tab) {
-	const autohideClass = (settings.ToolbarAutoHide === false) ? ' no-autohide' : '';
-	let html = '<div class="terminal-toolbar' + autohideClass + '" id="toolbar-' + tab.id + '">';
+	const autohideClass =
+		settings.ToolbarAutoHide === false ? " no-autohide" : "";
+	let html =
+		'<div class="terminal-toolbar' +
+		autohideClass +
+		'" id="toolbar-' +
+		tab.id +
+		'">';
 
 	if (tab.isSSH) {
 		html += '<span class="toolbar-badge ssh">SSH</span>';
