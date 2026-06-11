@@ -294,6 +294,10 @@
 	transition: border-color 0.15s;
 	box-sizing: border-box;
 }
+.setting-group select option {
+	background: #2d2d2d;
+	color: #ccc;
+}
 
 .setting-group input[type="text"]:focus,
 .setting-group select:focus {
