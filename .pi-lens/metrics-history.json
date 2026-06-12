@@ -3,14 +3,14 @@
   "files": {
     "tabby-go\\wails-app\\frontend\\src\\main.js": {
       "latest": {
-        "commit": "01b263da",
-        "timestamp": "2026-06-10T23:29:41.606Z",
+        "commit": "cd1d91aa",
+        "timestamp": "2026-06-12T02:05:48.893Z",
         "mi": 0,
-        "cognitive": 2348,
+        "cognitive": 2391,
         "nesting": 9,
-        "lines": 2602,
-        "maxCyclomatic": 185,
-        "entropy": 8.37
+        "lines": 4843,
+        "maxCyclomatic": 197,
+        "entropy": 8.41
       },
       "history": [
         {
@@ -52,10 +52,20 @@
           "lines": 2602,
           "maxCyclomatic": 185,
           "entropy": 8.37
+        },
+        {
+          "commit": "cd1d91aa",
+          "timestamp": "2026-06-12T02:05:48.893Z",
+          "mi": 0,
+          "cognitive": 2391,
+          "nesting": 9,
+          "lines": 4843,
+          "maxCyclomatic": 197,
+          "entropy": 8.41
         }
       ],
       "trend": "regressing"
     }
   },
-  "capturedAt": "2026-06-10T23:29:47.378Z"
+  "capturedAt": "2026-06-12T02:05:53.980Z"
 }

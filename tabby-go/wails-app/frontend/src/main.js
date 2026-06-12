@@ -4992,6 +4992,7 @@ class Tab {
 
 		this.ptyId = null;
 		this.title = "Shell";
+		this.userRenamed = false;
 		this.shell = shell || defaultShell;
 		this.exited = false;
 		this.status = "disconnected";
@@ -5158,6 +5159,16 @@ class Tab {
 			if (!e.target.classList.contains("tab-close")) this.activate();
 		};
 
+		// Double-click tab title to rename
+		this.tabEl.querySelector(".tab-title").ondblclick = (e) => {
+			e.stopPropagation();
+			const n = prompt("Tab name:", this.title);
+			if (n) {
+				this.userRenamed = true;
+				this.setTitle(n);
+			}
+		};
+
 		this.tabEl.querySelector(".tab-close").onclick = (e) => {
 			e.stopPropagation();
 			this.close();
@@ -5242,9 +5253,8 @@ class Tab {
 		});
 
 		this.term.onTitleChange((title) => {
-			if (title && title.trim()) {
+			if (title && title.trim() && !this.userRenamed) {
 				this.setTitle(title.trim());
-
 				SetWindowTitle(title.trim());
 			}
 		});
@@ -5840,7 +5850,10 @@ function showTabContextMenu(e, tab) {
 		switch (item.dataset.action) {
 			case "rename": {
 				const n = prompt("Tab name:", tab.title);
-				if (n) tab.setTitle(n);
+				if (n) {
+					tab.userRenamed = true;
+					tab.setTitle(n);
+				}
 				break;
 			}
 

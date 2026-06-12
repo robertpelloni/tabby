@@ -63,13 +63,13 @@
     },
     {
       "type": "file",
-      "name": "tabby-core/webpack.config.mjs",
-      "file": "tabby-core/webpack.config.mjs"
+      "name": "tabby-electron/webpack.config.mjs",
+      "file": "tabby-electron/webpack.config.mjs"
     },
     {
       "type": "file",
-      "name": "tabby-electron/webpack.config.mjs",
-      "file": "tabby-electron/webpack.config.mjs"
+      "name": "tabby-core/webpack.config.mjs",
+      "file": "tabby-core/webpack.config.mjs"
     },
     {
       "type": "file",
@@ -83,11 +83,6 @@
     },
     {
       "type": "file",
-      "name": "tabby-serial/webpack.config.mjs",
-      "file": "tabby-serial/webpack.config.mjs"
-    },
-    {
-      "type": "file",
       "name": "tabby-plugin-manager/webpack.config.mjs",
       "file": "tabby-plugin-manager/webpack.config.mjs"
     },
@@ -98,18 +93,23 @@
     },
     {
       "type": "file",
+      "name": "tabby-serial/webpack.config.mjs",
+      "file": "tabby-serial/webpack.config.mjs"
+    },
+    {
+      "type": "file",
       "name": "tabby-ssh/webpack.config.mjs",
       "file": "tabby-ssh/webpack.config.mjs"
     },
     {
       "type": "file",
-      "name": "tabby-telnet/webpack.config.mjs",
-      "file": "tabby-telnet/webpack.config.mjs"
+      "name": "tabby-terminal/webpack.config.mjs",
+      "file": "tabby-terminal/webpack.config.mjs"
     },
     {
       "type": "file",
-      "name": "tabby-terminal/webpack.config.mjs",
-      "file": "tabby-terminal/webpack.config.mjs"
+      "name": "tabby-telnet/webpack.config.mjs",
+      "file": "tabby-telnet/webpack.config.mjs"
     },
     {
       "type": "file",
@@ -343,6 +343,81 @@
     },
     {
       "type": "file",
+      "name": "tabby-core/src/cli.ts",
+      "file": "tabby-core/src/cli.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/commands.ts",
+      "file": "tabby-core/src/commands.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/config.ts",
+      "file": "tabby-core/src/config.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/hotkeys.ts",
+      "file": "tabby-core/src/hotkeys.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/index.ts",
+      "file": "tabby-core/src/index.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/profiles.ts",
+      "file": "tabby-core/src/profiles.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/tabContextMenu.ts",
+      "file": "tabby-core/src/tabContextMenu.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/theme.new.scss",
+      "file": "tabby-core/src/theme.new.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/theme.paper.scss",
+      "file": "tabby-core/src/theme.paper.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/theme.scss",
+      "file": "tabby-core/src/theme.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/theme.ts",
+      "file": "tabby-core/src/theme.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/theme.vars.scss",
+      "file": "tabby-core/src/theme.vars.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/theme.vendor.scss",
+      "file": "tabby-core/src/theme.vendor.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/utfSplitter.ts",
+      "file": "tabby-core/src/utfSplitter.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/utils.ts",
+      "file": "tabby-core/src/utils.ts"
+    },
+    {
+      "type": "file",
       "name": "tabby-linkifier/src/api.ts",
       "file": "tabby-linkifier/src/api.ts"
     },
@@ -433,111 +508,6 @@
     },
     {
       "type": "file",
-      "name": "tabby-core/src/cli.ts",
-      "file": "tabby-core/src/cli.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/commands.ts",
-      "file": "tabby-core/src/commands.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/config.ts",
-      "file": "tabby-core/src/config.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/hotkeys.ts",
-      "file": "tabby-core/src/hotkeys.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/index.ts",
-      "file": "tabby-core/src/index.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/profiles.ts",
-      "file": "tabby-core/src/profiles.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/tabContextMenu.ts",
-      "file": "tabby-core/src/tabContextMenu.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/theme.new.scss",
-      "file": "tabby-core/src/theme.new.scss"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/theme.paper.scss",
-      "file": "tabby-core/src/theme.paper.scss"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/theme.scss",
-      "file": "tabby-core/src/theme.scss"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/theme.ts",
-      "file": "tabby-core/src/theme.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/theme.vars.scss",
-      "file": "tabby-core/src/theme.vars.scss"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/theme.vendor.scss",
-      "file": "tabby-core/src/theme.vendor.scss"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/utfSplitter.ts",
-      "file": "tabby-core/src/utfSplitter.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/utils.ts",
-      "file": "tabby-core/src/utils.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-serial/src/api.ts",
-      "file": "tabby-serial/src/api.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-serial/src/config.ts",
-      "file": "tabby-serial/src/config.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-serial/src/hotkeys.ts",
-      "file": "tabby-serial/src/hotkeys.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-serial/src/index.ts",
-      "file": "tabby-serial/src/index.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-serial/src/profiles.ts",
-      "file": "tabby-serial/src/profiles.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-serial/src/recoveryProvider.ts",
-      "file": "tabby-serial/src/recoveryProvider.ts"
-    },
-    {
-      "type": "file",
       "name": "tabby-plugin-manager/src/index.ts",
       "file": "tabby-plugin-manager/src/index.ts"
     },
@@ -580,6 +550,36 @@
       "type": "file",
       "name": "tabby-settings/src/settings.ts",
       "file": "tabby-settings/src/settings.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/api.ts",
+      "file": "tabby-serial/src/api.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/config.ts",
+      "file": "tabby-serial/src/config.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/hotkeys.ts",
+      "file": "tabby-serial/src/hotkeys.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/index.ts",
+      "file": "tabby-serial/src/index.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/profiles.ts",
+      "file": "tabby-serial/src/profiles.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/recoveryProvider.ts",
+      "file": "tabby-serial/src/recoveryProvider.ts"
     },
     {
       "type": "file",
@@ -630,36 +630,6 @@
       "type": "file",
       "name": "tabby-ssh/src/tabContextMenu.ts",
       "file": "tabby-ssh/src/tabContextMenu.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-telnet/src/config.ts",
-      "file": "tabby-telnet/src/config.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-telnet/src/hotkeys.ts",
-      "file": "tabby-telnet/src/hotkeys.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-telnet/src/index.ts",
-      "file": "tabby-telnet/src/index.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-telnet/src/profiles.ts",
-      "file": "tabby-telnet/src/profiles.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-telnet/src/recoveryProvider.ts",
-      "file": "tabby-telnet/src/recoveryProvider.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-telnet/src/session.ts",
-      "file": "tabby-telnet/src/session.ts"
     },
     {
       "type": "file",
@@ -718,6 +688,36 @@
     },
     {
       "type": "file",
+      "name": "tabby-telnet/src/config.ts",
+      "file": "tabby-telnet/src/config.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-telnet/src/hotkeys.ts",
+      "file": "tabby-telnet/src/hotkeys.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-telnet/src/index.ts",
+      "file": "tabby-telnet/src/index.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-telnet/src/profiles.ts",
+      "file": "tabby-telnet/src/profiles.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-telnet/src/recoveryProvider.ts",
+      "file": "tabby-telnet/src/recoveryProvider.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-telnet/src/session.ts",
+      "file": "tabby-telnet/src/session.ts"
+    },
+    {
+      "type": "file",
       "name": "tabby-web/src/config.ts",
       "file": "tabby-web/src/config.ts"
     },
@@ -738,26 +738,6 @@
     },
     {
       "type": "file",
-      "name": "tabby-web-demo/data/v86_all.js",
-      "file": "tabby-web-demo/data/v86_all.js"
-    },
-    {
-      "type": "file",
-      "name": "terminus-core/src/index.ts",
-      "file": "terminus-core/src/index.ts"
-    },
-    {
-      "type": "file",
-      "name": "terminus-core/src/tabContextMenu.ts",
-      "file": "terminus-core/src/tabContextMenu.ts"
-    },
-    {
-      "type": "file",
-      "name": "terminus-terminal/src/index.ts",
-      "file": "terminus-terminal/src/index.ts"
-    },
-    {
-      "type": "file",
       "name": "tabby-web-demo/src/buttonProvider.ts",
       "file": "tabby-web-demo/src/buttonProvider.ts"
     },
@@ -775,6 +755,26 @@
       "type": "file",
       "name": "tabby-web-demo/src/session.ts",
       "file": "tabby-web-demo/src/session.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-web-demo/data/v86_all.js",
+      "file": "tabby-web-demo/data/v86_all.js"
+    },
+    {
+      "type": "file",
+      "name": "terminus-core/src/index.ts",
+      "file": "terminus-core/src/index.ts"
+    },
+    {
+      "type": "file",
+      "name": "terminus-core/src/tabContextMenu.ts",
+      "file": "terminus-core/src/tabContextMenu.ts"
+    },
+    {
+      "type": "file",
+      "name": "terminus-terminal/src/index.ts",
+      "file": "terminus-terminal/src/index.ts"
     },
     {
       "type": "file",
@@ -938,41 +938,6 @@
     },
     {
       "type": "file",
-      "name": "tabby-local/src/components/commandLineEditor.component.ts",
-      "file": "tabby-local/src/components/commandLineEditor.component.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-local/src/components/environmentEditor.component.scss",
-      "file": "tabby-local/src/components/environmentEditor.component.scss"
-    },
-    {
-      "type": "file",
-      "name": "tabby-local/src/components/environmentEditor.component.ts",
-      "file": "tabby-local/src/components/environmentEditor.component.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-local/src/components/localProfileSettings.component.ts",
-      "file": "tabby-local/src/components/localProfileSettings.component.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-local/src/components/shellSettingsTab.component.ts",
-      "file": "tabby-local/src/components/shellSettingsTab.component.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-local/src/components/terminalTab.component.ts",
-      "file": "tabby-local/src/components/terminalTab.component.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-local/src/services/terminal.service.ts",
-      "file": "tabby-local/src/services/terminal.service.ts"
-    },
-    {
-      "type": "file",
       "name": "tabby-core/src/api/cli.ts",
       "file": "tabby-core/src/api/cli.ts"
     },
@@ -1055,36 +1020,6 @@
       "type": "file",
       "name": "tabby-core/src/api/toolbarButtonProvider.ts",
       "file": "tabby-core/src/api/toolbarButtonProvider.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/directives/alwaysVisibleTypeahead.directive.ts",
-      "file": "tabby-core/src/directives/alwaysVisibleTypeahead.directive.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/directives/autofocus.directive.ts",
-      "file": "tabby-core/src/directives/autofocus.directive.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/directives/cdkAutoDropGroup.directive.ts",
-      "file": "tabby-core/src/directives/cdkAutoDropGroup.directive.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/directives/dropZone.directive.scss",
-      "file": "tabby-core/src/directives/dropZone.directive.scss"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/directives/dropZone.directive.ts",
-      "file": "tabby-core/src/directives/dropZone.directive.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/directives/fastHtmlBind.directive.ts",
-      "file": "tabby-core/src/directives/fastHtmlBind.directive.ts"
     },
     {
       "type": "file",
@@ -1298,6 +1233,36 @@
     },
     {
       "type": "file",
+      "name": "tabby-core/src/directives/alwaysVisibleTypeahead.directive.ts",
+      "file": "tabby-core/src/directives/alwaysVisibleTypeahead.directive.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/directives/autofocus.directive.ts",
+      "file": "tabby-core/src/directives/autofocus.directive.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/directives/cdkAutoDropGroup.directive.ts",
+      "file": "tabby-core/src/directives/cdkAutoDropGroup.directive.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/directives/dropZone.directive.scss",
+      "file": "tabby-core/src/directives/dropZone.directive.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/directives/dropZone.directive.ts",
+      "file": "tabby-core/src/directives/dropZone.directive.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/directives/fastHtmlBind.directive.ts",
+      "file": "tabby-core/src/directives/fastHtmlBind.directive.ts"
+    },
+    {
+      "type": "file",
       "name": "tabby-core/src/services/agent.service.ts",
       "file": "tabby-core/src/services/agent.service.ts"
     },
@@ -1398,23 +1363,38 @@
     },
     {
       "type": "file",
-      "name": "tabby-serial/src/services/serial.service.ts",
-      "file": "tabby-serial/src/services/serial.service.ts"
+      "name": "tabby-local/src/components/commandLineEditor.component.ts",
+      "file": "tabby-local/src/components/commandLineEditor.component.ts"
     },
     {
       "type": "file",
-      "name": "tabby-serial/src/components/serialProfileSettings.component.ts",
-      "file": "tabby-serial/src/components/serialProfileSettings.component.ts"
+      "name": "tabby-local/src/components/environmentEditor.component.scss",
+      "file": "tabby-local/src/components/environmentEditor.component.scss"
     },
     {
       "type": "file",
-      "name": "tabby-serial/src/components/serialTab.component.scss",
-      "file": "tabby-serial/src/components/serialTab.component.scss"
+      "name": "tabby-local/src/components/environmentEditor.component.ts",
+      "file": "tabby-local/src/components/environmentEditor.component.ts"
     },
     {
       "type": "file",
-      "name": "tabby-serial/src/components/serialTab.component.ts",
-      "file": "tabby-serial/src/components/serialTab.component.ts"
+      "name": "tabby-local/src/components/localProfileSettings.component.ts",
+      "file": "tabby-local/src/components/localProfileSettings.component.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-local/src/components/shellSettingsTab.component.ts",
+      "file": "tabby-local/src/components/shellSettingsTab.component.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-local/src/components/terminalTab.component.ts",
+      "file": "tabby-local/src/components/terminalTab.component.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-local/src/services/terminal.service.ts",
+      "file": "tabby-local/src/services/terminal.service.ts"
     },
     {
       "type": "file",
@@ -1533,6 +1513,31 @@
     },
     {
       "type": "file",
+      "name": "tabby-settings/src/services/configSync.service.ts",
+      "file": "tabby-settings/src/services/configSync.service.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/components/serialProfileSettings.component.ts",
+      "file": "tabby-serial/src/components/serialProfileSettings.component.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/components/serialTab.component.scss",
+      "file": "tabby-serial/src/components/serialTab.component.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/components/serialTab.component.ts",
+      "file": "tabby-serial/src/components/serialTab.component.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/services/serial.service.ts",
+      "file": "tabby-serial/src/services/serial.service.ts"
+    },
+    {
+      "type": "file",
       "name": "tabby-ssh/src/api/contextMenu.ts",
       "file": "tabby-ssh/src/api/contextMenu.ts"
     },
@@ -1550,11 +1555,6 @@
       "type": "file",
       "name": "tabby-ssh/src/api/interfaces.ts",
       "file": "tabby-ssh/src/api/interfaces.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-settings/src/services/configSync.service.ts",
-      "file": "tabby-settings/src/services/configSync.service.ts"
     },
     {
       "type": "file",
@@ -1623,26 +1623,6 @@
     },
     {
       "type": "file",
-      "name": "tabby-ssh/src/services/passwordStorage.service.ts",
-      "file": "tabby-ssh/src/services/passwordStorage.service.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-ssh/src/services/ssh.service.ts",
-      "file": "tabby-ssh/src/services/ssh.service.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-ssh/src/services/sshKnownHosts.service.ts",
-      "file": "tabby-ssh/src/services/sshKnownHosts.service.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-ssh/src/services/sshMultiplexer.service.ts",
-      "file": "tabby-ssh/src/services/sshMultiplexer.service.ts"
-    },
-    {
-      "type": "file",
       "name": "tabby-ssh/src/session/forwards.ts",
       "file": "tabby-ssh/src/session/forwards.ts"
     },
@@ -1668,18 +1648,23 @@
     },
     {
       "type": "file",
-      "name": "tabby-telnet/src/components/telnetProfileSettings.component.ts",
-      "file": "tabby-telnet/src/components/telnetProfileSettings.component.ts"
+      "name": "tabby-ssh/src/services/passwordStorage.service.ts",
+      "file": "tabby-ssh/src/services/passwordStorage.service.ts"
     },
     {
       "type": "file",
-      "name": "tabby-telnet/src/components/telnetTab.component.scss",
-      "file": "tabby-telnet/src/components/telnetTab.component.scss"
+      "name": "tabby-ssh/src/services/ssh.service.ts",
+      "file": "tabby-ssh/src/services/ssh.service.ts"
     },
     {
       "type": "file",
-      "name": "tabby-telnet/src/components/telnetTab.component.ts",
-      "file": "tabby-telnet/src/components/telnetTab.component.ts"
+      "name": "tabby-ssh/src/services/sshKnownHosts.service.ts",
+      "file": "tabby-ssh/src/services/sshKnownHosts.service.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-ssh/src/services/sshMultiplexer.service.ts",
+      "file": "tabby-ssh/src/services/sshMultiplexer.service.ts"
     },
     {
       "type": "file",
@@ -1848,6 +1833,11 @@
     },
     {
       "type": "file",
+      "name": "tabby-terminal/src/services/multifocus.service.ts",
+      "file": "tabby-terminal/src/services/multifocus.service.ts"
+    },
+    {
+      "type": "file",
       "name": "tabby-terminal/src/middleware/inputProcessing.ts",
       "file": "tabby-terminal/src/middleware/inputProcessing.ts"
     },
@@ -1873,8 +1863,18 @@
     },
     {
       "type": "file",
-      "name": "tabby-terminal/src/services/multifocus.service.ts",
-      "file": "tabby-terminal/src/services/multifocus.service.ts"
+      "name": "tabby-telnet/src/components/telnetProfileSettings.component.ts",
+      "file": "tabby-telnet/src/components/telnetProfileSettings.component.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-telnet/src/components/telnetTab.component.scss",
+      "file": "tabby-telnet/src/components/telnetTab.component.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-telnet/src/components/telnetTab.component.ts",
+      "file": "tabby-telnet/src/components/telnetTab.component.ts"
     },
     {
       "type": "file",
@@ -1900,6 +1900,11 @@
       "type": "file",
       "name": "tabby-web/src/services/updater.service.ts",
       "file": "tabby-web/src/services/updater.service.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-web-demo/src/components/terminalTab.component.ts",
+      "file": "tabby-web-demo/src/components/terminalTab.component.ts"
     },
     {
       "type": "file",
@@ -1938,13 +1943,13 @@
     },
     {
       "type": "file",
-      "name": "tabby-web-demo/src/components/terminalTab.component.ts",
-      "file": "tabby-web-demo/src/components/terminalTab.component.ts"
+      "name": "warp/crates/warp_graphql_schema/graphql.config.js",
+      "file": "warp/crates/warp_graphql_schema/graphql.config.js"
     },
     {
       "type": "file",
-      "name": "warp/crates/warp_graphql_schema/graphql.config.js",
-      "file": "warp/crates/warp_graphql_schema/graphql.config.js"
+      "name": "tabby-go/wails-app/frontend/src/main.js",
+      "file": "tabby-go/wails-app/frontend/src/main.js"
     },
     {
       "type": "file",
@@ -1960,11 +1965,6 @@
       "type": "file",
       "name": "tabby-core/src/components/widgets/workflowProgress.component.ts",
       "file": "tabby-core/src/components/widgets/workflowProgress.component.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-go/wails-app/frontend/src/main.js",
-      "file": "tabby-go/wails-app/frontend/src/main.js"
     },
     {
       "type": "file",
@@ -2648,13 +2648,13 @@
     },
     {
       "type": "file",
-      "name": "tabby-core/webpack.config.mjs",
-      "file": "tabby-core/webpack.config.mjs"
+      "name": "tabby-electron/webpack.config.mjs",
+      "file": "tabby-electron/webpack.config.mjs"
     },
     {
       "type": "file",
-      "name": "tabby-electron/webpack.config.mjs",
-      "file": "tabby-electron/webpack.config.mjs"
+      "name": "tabby-core/webpack.config.mjs",
+      "file": "tabby-core/webpack.config.mjs"
     },
     {
       "type": "file",
@@ -2668,11 +2668,6 @@
     },
     {
       "type": "file",
-      "name": "tabby-serial/webpack.config.mjs",
-      "file": "tabby-serial/webpack.config.mjs"
-    },
-    {
-      "type": "file",
       "name": "tabby-plugin-manager/webpack.config.mjs",
       "file": "tabby-plugin-manager/webpack.config.mjs"
     },
@@ -2683,18 +2678,23 @@
     },
     {
       "type": "file",
+      "name": "tabby-serial/webpack.config.mjs",
+      "file": "tabby-serial/webpack.config.mjs"
+    },
+    {
+      "type": "file",
       "name": "tabby-ssh/webpack.config.mjs",
       "file": "tabby-ssh/webpack.config.mjs"
     },
     {
       "type": "file",
-      "name": "tabby-telnet/webpack.config.mjs",
-      "file": "tabby-telnet/webpack.config.mjs"
+      "name": "tabby-terminal/webpack.config.mjs",
+      "file": "tabby-terminal/webpack.config.mjs"
     },
     {
       "type": "file",
-      "name": "tabby-terminal/webpack.config.mjs",
-      "file": "tabby-terminal/webpack.config.mjs"
+      "name": "tabby-telnet/webpack.config.mjs",
+      "file": "tabby-telnet/webpack.config.mjs"
     },
     {
       "type": "file",
@@ -2928,6 +2928,81 @@
     },
     {
       "type": "file",
+      "name": "tabby-core/src/cli.ts",
+      "file": "tabby-core/src/cli.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/commands.ts",
+      "file": "tabby-core/src/commands.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/config.ts",
+      "file": "tabby-core/src/config.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/hotkeys.ts",
+      "file": "tabby-core/src/hotkeys.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/index.ts",
+      "file": "tabby-core/src/index.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/profiles.ts",
+      "file": "tabby-core/src/profiles.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/tabContextMenu.ts",
+      "file": "tabby-core/src/tabContextMenu.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/theme.new.scss",
+      "file": "tabby-core/src/theme.new.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/theme.paper.scss",
+      "file": "tabby-core/src/theme.paper.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/theme.scss",
+      "file": "tabby-core/src/theme.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/theme.ts",
+      "file": "tabby-core/src/theme.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/theme.vars.scss",
+      "file": "tabby-core/src/theme.vars.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/theme.vendor.scss",
+      "file": "tabby-core/src/theme.vendor.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/utfSplitter.ts",
+      "file": "tabby-core/src/utfSplitter.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/utils.ts",
+      "file": "tabby-core/src/utils.ts"
+    },
+    {
+      "type": "file",
       "name": "tabby-linkifier/src/api.ts",
       "file": "tabby-linkifier/src/api.ts"
     },
@@ -3018,111 +3093,6 @@
     },
     {
       "type": "file",
-      "name": "tabby-core/src/cli.ts",
-      "file": "tabby-core/src/cli.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/commands.ts",
-      "file": "tabby-core/src/commands.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/config.ts",
-      "file": "tabby-core/src/config.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/hotkeys.ts",
-      "file": "tabby-core/src/hotkeys.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/index.ts",
-      "file": "tabby-core/src/index.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/profiles.ts",
-      "file": "tabby-core/src/profiles.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/tabContextMenu.ts",
-      "file": "tabby-core/src/tabContextMenu.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/theme.new.scss",
-      "file": "tabby-core/src/theme.new.scss"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/theme.paper.scss",
-      "file": "tabby-core/src/theme.paper.scss"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/theme.scss",
-      "file": "tabby-core/src/theme.scss"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/theme.ts",
-      "file": "tabby-core/src/theme.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/theme.vars.scss",
-      "file": "tabby-core/src/theme.vars.scss"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/theme.vendor.scss",
-      "file": "tabby-core/src/theme.vendor.scss"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/utfSplitter.ts",
-      "file": "tabby-core/src/utfSplitter.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/utils.ts",
-      "file": "tabby-core/src/utils.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-serial/src/api.ts",
-      "file": "tabby-serial/src/api.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-serial/src/config.ts",
-      "file": "tabby-serial/src/config.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-serial/src/hotkeys.ts",
-      "file": "tabby-serial/src/hotkeys.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-serial/src/index.ts",
-      "file": "tabby-serial/src/index.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-serial/src/profiles.ts",
-      "file": "tabby-serial/src/profiles.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-serial/src/recoveryProvider.ts",
-      "file": "tabby-serial/src/recoveryProvider.ts"
-    },
-    {
-      "type": "file",
       "name": "tabby-plugin-manager/src/index.ts",
       "file": "tabby-plugin-manager/src/index.ts"
     },
@@ -3165,6 +3135,36 @@
       "type": "file",
       "name": "tabby-settings/src/settings.ts",
       "file": "tabby-settings/src/settings.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/api.ts",
+      "file": "tabby-serial/src/api.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/config.ts",
+      "file": "tabby-serial/src/config.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/hotkeys.ts",
+      "file": "tabby-serial/src/hotkeys.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/index.ts",
+      "file": "tabby-serial/src/index.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/profiles.ts",
+      "file": "tabby-serial/src/profiles.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/recoveryProvider.ts",
+      "file": "tabby-serial/src/recoveryProvider.ts"
     },
     {
       "type": "file",
@@ -3215,36 +3215,6 @@
       "type": "file",
       "name": "tabby-ssh/src/tabContextMenu.ts",
       "file": "tabby-ssh/src/tabContextMenu.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-telnet/src/config.ts",
-      "file": "tabby-telnet/src/config.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-telnet/src/hotkeys.ts",
-      "file": "tabby-telnet/src/hotkeys.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-telnet/src/index.ts",
-      "file": "tabby-telnet/src/index.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-telnet/src/profiles.ts",
-      "file": "tabby-telnet/src/profiles.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-telnet/src/recoveryProvider.ts",
-      "file": "tabby-telnet/src/recoveryProvider.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-telnet/src/session.ts",
-      "file": "tabby-telnet/src/session.ts"
     },
     {
       "type": "file",
@@ -3303,6 +3273,36 @@
     },
     {
       "type": "file",
+      "name": "tabby-telnet/src/config.ts",
+      "file": "tabby-telnet/src/config.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-telnet/src/hotkeys.ts",
+      "file": "tabby-telnet/src/hotkeys.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-telnet/src/index.ts",
+      "file": "tabby-telnet/src/index.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-telnet/src/profiles.ts",
+      "file": "tabby-telnet/src/profiles.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-telnet/src/recoveryProvider.ts",
+      "file": "tabby-telnet/src/recoveryProvider.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-telnet/src/session.ts",
+      "file": "tabby-telnet/src/session.ts"
+    },
+    {
+      "type": "file",
       "name": "tabby-web/src/config.ts",
       "file": "tabby-web/src/config.ts"
     },
@@ -3323,26 +3323,6 @@
     },
     {
       "type": "file",
-      "name": "tabby-web-demo/data/v86_all.js",
-      "file": "tabby-web-demo/data/v86_all.js"
-    },
-    {
-      "type": "file",
-      "name": "terminus-core/src/index.ts",
-      "file": "terminus-core/src/index.ts"
-    },
-    {
-      "type": "file",
-      "name": "terminus-core/src/tabContextMenu.ts",
-      "file": "terminus-core/src/tabContextMenu.ts"
-    },
-    {
-      "type": "file",
-      "name": "terminus-terminal/src/index.ts",
-      "file": "terminus-terminal/src/index.ts"
-    },
-    {
-      "type": "file",
       "name": "tabby-web-demo/src/buttonProvider.ts",
       "file": "tabby-web-demo/src/buttonProvider.ts"
     },
@@ -3360,6 +3340,26 @@
       "type": "file",
       "name": "tabby-web-demo/src/session.ts",
       "file": "tabby-web-demo/src/session.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-web-demo/data/v86_all.js",
+      "file": "tabby-web-demo/data/v86_all.js"
+    },
+    {
+      "type": "file",
+      "name": "terminus-core/src/index.ts",
+      "file": "terminus-core/src/index.ts"
+    },
+    {
+      "type": "file",
+      "name": "terminus-core/src/tabContextMenu.ts",
+      "file": "terminus-core/src/tabContextMenu.ts"
+    },
+    {
+      "type": "file",
+      "name": "terminus-terminal/src/index.ts",
+      "file": "terminus-terminal/src/index.ts"
     },
     {
       "type": "file",
@@ -3523,41 +3523,6 @@
     },
     {
       "type": "file",
-      "name": "tabby-local/src/components/commandLineEditor.component.ts",
-      "file": "tabby-local/src/components/commandLineEditor.component.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-local/src/components/environmentEditor.component.scss",
-      "file": "tabby-local/src/components/environmentEditor.component.scss"
-    },
-    {
-      "type": "file",
-      "name": "tabby-local/src/components/environmentEditor.component.ts",
-      "file": "tabby-local/src/components/environmentEditor.component.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-local/src/components/localProfileSettings.component.ts",
-      "file": "tabby-local/src/components/localProfileSettings.component.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-local/src/components/shellSettingsTab.component.ts",
-      "file": "tabby-local/src/components/shellSettingsTab.component.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-local/src/components/terminalTab.component.ts",
-      "file": "tabby-local/src/components/terminalTab.component.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-local/src/services/terminal.service.ts",
-      "file": "tabby-local/src/services/terminal.service.ts"
-    },
-    {
-      "type": "file",
       "name": "tabby-core/src/api/cli.ts",
       "file": "tabby-core/src/api/cli.ts"
     },
@@ -3640,36 +3605,6 @@
       "type": "file",
       "name": "tabby-core/src/api/toolbarButtonProvider.ts",
       "file": "tabby-core/src/api/toolbarButtonProvider.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/directives/alwaysVisibleTypeahead.directive.ts",
-      "file": "tabby-core/src/directives/alwaysVisibleTypeahead.directive.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/directives/autofocus.directive.ts",
-      "file": "tabby-core/src/directives/autofocus.directive.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/directives/cdkAutoDropGroup.directive.ts",
-      "file": "tabby-core/src/directives/cdkAutoDropGroup.directive.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/directives/dropZone.directive.scss",
-      "file": "tabby-core/src/directives/dropZone.directive.scss"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/directives/dropZone.directive.ts",
-      "file": "tabby-core/src/directives/dropZone.directive.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-core/src/directives/fastHtmlBind.directive.ts",
-      "file": "tabby-core/src/directives/fastHtmlBind.directive.ts"
     },
     {
       "type": "file",
@@ -3883,6 +3818,36 @@
     },
     {
       "type": "file",
+      "name": "tabby-core/src/directives/alwaysVisibleTypeahead.directive.ts",
+      "file": "tabby-core/src/directives/alwaysVisibleTypeahead.directive.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/directives/autofocus.directive.ts",
+      "file": "tabby-core/src/directives/autofocus.directive.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/directives/cdkAutoDropGroup.directive.ts",
+      "file": "tabby-core/src/directives/cdkAutoDropGroup.directive.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/directives/dropZone.directive.scss",
+      "file": "tabby-core/src/directives/dropZone.directive.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/directives/dropZone.directive.ts",
+      "file": "tabby-core/src/directives/dropZone.directive.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-core/src/directives/fastHtmlBind.directive.ts",
+      "file": "tabby-core/src/directives/fastHtmlBind.directive.ts"
+    },
+    {
+      "type": "file",
       "name": "tabby-core/src/services/agent.service.ts",
       "file": "tabby-core/src/services/agent.service.ts"
     },
@@ -3983,23 +3948,38 @@
     },
     {
       "type": "file",
-      "name": "tabby-serial/src/services/serial.service.ts",
-      "file": "tabby-serial/src/services/serial.service.ts"
+      "name": "tabby-local/src/components/commandLineEditor.component.ts",
+      "file": "tabby-local/src/components/commandLineEditor.component.ts"
     },
     {
       "type": "file",
-      "name": "tabby-serial/src/components/serialProfileSettings.component.ts",
-      "file": "tabby-serial/src/components/serialProfileSettings.component.ts"
+      "name": "tabby-local/src/components/environmentEditor.component.scss",
+      "file": "tabby-local/src/components/environmentEditor.component.scss"
     },
     {
       "type": "file",
-      "name": "tabby-serial/src/components/serialTab.component.scss",
-      "file": "tabby-serial/src/components/serialTab.component.scss"
+      "name": "tabby-local/src/components/environmentEditor.component.ts",
+      "file": "tabby-local/src/components/environmentEditor.component.ts"
     },
     {
       "type": "file",
-      "name": "tabby-serial/src/components/serialTab.component.ts",
-      "file": "tabby-serial/src/components/serialTab.component.ts"
+      "name": "tabby-local/src/components/localProfileSettings.component.ts",
+      "file": "tabby-local/src/components/localProfileSettings.component.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-local/src/components/shellSettingsTab.component.ts",
+      "file": "tabby-local/src/components/shellSettingsTab.component.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-local/src/components/terminalTab.component.ts",
+      "file": "tabby-local/src/components/terminalTab.component.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-local/src/services/terminal.service.ts",
+      "file": "tabby-local/src/services/terminal.service.ts"
     },
     {
       "type": "file",
@@ -4118,6 +4098,31 @@
     },
     {
       "type": "file",
+      "name": "tabby-settings/src/services/configSync.service.ts",
+      "file": "tabby-settings/src/services/configSync.service.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/components/serialProfileSettings.component.ts",
+      "file": "tabby-serial/src/components/serialProfileSettings.component.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/components/serialTab.component.scss",
+      "file": "tabby-serial/src/components/serialTab.component.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/components/serialTab.component.ts",
+      "file": "tabby-serial/src/components/serialTab.component.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-serial/src/services/serial.service.ts",
+      "file": "tabby-serial/src/services/serial.service.ts"
+    },
+    {
+      "type": "file",
       "name": "tabby-ssh/src/api/contextMenu.ts",
       "file": "tabby-ssh/src/api/contextMenu.ts"
     },
@@ -4135,11 +4140,6 @@
       "type": "file",
       "name": "tabby-ssh/src/api/interfaces.ts",
       "file": "tabby-ssh/src/api/interfaces.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-settings/src/services/configSync.service.ts",
-      "file": "tabby-settings/src/services/configSync.service.ts"
     },
     {
       "type": "file",
@@ -4208,26 +4208,6 @@
     },
     {
       "type": "file",
-      "name": "tabby-ssh/src/services/passwordStorage.service.ts",
-      "file": "tabby-ssh/src/services/passwordStorage.service.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-ssh/src/services/ssh.service.ts",
-      "file": "tabby-ssh/src/services/ssh.service.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-ssh/src/services/sshKnownHosts.service.ts",
-      "file": "tabby-ssh/src/services/sshKnownHosts.service.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-ssh/src/services/sshMultiplexer.service.ts",
-      "file": "tabby-ssh/src/services/sshMultiplexer.service.ts"
-    },
-    {
-      "type": "file",
       "name": "tabby-ssh/src/session/forwards.ts",
       "file": "tabby-ssh/src/session/forwards.ts"
     },
@@ -4253,18 +4233,23 @@
     },
     {
       "type": "file",
-      "name": "tabby-telnet/src/components/telnetProfileSettings.component.ts",
-      "file": "tabby-telnet/src/components/telnetProfileSettings.component.ts"
+      "name": "tabby-ssh/src/services/passwordStorage.service.ts",
+      "file": "tabby-ssh/src/services/passwordStorage.service.ts"
     },
     {
       "type": "file",
-      "name": "tabby-telnet/src/components/telnetTab.component.scss",
-      "file": "tabby-telnet/src/components/telnetTab.component.scss"
+      "name": "tabby-ssh/src/services/ssh.service.ts",
+      "file": "tabby-ssh/src/services/ssh.service.ts"
     },
     {
       "type": "file",
-      "name": "tabby-telnet/src/components/telnetTab.component.ts",
-      "file": "tabby-telnet/src/components/telnetTab.component.ts"
+      "name": "tabby-ssh/src/services/sshKnownHosts.service.ts",
+      "file": "tabby-ssh/src/services/sshKnownHosts.service.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-ssh/src/services/sshMultiplexer.service.ts",
+      "file": "tabby-ssh/src/services/sshMultiplexer.service.ts"
     },
     {
       "type": "file",
@@ -4433,6 +4418,11 @@
     },
     {
       "type": "file",
+      "name": "tabby-terminal/src/services/multifocus.service.ts",
+      "file": "tabby-terminal/src/services/multifocus.service.ts"
+    },
+    {
+      "type": "file",
       "name": "tabby-terminal/src/middleware/inputProcessing.ts",
       "file": "tabby-terminal/src/middleware/inputProcessing.ts"
     },
@@ -4458,8 +4448,18 @@
     },
     {
       "type": "file",
-      "name": "tabby-terminal/src/services/multifocus.service.ts",
-      "file": "tabby-terminal/src/services/multifocus.service.ts"
+      "name": "tabby-telnet/src/components/telnetProfileSettings.component.ts",
+      "file": "tabby-telnet/src/components/telnetProfileSettings.component.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-telnet/src/components/telnetTab.component.scss",
+      "file": "tabby-telnet/src/components/telnetTab.component.scss"
+    },
+    {
+      "type": "file",
+      "name": "tabby-telnet/src/components/telnetTab.component.ts",
+      "file": "tabby-telnet/src/components/telnetTab.component.ts"
     },
     {
       "type": "file",
@@ -4485,6 +4485,11 @@
       "type": "file",
       "name": "tabby-web/src/services/updater.service.ts",
       "file": "tabby-web/src/services/updater.service.ts"
+    },
+    {
+      "type": "file",
+      "name": "tabby-web-demo/src/components/terminalTab.component.ts",
+      "file": "tabby-web-demo/src/components/terminalTab.component.ts"
     },
     {
       "type": "file",
@@ -4523,13 +4528,13 @@
     },
     {
       "type": "file",
-      "name": "tabby-web-demo/src/components/terminalTab.component.ts",
-      "file": "tabby-web-demo/src/components/terminalTab.component.ts"
+      "name": "warp/crates/warp_graphql_schema/graphql.config.js",
+      "file": "warp/crates/warp_graphql_schema/graphql.config.js"
     },
     {
       "type": "file",
-      "name": "warp/crates/warp_graphql_schema/graphql.config.js",
-      "file": "warp/crates/warp_graphql_schema/graphql.config.js"
+      "name": "tabby-go/wails-app/frontend/src/main.js",
+      "file": "tabby-go/wails-app/frontend/src/main.js"
     },
     {
       "type": "file",
@@ -4545,11 +4550,6 @@
       "type": "file",
       "name": "tabby-core/src/components/widgets/workflowProgress.component.ts",
       "file": "tabby-core/src/components/widgets/workflowProgress.component.ts"
-    },
-    {
-      "type": "file",
-      "name": "tabby-go/wails-app/frontend/src/main.js",
-      "file": "tabby-go/wails-app/frontend/src/main.js"
     },
     {
       "type": "file",
