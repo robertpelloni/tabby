@@ -75,13 +75,6 @@ func (m *Manager) Spawn(params api.PTYSpawnParams) (*api.PTYSpawnResult, error) 
 		return nil, fmt.Errorf("failed to start ConPTY: %w", err)
 	}
 
-	// Set UTF-8 code page by writing chcp to ConPTY stdin
-	// This runs inside the child console, fixing Unicode/emoji rendering
-	go func() {
-		time.Sleep(100 * time.Millisecond)
-		cpty.Write([]byte("chcp 65001 >nul\r\n"))
-	}()
-
 	id := params.ID
 	if id == "" {
 		id = m.nextID("pty")

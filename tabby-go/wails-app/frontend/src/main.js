@@ -526,7 +526,6 @@ async function doSSHConnect() {
 		}
 
 		tab.setTitle(user + "@" + host + jumpLabel);
-		tab.tabEl.querySelector(".tab-icon").textContent = "🔐";
 		const shellResult = await SSHStartShell({
 			connectionId: result.connectionId,
 			columns: tab.term.cols,
@@ -705,8 +704,6 @@ async function doSerialConnect() {
 
 		tab.setTitle(port.split("/").pop().split("\\").pop());
 
-		tab.tabEl.querySelector(".tab-icon").textContent = "📡";
-
 		tab.serialDataHandler = (params) => {
 			if ((params.serialId || params.SerialID) === tab.serialId)
 				tab.term.write(b64ToBytes(params.data || params.Data));
@@ -723,8 +720,6 @@ async function doSerialConnect() {
 
 [1;33m[Serial port closed][0m`);
 				tab.setTitle(tab.title + " [disconnected]");
-				tab.tabEl.querySelector(".tab-icon").textContent = "✕";
-				tab.tabEl.querySelector(".tab-icon").style.color = "#f44747";
 			}
 		};
 
@@ -820,8 +815,6 @@ async function doTelnetConnect() {
 
 		tab.setTitle(host + ":" + port);
 
-		tab.tabEl.querySelector(".tab-icon").textContent = "\ud83c\udf10";
-
 		tab.telnetDataHandler = (params) => {
 			const cid = params.ConnectionID || params.connectionId;
 
@@ -841,8 +834,6 @@ async function doTelnetConnect() {
 
 [1;33m[Telnet connection closed][0m`);
 				tab.setTitle(tab.title + " [disconnected]");
-				tab.tabEl.querySelector(".tab-icon").textContent = "✕";
-				tab.tabEl.querySelector(".tab-icon").style.color = "#f44747";
 			}
 		};
 
@@ -1688,14 +1679,7 @@ function formatBytes(bytes) {
 // ===== TERMINAL TOOLBAR =====
 
 function buildToolbar(tab) {
-	const autohideClass =
-		settings.ToolbarAutoHide === false ? " no-autohide" : "";
-	let html =
-		'<div class="terminal-toolbar' +
-		autohideClass +
-		'" id="toolbar-' +
-		tab.id +
-		'">';
+	let html = '<div class="terminal-toolbar" id="toolbar-' + tab.id + '">';
 
 	if (tab.isSSH) {
 		html += '<span class="toolbar-badge ssh">SSH</span>';
@@ -1743,11 +1727,6 @@ function buildToolbar(tab) {
 	html +=
 		'<button class="toolbar-btn" onclick="clearTerminal()" title="Clear">X</button>';
 
-	html +=
-		'<button class="toolbar-btn toolbar-pin" data-tab-id="' +
-		tab.id +
-		'" onclick="toggleToolbarPin(this.dataset.tabId)" title="Pin">Pin</button>';
-
 	html += "</div>";
 
 	return html;
@@ -1772,22 +1751,6 @@ function updateToolbar(tab) {
 	else tab.wrapper.insertBefore(newToolbar, tab.wrapper.firstChild);
 }
 
-function toggleToolbarPin(tabId) {
-	const tab = tabs.find((t) => t.id === tabId);
-
-	if (!tab) return;
-
-	tab.pinToolbar = !tab.pinToolbar;
-
-	const toolbar = tab.wrapper.querySelector(".terminal-toolbar");
-
-	if (toolbar) {
-		toolbar.classList.toggle("pinned", tab.pinToolbar);
-
-		toolbar.classList.toggle("unpinned", !tab.pinToolbar);
-	}
-}
-
 function clearTerminal() {
 	const tab = getActiveTab();
 
@@ -1795,21 +1758,6 @@ function clearTerminal() {
 		tab.term.clear();
 		tab.term.focus();
 	}
-}
-
-function showToolbarForTab(tab) {
-	if (!tab || !tab.wrapper || tab.pinToolbar) return;
-	// If auto-hide is disabled, toolbar is always visible via pinned class
-	if (settings.ToolbarAutoHide === false) return;
-	const toolbar = tab.wrapper.querySelector(".terminal-toolbar");
-	if (toolbar) toolbar.classList.add("visible");
-}
-
-function hideToolbarForTab(tab) {
-	if (!tab || !tab.wrapper || tab.pinToolbar) return;
-	if (settings.ToolbarAutoHide === false) return;
-	const toolbar = tab.wrapper.querySelector(".terminal-toolbar");
-	if (toolbar) toolbar.classList.remove("visible");
 }
 
 // ===== COMMAND PALETTE =====
@@ -3070,18 +3018,6 @@ function setTabStatus(tab, status) {
 	if (!tab) return;
 
 	tab.status = status;
-
-	const dot = tab.tabEl ? tab.tabEl.querySelector(".tab-status-dot") : null;
-
-	if (dot) {
-		dot.className = "tab-status-dot";
-
-		if (status === "connected") dot.classList.add("status-connected");
-		else if (status === "connecting") dot.classList.add("status-connecting");
-		else dot.classList.add("status-disconnected");
-
-		dot.title = status.charAt(0).toUpperCase() + status.slice(1);
-	}
 }
 
 function logConnection(tab, message) {
@@ -3933,8 +3869,6 @@ function buildUI() {
 
                 <h3>Toolbar</h3>
 
-                <div class="setting-group"><label>Auto-hide Toolbar</label><div class="toggle-container"><input type="checkbox" id="s-toolbar-autohide" checked><label for="s-toolbar-autohide" class="toggle-label"></label></div></div>
-
             </div>
 
             <!-- Clipboard -->
@@ -4434,8 +4368,6 @@ function applySettingsToUI() {
 
 	check("s-set-comspec", s.SetComSpec);
 
-	check("s-toolbar-autohide", s.ToolbarAutoHide ?? true);
-
 	// Clipboard
 
 	check("s-copy-on-select", s.CopyOnSelect);
@@ -4649,8 +4581,6 @@ async function saveSettingsFromUI() {
 		UseConPTY: document.getElementById("s-use-conpty").checked,
 
 		SetComSpec: document.getElementById("s-set-comspec").checked,
-
-		ToolbarAutoHide: document.getElementById("s-toolbar-autohide").checked,
 
 		CopyOnSelect: document.getElementById("s-copy-on-select").checked,
 
@@ -5123,12 +5053,6 @@ class Tab {
 		this.wrapper.style.position = "relative";
 		this.wrapper.className = "terminal-wrapper";
 
-		this.wrapper.onmouseenter = () => showToolbarForTab(this);
-
-		this.wrapper.onmouseleave = () => hideToolbarForTab(this);
-
-		this.pinToolbar = false;
-
 		this.wrapper.id = this.id;
 
 		document.getElementById("main-content").appendChild(this.wrapper);
@@ -5151,7 +5075,7 @@ class Tab {
 		});
 		this.tabEl.dataset.tabId = this.id;
 
-		this.tabEl.innerHTML = `<span class="tab-status-dot status-disconnected" title="Disconnected"></span><span class="tab-icon">⌘</span><span class="tab-title">${this.title}</span><button class="tab-close">×</button>`;
+		this.tabEl.innerHTML = `<span class="tab-title">${this.title}</span><button class="tab-close">×</button>`;
 
 		document.getElementById("tab-list").appendChild(this.tabEl);
 
@@ -5303,8 +5227,6 @@ class Tab {
 					`\r\n\x1b[1;33m[Process exited — code ${code}]\x1b[0m`,
 				);
 				this.setTitle(`Exit (${code})`);
-				this.tabEl.querySelector(".tab-icon").textContent = "✕";
-				this.tabEl.querySelector(".tab-icon").style.color = "#f44747";
 			}
 		};
 
@@ -6008,10 +5930,6 @@ function toggleFind() {
 async function reconnectTab(tab) {
 	tab.exited = false;
 
-	tab.tabEl.querySelector(".tab-icon").textContent = "...";
-
-	tab.tabEl.querySelector(".tab-icon").style.color = "";
-
 	if (tab.sessionData) {
 		try {
 			const session = JSON.parse(tab.sessionData);
@@ -6068,8 +5986,6 @@ async function reconnectTab(tab) {
 
 				tab.setTitle(session.user + "@" + session.host + jumpLabel);
 
-				tab.tabEl.querySelector(".tab-icon").textContent = "U0001f510";
-
 				tab.term.onData((data) => {
 					if (tab.sshConnectionId && tab.sshSessionId)
 						SSHWrite({
@@ -6103,8 +6019,6 @@ async function reconnectTab(tab) {
 
 				tab.setTitle(session.host + ":" + (session.port || 23));
 
-				tab.tabEl.querySelector(".tab-icon").textContent = "U0001f310";
-
 				tab.telnetDataHandler = (params) => {
 					const cid = params.ConnectionID || params.connectionId;
 
@@ -6127,10 +6041,6 @@ async function reconnectTab(tab) {
 						tab.term.writeln("\x1b[1;33m[Telnet connection closed]\x1b[0m");
 
 						tab.setTitle(tab.title + " [disconnected]");
-
-						tab.tabEl.querySelector(".tab-icon").textContent = "\u2715";
-
-						tab.tabEl.querySelector(".tab-icon").style.color = "#f44747";
 					}
 				};
 
@@ -6178,8 +6088,6 @@ async function reconnectTab(tab) {
 						" baud",
 				);
 
-				tab.tabEl.querySelector(".tab-icon").textContent = "U0001f4e1";
-
 				tab.serialDataHandler = (params) => {
 					if ((params.serialId || params.SerialID) === tab.serialId)
 						tab.term.write(b64ToBytes(params.data || params.Data));
@@ -6198,10 +6106,6 @@ async function reconnectTab(tab) {
 						tab.term.writeln("\x1b[1;33m[Serial port closed]\x1b[0m");
 
 						tab.setTitle(tab.title + " [disconnected]");
-
-						tab.tabEl.querySelector(".tab-icon").textContent = "\u2715";
-
-						tab.tabEl.querySelector(".tab-icon").style.color = "#f44747";
 					}
 				};
 
@@ -6231,10 +6135,6 @@ async function reconnectTab(tab) {
 			setTabStatus(tab, "disconnected");
 
 			tab.exited = true;
-
-			tab.tabEl.querySelector(".tab-icon").textContent = "\u2715";
-
-			tab.tabEl.querySelector(".tab-icon").style.color = "#f44747";
 		}
 	} else {
 		tab.spawn();
@@ -6626,6 +6526,22 @@ function bindGlobalKeys() {
 			const t = getActiveTab();
 			if (t) t.copySelection();
 			return;
+		}
+
+		// Ctrl+C: copy if selection, otherwise unselect
+		if (ctrl && (e.key === "c" || e.key === "C") && !shift && !inInput) {
+			const t = getActiveTab();
+			if (t) {
+				const sel = t.term.getSelection();
+				if (sel) {
+					e.preventDefault();
+					navigator.clipboard.writeText(sel).then(() => {
+						showToast("Copied", "success");
+					});
+					t.term.clearSelection();
+					return;
+				}
+			}
 		}
 
 		if (ctrl && shift && (e.key === "V" || e.key === "v") && !inInput) {
