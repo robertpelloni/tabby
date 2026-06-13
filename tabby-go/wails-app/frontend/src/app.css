@@ -6,6 +6,87 @@
 	overflow: hidden;
 }
 
+/* ===== CUSTOM TITLEBAR ===== */
+.titlebar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	height: 32px;
+	background: #111;
+	border-bottom: 1px solid #007acc;
+	color: #ccc;
+	font-size: 12px;
+	font-weight: 500;
+	user-select: none;
+	-webkit-app-region: drag;
+	z-index: 100;
+}
+
+.titlebar-left {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding-left: 12px;
+}
+
+.titlebar-icon {
+	width: 16px;
+	height: 16px;
+	background: #007acc;
+	border-radius: 3px;
+	flex-shrink: 0;
+}
+
+.titlebar-title {
+	white-space: nowrap;
+	font-weight: 600;
+	letter-spacing: 0.3px;
+}
+
+.titlebar-center {
+	flex: 1;
+	-webkit-app-region: drag;
+}
+
+.titlebar-right {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	padding-right: 8px;
+	-webkit-app-region: no-drag;
+}
+
+.titlebar-btn {
+	width: 28px;
+	height: 20px;
+	background: transparent;
+	border: none;
+	border-radius: 3px;
+	color: #999;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition:
+		background 0.1s,
+		color 0.1s;
+	-webkit-app-region: no-drag;
+}
+
+.titlebar-btn:hover {
+	background: #2a2a2a;
+	color: #ccc;
+}
+
+.titlebar-close:hover {
+	background: #e81123 !important;
+	color: #fff !important;
+}
+
+.titlebar-maximize:hover {
+	background: #2a2a2a;
+}
+
 /* ===== SIDEBAR ===== */
 #sidebar {
 	width: 220px;

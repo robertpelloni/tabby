@@ -71,20 +71,19 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 30, G: 30, B: 30, A: 1},
+BackgroundColour: &options.RGBA{R: 30, G: 30, B: 30, A: 1},
 		OnStartup:        app.startup,
-		Menu:           createAppMenu(),
+		Menu:             nil,
 		OnBeforeClose:  app.onBeforeClose,
 		Bind: []interface{}{
 			app,
 		},
+		Frameless: true,
 Windows: &windows.Options{
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,
 			DisableWindowIcon:    false,
-			DisableFramelessWindowDecorations: false,
-			// Disable GPU acceleration to prevent WebView2 renderer crashes
-			BackdropType: windows.Acrylic,
+			DisableFramelessWindowDecorations: true,
 		},
 	})
 

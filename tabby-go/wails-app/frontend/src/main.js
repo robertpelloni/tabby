@@ -271,6 +271,39 @@ async function init() {
 
 	const restored = await restoreSession();
 
+	// Custom titlebar handlers
+	const btnClose = document.getElementById("btn-close");
+	const btnMaximize = document.getElementById("btn-maximize");
+	const btnMinimize = document.getElementById("btn-minimize");
+
+	if (btnClose) {
+		btnClose.onclick = () => window.close();
+	}
+	if (btnMaximize) {
+		btnMaximize.onclick = () => {
+			const isMaximized = window.outerWidth >= screen.availWidth - 10;
+			if (isMaximized) {
+				window.restore();
+			} else {
+				window.maximize();
+			}
+		};
+	}
+	if (btnMinimize) {
+		btnMinimize.onclick = () => window.minimize();
+	}
+
+	// Handle maximize/restore state
+	window.addEventListener("resize", () => {
+		const btn = document.getElementById("btn-maximize");
+		if (btn) {
+			const isMaximized = window.outerWidth >= screen.availWidth - 10;
+			btn.innerHTML = isMaximized
+				? '<svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="4" height="4" stroke="currentColor" fill="none" stroke-width="1"/><rect x="6" y="6" width="4" height="4" stroke="currentColor" fill="none" stroke-width="1"/></svg>'
+				: '<svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" stroke="currentColor" fill="none" stroke-width="1"/></svg>';
+		}
+	});
+
 	if (!restored) newTab();
 }
 
