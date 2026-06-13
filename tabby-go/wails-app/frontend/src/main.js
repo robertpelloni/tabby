@@ -4924,6 +4924,7 @@ class Tab {
 		this.title = "Shell";
 		this.userRenamed = false;
 		this.shell = shell || defaultShell;
+		this.workingDir = "";
 		this.exited = false;
 		this.status = "disconnected";
 		this.connectionType = "local";
@@ -5254,6 +5255,7 @@ class Tab {
 				command: this.shell,
 				args: [],
 				env: {},
+				cwd: this.workingDir || undefined,
 				columns: this.term.cols,
 				rows: this.term.rows,
 			});
@@ -6178,6 +6180,8 @@ function saveSession() {
 
 			SerialPort: t.isSerial ? t.serialPort : "",
 
+			WorkingDir: t.isSSH || t.isSerial || t.isTelnet ? "" : t.workingDir,
+
 			Exited: t.exited,
 		}));
 
@@ -6372,6 +6376,8 @@ async function restoreSession() {
 				if (saved.Active) activated = true;
 			} else {
 				const tab = new Tab(saved.Shell);
+
+				tab.workingDir = saved.WorkingDir || "";
 
 				tabs.push(tab);
 				tab.spawn();
@@ -6647,5 +6653,9 @@ setInterval(() => {
 		}
 	});
 }, 60000);
+
+window.addEventListener("beforeunload", () => {
+	saveSession();
+});
 
 init();

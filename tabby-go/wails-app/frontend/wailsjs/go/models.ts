@@ -637,6 +637,14 @@ export namespace session {
 	    shell: string;
 	    title: string;
 	    active: boolean;
+	    type: string;
+	    host: string;
+	    port: number;
+	    user: string;
+	    baudRate: number;
+	    serialPort: string;
+	    exited: boolean;
+	    workingDir: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new TabState(source);
@@ -647,6 +655,14 @@ export namespace session {
 	        this.shell = source["shell"];
 	        this.title = source["title"];
 	        this.active = source["active"];
+	        this.type = source["type"];
+	        this.host = source["host"];
+	        this.port = source["port"];
+	        this.user = source["user"];
+	        this.baudRate = source["baudRate"];
+	        this.serialPort = source["serialPort"];
+	        this.exited = source["exited"];
+	        this.workingDir = source["workingDir"];
 	    }
 	}
 	export class SessionState {

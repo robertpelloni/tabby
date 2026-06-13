@@ -13,9 +13,17 @@ import (
 
 // TabState represents a single tab that was open when the app was closed.
 type TabState struct {
-	Shell  string `json:"shell"`
-	Title  string `json:"title"`
-	Active bool   `json:"active"`
+	Shell      string `json:"shell"`
+	Title      string `json:"title"`
+	Active     bool   `json:"active"`
+	Type       string `json:"type"`
+	Host       string `json:"host"`
+	Port       int    `json:"port"`
+	User       string `json:"user"`
+	BaudRate   int    `json:"baudRate"`
+	SerialPort string `json:"serialPort"`
+	Exited     bool   `json:"exited"`
+	WorkingDir string `json:"workingDir"`
 }
 
 // SessionState represents the full application session state.
