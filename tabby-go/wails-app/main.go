@@ -78,10 +78,13 @@ func main() {
 		Bind: []interface{}{
 			app,
 		},
-		Windows: &windows.Options{
+Windows: &windows.Options{
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,
 			DisableWindowIcon:    false,
+			DisableFramelessWindowDecorations: false,
+			// Disable GPU acceleration to prevent WebView2 renderer crashes
+			BackdropType: windows.Acrylic,
 		},
 	})
 

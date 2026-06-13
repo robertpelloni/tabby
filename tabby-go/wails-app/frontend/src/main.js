@@ -10,6 +10,17 @@ import { WebLinksAddon } from "@xterm/addon-web-links";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { WebglAddon } from "@xterm/addon-webgl";
 
+// Global error handler to prevent WebView2 renderer crashes (sad face emoji)
+window.addEventListener("error", (event) => {
+	console.error("Global error caught:", event.error);
+	event.preventDefault();
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+	console.error("Unhandled promise rejection:", event.reason);
+	event.preventDefault();
+});
+
 import {
 	PTYSpawn,
 	PTYWrite,
