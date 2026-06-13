@@ -110,3 +110,6 @@
 {"seq":111,"timestamp":"2026-06-13T13:25:50.994Z","sessionId":"lens-mqcbfx1p-2155e768","turnIndex":36,"source":"format","filePath":"C:\\Users\\hyper\\workspace\\tabby\\tabby-go\\wails-app\\frontend\\index.html","fileSeq":5}
 {"seq":112,"timestamp":"2026-06-13T13:25:51.001Z","sessionId":"lens-mqcbfx1p-2155e768","turnIndex":36,"source":"format","filePath":"C:\\Users\\hyper\\workspace\\tabby\\tabby-go\\wails-app\\frontend\\src\\app.css","fileSeq":15}
 {"seq":113,"timestamp":"2026-06-13T13:25:51.008Z","sessionId":"lens-mqcbfx1p-2155e768","turnIndex":36,"source":"format","filePath":"C:\\Users\\hyper\\workspace\\tabby\\tabby-go\\wails-app\\frontend\\src\\main.js","fileSeq":50}
+{"seq":114,"timestamp":"2026-06-13T15:53:53.985Z","sessionId":"lens-mqcensgo-adca70f3","turnIndex":48,"source":"agent-edit","filePath":"C:\\Users\\hyper\\workspace\\tabby\\tabby-go\\wails-app\\frontend\\src\\main.js","fileSeq":51}
+{"seq":115,"timestamp":"2026-06-13T16:18:01.697Z","sessionId":"lens-mqcensgo-adca70f3","turnIndex":69,"source":"agent-edit","filePath":"C:\\Users\\hyper\\workspace\\tabby\\tabby-go\\wails-app\\frontend\\src\\main.js","fileSeq":52}
+{"seq":116,"timestamp":"2026-06-13T16:19:39.191Z","sessionId":"lens-mqcensgo-adca70f3","turnIndex":70,"source":"format","filePath":"C:\\Users\\hyper\\workspace\\tabby\\tabby-go\\wails-app\\frontend\\src\\main.js","fileSeq":53}

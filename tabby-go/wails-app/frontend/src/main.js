@@ -2587,12 +2587,32 @@ function runLoginScript(tab, script) {
 // Right-click paste support
 
 function setupInputProcessing(term, tab) {
-	// Handle right-click paste
-
+	// Handle right-click paste (only if RightClick setting allows it)
+	// If clipboard has content, paste it; otherwise copy if selection
 	term.element.addEventListener("contextmenu", (e) => {
 		e.preventDefault();
 
-		if (settings.RightClick && settings.RightClick !== "off") {
+		if (settings.RightClick === "off") return;
+
+		const sel = term.getSelection();
+
+		// If there's a selection and RightClick is set to copy or clipboard-aware, copy it
+		if (
+			sel &&
+			(settings.RightClick === "clipboard" || settings.RightClick === "menu")
+		) {
+			ClipboardSetText(sel).then(() => {
+				showToast("Copied", "success");
+			});
+			term.clearSelection();
+			return;
+		}
+
+		// Otherwise paste if clipboard has content
+		if (
+			settings.RightClick === "paste" ||
+			settings.RightClick === "clipboard"
+		) {
 			tab.pasteFromClipboard();
 		}
 	});
@@ -6578,19 +6598,21 @@ function bindGlobalKeys() {
 			return;
 		}
 
-		// Ctrl+C: copy if selection, otherwise unselect
+		// Ctrl+C: copy if selection, otherwise send to terminal
 		if (ctrl && (e.key === "c" || e.key === "C") && !shift && !inInput) {
 			const t = getActiveTab();
 			if (t) {
 				const sel = t.term.getSelection();
 				if (sel) {
+					// Selection exists: copy and deselect, DON'T send to terminal
 					e.preventDefault();
-					navigator.clipboard.writeText(sel).then(() => {
+					ClipboardSetText(sel).then(() => {
 						showToast("Copied", "success");
 					});
 					t.term.clearSelection();
 					return;
 				}
+				// No selection: send Ctrl+C to terminal
 			}
 		}
 
