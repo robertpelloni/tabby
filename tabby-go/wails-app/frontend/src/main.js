@@ -1796,6 +1796,9 @@ function buildToolbar(tab) {
 		'<button class="toolbar-btn" onclick="toggleFind()" title="Find">F</button>';
 
 	html +=
+		'<button class="toolbar-btn" onclick="toggleBroadcast()" title="Broadcast (Ctrl+Shift+B)" id="btn-broadcast" style="' + (broadcastMode ? 'color:#007acc;' : '') + '">U0001f4e1</button>';
+
+	html +=
 		'<button class="toolbar-btn" onclick="clearTerminal()" title="Clear">X</button>';
 
 	html += "</div>";
@@ -1827,8 +1830,35 @@ function clearTerminal() {
 
 	if (tab) {
 		tab.term.clear();
-		tab.term.focus();
+			tab.term.focus();
 	}
+}
+
+// ===== BROADCAST MODE =====
+
+function toggleBroadcast() {
+	broadcastMode = !broadcastMode;
+	// Update all toolbar buttons to reflect broadcast state
+	for (const t of tabs) {
+		const btn = t.wrapper && t.wrapper.querySelector("#btn-broadcast");
+		if (btn) {
+			btn.style.color = broadcastMode ? "#007acc" : "";
+			btn.title = broadcastMode
+				? "Broadcasting ON (Ctrl+Shift+B)"
+				: "Broadcast (Ctrl+Shift+B)";
+		}
+	}
+	const el = document.getElementById("status-text");
+	if (el) {
+		el.textContent = broadcastMode
+			? "U0001f4e1 Broadcast ON - " + tabs.length + " tab" + (tabs.length !== 1 ? "s" : "")
+			: tabs.length + " tab" + (tabs.length !== 1 ? "s" : "");
+		clearTimeout(window.__statusTimeout);
+		window.__statusTimeout = setTimeout(() => {
+			el.textContent = tabs.length + " tab" + (tabs.length !== 1 ? "s" : "");
+		}, 3000);
+	}
+	showToast(broadcastMode ? "Broadcast ON" : "Broadcast OFF", "info");
 }
 
 // ===== COMMAND PALETTE =====
@@ -6083,12 +6113,14 @@ async function reconnectTab(tab) {
 				tab.setTitle(session.user + "@" + session.host + jumpLabel);
 
 				tab.term.onData((data) => {
-					if (tab.sshConnectionId && tab.sshSessionId)
+					if (tab.sshConnectionId && tab.sshSessionId) {
 						SSHWrite({
 							connectionId: tab.sshConnectionId,
 							sessionId: tab.sshSessionId,
 							data: btoa(data),
 						});
+						broadcastInput(data, tab);
+					}
 				});
 
 				setupInputProcessing(tab.term, tab);
@@ -6145,8 +6177,10 @@ async function reconnectTab(tab) {
 				window.__telnetExitHandlers.push(tab.telnetExitHandler);
 
 				tab.term.onData((data) => {
-					if (tab.telnetConnectionId)
+					if (tab.telnetConnectionId) {
 						TelnetWrite(tab.telnetConnectionId, btoa(data));
+						broadcastInput(data, tab);
+					}
 				});
 
 				setupInputProcessing(tab.term, tab);
@@ -6210,7 +6244,10 @@ async function reconnectTab(tab) {
 				window.__serialExitHandlers.push(tab.serialExitHandler);
 
 				tab.term.onData((data) => {
-					if (tab.serialId) SerialWrite(tab.serialId, btoa(data));
+					if (tab.serialId) {
+						SerialWrite(tab.serialId, btoa(data));
+						broadcastInput(data, tab);
+					}
 				});
 
 				setupInputProcessing(tab.term, tab);
@@ -6356,12 +6393,14 @@ async function restoreSession() {
 					tab.term.writeln("\x1b[1;32m[Reconnected]\x1b[0m");
 
 					tab.term.onData((data) => {
-						if (tab.sshConnectionId && tab.sshSessionId)
+						if (tab.sshConnectionId && tab.sshSessionId) {
 							SSHWrite({
 								connectionId: tab.sshConnectionId,
 								sessionId: tab.sshSessionId,
 								data: btoa(data),
 							});
+							broadcastInput(data, tab);
+						}
 					});
 
 					showStatus("SSH - " + (saved.User || "root") + "@" + saved.Host);
@@ -6408,8 +6447,10 @@ async function restoreSession() {
 					window.__telnetDataHandlers.push(tab.telnetDataHandler);
 
 					tab.term.onData((data) => {
-						if (tab.telnetConnectionId)
+						if (tab.telnetConnectionId) {
 							TelnetWrite(tab.telnetConnectionId, btoa(data));
+							broadcastInput(data, tab);
+						}
 					});
 
 					showStatus("Telnet - " + saved.Host + ":" + (saved.Port || 23));
@@ -6455,7 +6496,10 @@ async function restoreSession() {
 					tab.term.writeln("[1;32m[Reconnected][0m");
 
 					tab.term.onData((data) => {
-						if (tab.serialId) SerialWrite(tab.serialId, btoa(data));
+						if (tab.serialId) {
+							SerialWrite(tab.serialId, btoa(data));
+							broadcastInput(data, tab);
+						}
 					});
 
 					showStatus("Serial - " + saved.Host);
@@ -6593,8 +6637,7 @@ function bindGlobalKeys() {
 
 		if (ctrl && shift && e.key === "B") {
 			e.preventDefault();
-			const tab = getActiveTab();
-			if (tab) setTabBadge(tab, Math.floor(Math.random() * 10));
+			toggleBroadcast();
 		}
 
 		if (ctrl && !shift && e.key === "\\") {
