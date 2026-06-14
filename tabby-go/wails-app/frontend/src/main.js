@@ -1879,7 +1879,7 @@ function toggleBroadcast() {
 function openLogDialog(tab) {
 	if (!tab || !tab.logBuffer.length) {
 		showToast("No log data available", "info");
-			return;
+		return;
 	}
 	// Remove existing log dialog if any
 	const existing = document.getElementById("log-dialog");
@@ -1892,12 +1892,13 @@ function openLogDialog(tab) {
 
 	const box = document.createElement("div");
 	box.className = "modal-box";
-	box.style.cssText = "width:700px;max-height:80vh;display:flex;flex-direction:column;";
+	box.style.cssText =
+		"width:700px;max-height:80vh;display:flex;flex-direction:column;";
 
 	const hdr = document.createElement("div");
 	hdr.style.cssText =
 		"display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;";
-	hdr.innerHTML = "<h3 style=\"margin:0;\">U0001f4dc Session Log</h3>";
+	hdr.innerHTML = '<h3 style="margin:0;">U0001f4dc Session Log</h3>';
 	box.appendChild(hdr);
 
 	const textarea = document.createElement("textarea");
@@ -2529,6 +2530,17 @@ function editProfile(profile) {
 	document.getElementById("edit-profile-name").value = profile.name || "";
 
 	document.getElementById("edit-profile-group").value = profile.group || "";
+// Populate group suggestions datalist for the group input
+(()=> {
+    const groupsSet = new Set();
+    savedProfiles.forEach(p => {
+        if (p.group) groupsSet.add(p.group);
+    });
+    const datalist = document.getElementById("existing-groups");
+    if (datalist) {
+        datalist.innerHTML = Array.from(groupsSet).map(g => `<option value="${g}"></option>`).join("");
+    }
+})();
 
 	const opts = profile.options || {};
 
@@ -5407,22 +5419,26 @@ class Tab {
 			if (pid && pid === this.ptyId) {
 				const bytes = b64ToBytes(params.data);
 				this.term.write(bytes);
-				if (this.loggingEnabled) this.logBuffer.push(new TextDecoder().decode(bytes));
+				if (this.loggingEnabled)
+					this.logBuffer.push(new TextDecoder().decode(bytes));
 				this.lastActivity = Date.now();
 			} else if (this.isSSH && sid && sid === this.sshSessionId) {
 				const bytes = b64ToBytes(params.data);
 				this.term.write(bytes);
-				if (this.loggingEnabled) this.logBuffer.push(new TextDecoder().decode(bytes));
+				if (this.loggingEnabled)
+					this.logBuffer.push(new TextDecoder().decode(bytes));
 				this.lastActivity = Date.now();
 			} else if (this.isSerial && serid && serid === this.serialId) {
 				const bytes = b64ToBytes(params.data);
 				this.term.write(bytes);
-				if (this.loggingEnabled) this.logBuffer.push(new TextDecoder().decode(bytes));
+				if (this.loggingEnabled)
+					this.logBuffer.push(new TextDecoder().decode(bytes));
 				this.lastActivity = Date.now();
 			} else if (this.isTelnet && cid && cid === this.telnetConnectionId) {
 				const bytes = b64ToBytes(params.data);
 				this.term.write(bytes);
-				if (this.loggingEnabled) this.logBuffer.push(new TextDecoder().decode(bytes));
+				if (this.loggingEnabled)
+					this.logBuffer.push(new TextDecoder().decode(bytes));
 				this.lastActivity = Date.now();
 			}
 		};
