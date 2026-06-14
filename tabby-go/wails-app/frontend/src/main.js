@@ -150,6 +150,11 @@ function broadcastInput(data, sourceTab) {
 	}
 }
 
+// Strip ANSI escape sequences for clean log output
+function stripAnsi(str) {
+	return str.replace(/\x1b[[0-9;]*[a-zA-Z]/g, "");
+}
+
 // Decode base64 string to Uint8Array for proper UTF-8 handling
 function b64ToBytes(b64) {
 	const binary = atob(b64);
@@ -1796,10 +1801,15 @@ function buildToolbar(tab) {
 		'<button class="toolbar-btn" onclick="toggleFind()" title="Find">F</button>';
 
 	html +=
-		'<button class="toolbar-btn" onclick="toggleBroadcast()" title="Broadcast (Ctrl+Shift+B)" id="btn-broadcast" style="' + (broadcastMode ? 'color:#007acc;' : '') + '">U0001f4e1</button>';
+		'<button class="toolbar-btn" onclick="toggleBroadcast()" title="Broadcast (Ctrl+Shift+B)" id="btn-broadcast" style="' +
+		(broadcastMode ? "color:#007acc;" : "") +
+		'">U0001f4e1</button>';
 
 	html +=
 		'<button class="toolbar-btn" onclick="clearTerminal()" title="Clear">X</button>';
+
+	html +=
+		'<button class="toolbar-btn" onclick="openLogDialog(getActiveTab())" title="View Log">U0001f4dc</button>';
 
 	html += "</div>";
 
@@ -1830,7 +1840,7 @@ function clearTerminal() {
 
 	if (tab) {
 		tab.term.clear();
-			tab.term.focus();
+		tab.term.focus();
 	}
 }
 
@@ -1851,7 +1861,10 @@ function toggleBroadcast() {
 	const el = document.getElementById("status-text");
 	if (el) {
 		el.textContent = broadcastMode
-			? "U0001f4e1 Broadcast ON - " + tabs.length + " tab" + (tabs.length !== 1 ? "s" : "")
+			? "U0001f4e1 Broadcast ON - " +
+				tabs.length +
+				" tab" +
+				(tabs.length !== 1 ? "s" : "")
 			: tabs.length + " tab" + (tabs.length !== 1 ? "s" : "");
 		clearTimeout(window.__statusTimeout);
 		window.__statusTimeout = setTimeout(() => {
@@ -1859,6 +1872,71 @@ function toggleBroadcast() {
 		}, 3000);
 	}
 	showToast(broadcastMode ? "Broadcast ON" : "Broadcast OFF", "info");
+}
+
+// ===== SESSION LOG =====
+
+function openLogDialog(tab) {
+	if (!tab || !tab.logBuffer.length) {
+		showToast("No log data available", "info");
+			return;
+	}
+	// Remove existing log dialog if any
+	const existing = document.getElementById("log-dialog");
+	if (existing) existing.remove();
+
+	const dlg = document.createElement("div");
+	dlg.className = "modal-overlay";
+	dlg.id = "log-dialog";
+	dlg.style.cssText = "z-index:1000;";
+
+	const box = document.createElement("div");
+	box.className = "modal-box";
+	box.style.cssText = "width:700px;max-height:80vh;display:flex;flex-direction:column;";
+
+	const hdr = document.createElement("div");
+	hdr.style.cssText =
+		"display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;";
+	hdr.innerHTML = "<h3 style=\"margin:0;\">U0001f4dc Session Log</h3>";
+	box.appendChild(hdr);
+
+	const textarea = document.createElement("textarea");
+	textarea.style.cssText =
+		"width:100%;flex:1;min-height:300px;background:#1a1a1a;border:1px solid #3a3a3a;color:#ccc;padding:8px;border-radius:4px;font-family:monospace;font-size:12px;resize:none;";
+	textarea.readOnly = true;
+	textarea.value = stripAnsi(tab.logBuffer.join(""));
+	box.appendChild(textarea);
+
+	const actions = document.createElement("div");
+	actions.style.cssText =
+		"display:flex;gap:8px;justify-content:flex-end;margin-top:8px;";
+
+	const downloadBtn = document.createElement("button");
+	downloadBtn.textContent = "U0001f4e5 Download";
+	downloadBtn.className = "btn-primary";
+	downloadBtn.onclick = () => {
+		const blob = new Blob([textarea.value], { type: "text/plain" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = "session-" + tab.id + ".log";
+		a.click();
+		URL.revokeObjectURL(url);
+	};
+	actions.appendChild(downloadBtn);
+
+	const closeBtn = document.createElement("button");
+	closeBtn.textContent = "Close";
+	closeBtn.className = "btn-secondary";
+	closeBtn.onclick = () => dlg.remove();
+	actions.appendChild(closeBtn);
+
+	box.appendChild(actions);
+	dlg.appendChild(box);
+	dlg.addEventListener("click", (e) => {
+		if (e.target === dlg) dlg.remove();
+	});
+	document.body.appendChild(dlg);
 }
 
 // ===== COMMAND PALETTE =====
@@ -4004,6 +4082,8 @@ function buildUI() {
 
                 <div class="setting-group"><label>Bracketed Paste</label><div class="toggle-container"><input type="checkbox" id="s-bracketed-paste" checked><label for="s-bracketed-paste" class="toggle-label"></label></div></div>
 
+                <div class="setting-group"><label>Session Logging</label><div class="toggle-container"><input type="checkbox" id="s-session-logging"><label for="s-session-logging" class="toggle-label"></label></div><span style="color:#666;font-size:11px;margin-top:2px;">Capture all terminal output to a session log</span></div>
+
                 <div class="setting-group"><label>Warn on Multi-line Paste</label><div class="toggle-container"><input type="checkbox" id="s-warn-multiline" checked><label for="s-warn-multiline" class="toggle-label"></label></div></div>
 
                 <div class="setting-group"><label>Replace Line Breaks with Spaces on Paste</label><div class="toggle-container"><input type="checkbox" id="s-replace-newlines"><label for="s-replace-newlines" class="toggle-label"></label></div></div>
@@ -4496,6 +4576,7 @@ function applySettingsToUI() {
 	check("s-copy-as-html", s.CopyAsHTML ?? true);
 
 	check("s-bracketed-paste", s.BracketedPaste ?? true);
+	check("s-session-logging", s.SessionLogging ?? false);
 
 	check("s-warn-multiline", s.WarnOnMultilinePaste ?? true);
 
@@ -4708,6 +4789,7 @@ async function saveSettingsFromUI() {
 		CopyAsHTML: document.getElementById("s-copy-as-html").checked,
 
 		BracketedPaste: document.getElementById("s-bracketed-paste").checked,
+		SessionLogging: document.getElementById("s-session-logging").checked,
 
 		WarnOnMultilinePaste: document.getElementById("s-warn-multiline").checked,
 
@@ -5050,6 +5132,8 @@ class Tab {
 		this.status = "disconnected";
 		this.connectionType = "local";
 		this.connectionLog = [];
+		this.logBuffer = [];
+		this.loggingEnabled = settings.SessionLogging || false;
 		this.lastActivity = Date.now();
 		this.isSSH = false;
 		this.sshConnectionId = null;
@@ -5321,16 +5405,24 @@ class Tab {
 			const serid = params.serialId ?? params.SerialID;
 			const cid = params.connectionId ?? params.ConnectionID;
 			if (pid && pid === this.ptyId) {
-				this.term.write(b64ToBytes(params.data));
+				const bytes = b64ToBytes(params.data);
+				this.term.write(bytes);
+				if (this.loggingEnabled) this.logBuffer.push(new TextDecoder().decode(bytes));
 				this.lastActivity = Date.now();
 			} else if (this.isSSH && sid && sid === this.sshSessionId) {
-				this.term.write(b64ToBytes(params.data));
+				const bytes = b64ToBytes(params.data);
+				this.term.write(bytes);
+				if (this.loggingEnabled) this.logBuffer.push(new TextDecoder().decode(bytes));
 				this.lastActivity = Date.now();
 			} else if (this.isSerial && serid && serid === this.serialId) {
-				this.term.write(b64ToBytes(params.data));
+				const bytes = b64ToBytes(params.data);
+				this.term.write(bytes);
+				if (this.loggingEnabled) this.logBuffer.push(new TextDecoder().decode(bytes));
 				this.lastActivity = Date.now();
 			} else if (this.isTelnet && cid && cid === this.telnetConnectionId) {
-				this.term.write(b64ToBytes(params.data));
+				const bytes = b64ToBytes(params.data);
+				this.term.write(bytes);
+				if (this.loggingEnabled) this.logBuffer.push(new TextDecoder().decode(bytes));
 				this.lastActivity = Date.now();
 			}
 		};
