@@ -130,6 +130,26 @@ let settings = {};
 
 let savedProfiles = [];
 
+const broadcastMode = false;
+
+// Broadcast input to all terminals
+function broadcastInput(data, sourceTab) {
+	if (!broadcastMode) return;
+	for (const t of tabs) {
+		if (t === sourceTab || t.exited) continue;
+		if (t.ptyId) PTYWrite(t.ptyId, btoa(data));
+		else if (t.isSSH && t.sshConnectionId && t.sshSessionId)
+			SSHWrite({
+				connectionId: t.sshConnectionId,
+				sessionId: t.sshSessionId,
+				data: btoa(data),
+			});
+		else if (t.isSerial && t.serialId) SerialWrite(t.serialId, btoa(data));
+		else if (t.isTelnet && t.telnetConnectionId)
+			TelnetWrite(t.telnetConnectionId, btoa(data));
+	}
+}
+
 // Decode base64 string to Uint8Array for proper UTF-8 handling
 function b64ToBytes(b64) {
 	const binary = atob(b64);
@@ -593,12 +613,14 @@ async function doSSHConnect() {
 				)
 					return;
 			}
-			if (tab.sshConnectionId && tab.sshSessionId)
+			if (tab.sshConnectionId && tab.sshSessionId) {
 				SSHWrite({
 					connectionId: tab.sshConnectionId,
 					sessionId: tab.sshSessionId,
 					data: btoa(data),
 				});
+				broadcastInput(data, tab);
+			}
 		});
 
 		setupInputProcessing(tab.term, tab);
@@ -771,7 +793,10 @@ async function doSerialConnect() {
 		window.__serialExitHandlers.push(tab.serialExitHandler);
 
 		tab.term.onData((data) => {
-			if (tab.serialId) SerialWrite(tab.serialId, btoa(data));
+			if (tab.serialId) {
+				SerialWrite(tab.serialId, btoa(data));
+				broadcastInput(data, tab);
+			}
 		});
 
 		setupInputProcessing(tab.term, tab);
@@ -900,8 +925,10 @@ async function doTelnetConnect() {
 					return;
 			}
 
-			if (tab.telnetConnectionId)
+			if (tab.telnetConnectionId) {
 				TelnetWrite(tab.telnetConnectionId, btoa(data));
+				broadcastInput(data, tab);
+			}
 		});
 
 		setupInputProcessing(tab.term, tab);
@@ -5250,7 +5277,10 @@ class Tab {
 
 		this.lastActivity = Date.now();
 		this.term.onData((data) => {
-			if (this.ptyId && !this.exited) PTYWrite(this.ptyId, btoa(data));
+			if (this.ptyId && !this.exited) {
+				PTYWrite(this.ptyId, btoa(data));
+				broadcastInput(data, this);
+			}
 		});
 
 		setupInputProcessing(this.term, this);

@@ -45,3 +45,6 @@ tabby-go/wails-app/build/bin/
 
 # Jules session logs
 .jules/sessions/
+.pi-lens/
+.pi-lens/cache/
+pi-lens/
