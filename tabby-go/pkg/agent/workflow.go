@@ -19,9 +19,6 @@ const (
 	PhaseImplementation WorkflowPhase = "implementation"
 	PhaseReview         WorkflowPhase = "review"
 	PhaseSummary        WorkflowPhase = "summary"
-	PhasePlan           WorkflowPhase = "plan"
-	PhaseSolve          WorkflowPhase = "solve"
-	PhaseCode           WorkflowPhase = "code"
 )
 
 type Workflow struct {

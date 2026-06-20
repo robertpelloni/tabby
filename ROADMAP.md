@@ -96,14 +96,3 @@ Leverage the decoupled Go backend (`tabby-go`) to power multiple native frontend
 1.  **Pure Native UI**: A blazing fast, GPU-accelerated desktop client built on a modern framework (e.g., Tauri, Rust/Metal, or a Go native UI).
 2.  **Web UI**: A browser-based remote terminal client connecting to a headless `tabby-go` daemon running on a server.
 3.  **Mobile Companion**: iOS/Android apps for remote session management and quick command execution.
-
-## Phase 8: Agentic Orchestration Ecosystem
-**Priority: HIGH** | **Status: IMPLEMENTING**
-
-### Goal
-Bring parity with Pi-Mono and Just-Every-Code by expanding the Go backend with a robust orchestrator.
-
-### Key Milestones
-1.  **Orchestrator Enhancements**: Expand the `tabby-go/pkg/agent` Manager to support multi-agent planning (`/plan`), problem-solving (`/solve`), and coding workflows (`/code`).
-2.  **Model Context Protocol (MCP)**: Native backend integration for extensible tools (filesystem access, web browsing, database queries) as seen in `just-every-code`.
-3.  **Advanced User Steering**: Implement interruptable queues (`steeringMode` / `followUpMode`) based on `pi-mono` for greater user autonomy over agent workflows.
