@@ -166,6 +166,8 @@ export class HotkeysService {
         if (eventName === 'keydown') {
             this.addPressedKey(keyName, eventData)
             this.recognitionPhase = true
+            if (!(nativeEvent as KeyboardEvent).repeat) {
+            }
             this.updateModifiers(eventData)
         }
         if (eventName === 'keyup') {
