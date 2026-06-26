@@ -75,7 +75,6 @@ export class HotkeysService {
     private pressedKeystroke: Keystroke|null = null
     private lastKeystrokes: PastKeystroke[] = []
     private recognitionPhase = true
-    private suppressNextKeyupKeystroke = false
     private lastEventTimestamp = 0
     private lastWheelTimestamp: number|null = null
 
@@ -167,9 +166,6 @@ export class HotkeysService {
         if (eventName === 'keydown') {
             this.addPressedKey(keyName, eventData)
             this.recognitionPhase = true
-            if (!(nativeEvent as KeyboardEvent).repeat) {
-                this.suppressNextKeyupKeystroke = false
-            }
             this.updateModifiers(eventData)
         }
         if (eventName === 'keyup') {
@@ -197,7 +193,6 @@ export class HotkeysService {
             })
             this.pressedKeystroke = keystroke
             this.recognitionPhase = true
-            this.suppressNextKeyupKeystroke = true
         }
 
         if (this.pressedKeys.size) {
