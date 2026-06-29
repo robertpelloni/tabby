@@ -1,7 +1,7 @@
 # Tabby - Long-Term Structural Roadmap
 
 ## Phase 1: The Go Backend Migration (In Progress)
-**Priority: CRITICAL** | **Status: ALMOST COMPLETE**
+**Priority: CRITICAL** | **Status: PARTIAL**
 
 ### Goal
 Eliminate brittle Node.js native dependencies (`node-pty`, `serialport`, `russh`) by porting all OS-level and protocol logic to a unified Go daemon (`tabby-go`). Achieve 1:1 parity with the legacy TypeScript implementation.
@@ -12,11 +12,10 @@ Eliminate brittle Node.js native dependencies (`node-pty`, `serialport`, `russh`
 *   **Communication**: JSON-RPC 2.0 bridge over stdin/stdout. Tests are written and passing. ✅
 *   **SSH & SFTP Backend**: `SSHSession` and `SFTPSession` Angular services rewritten to proxy all calls to the Go daemon via `ipcRenderer`. The Electron main process correctly multiplexes these requests. ✅
 *   **X11 Forwarding**: Implemented missing `x11-req` socket forwarding in the Go backend (`pkg/ssh/ssh.go`). ✅
-*   **Jump Hosts (ProxyJump)**: Implemented recursive TCP Dialing via SSH natively in the Go backend (`pkg/ssh/ssh.go`). Verified via unit tests. ✅
-*   **End-to-End Integration Testing**: Validated `tabby-go` multiplexing, raw `Uint8Array` data propagation over RPC to the frontend. Node `russh` module completely removed. ✅
 
-### Immediate Next Steps (Phase 1)
-1. **Stabilize Production CI**: Resolve any underlying CI script or packaging dependencies missed during the Node native modules swap out before cutting a stable release.
+### Immediate Next Steps (Go Parity)
+1.  **Jump Hosts (ProxyJump)**: Add support for recursive TCP Dialing via SSH in the Go backend (`pkg/ssh/ssh.go`). The legacy TS frontend created a TCP Forwarding channel, but the new Go architecture expects direct dialing or integrated proxying.
+2.  **End-to-End Integration Testing**: Boot the Electron app (`yarn start`) and verify that typing in an SSH terminal forwards keystrokes to the Go daemon properly. Ensure `MockChannel` handles raw `Uint8Array` data vs. Base64 encoded JSON-RPC frames correctly.
 
 ## Phase 2: The UI/UX Paradigm Shift (Warp & WaveTerm Parity)
 **Priority: HIGH** | **Status: EXPERIMENTAL**
