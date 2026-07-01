@@ -54,6 +54,7 @@ type SSHProfileOptions struct {
 	KeepaliveCountMax int               `json:"keepaliveCountMax,omitempty"`
 	ReadyTimeout      int               `json:"readyTimeout,omitempty"`
 	JumpHost          string            `json:"jumpHost,omitempty"`
+	ProxyJump         string            `json:"proxyJump,omitempty"`
 	ProxyCommand      string            `json:"proxyCommand,omitempty"`
 	Algorithms        *api.SSHAlgorithms `json:"algorithms,omitempty"`
 	ForwardedPorts    []ForwardedPort   `json:"forwardedPorts,omitempty"`

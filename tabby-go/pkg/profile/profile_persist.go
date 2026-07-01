@@ -157,7 +157,7 @@ func ImportSSHConfigAsProfiles(path string) ([]ConnectionProfile, error) {
 
 		case "proxyjump":
 			if currentOpts != nil {
-				currentOpts.JumpHost = value
+				currentOpts.ProxyJump = value
 			}
 		}
 	}
