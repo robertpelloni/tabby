@@ -198,6 +198,7 @@ export class SSHSession {
             readyTimeout: this.profile.options.readyTimeout,
             agentForward: (this.profile.options as any).forwardAgent,
             x11: this.profile.options.x11,
+            proxyJump: (this.profile.options as any).proxyJump || '',
         }
 
         try {

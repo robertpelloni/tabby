@@ -25,6 +25,11 @@ ul.nav-tabs(ngbNav, #nav='ngbNav')
                             div(translate) Jump host
                             .text-muted(translate) Connect to a different host first and use it as a proxy
                         button.dropdown-item(
+                            (click)='connectionMode = "proxyJump"',
+                        )
+                            div(translate) ProxyJump (String)
+                            .text-muted(translate) OpenSSH ProxyJump comma-separated connection string
+                        button.dropdown-item(
                             (click)='connectionMode = "socksProxy"',
                         )
                             div(translate) SOCKS proxy
@@ -63,6 +68,13 @@ ul.nav-tabs(ngbNav, #nav='ngbNav')
                     option([ngValue]='null', translate) Select
                     option([ngValue]='x.id', *ngFor='let x of jumpHosts') {{getJumpHostLabel(x)}}
 
+            .mb-3(*ngIf='connectionMode === "proxyJump"')
+                label(translate) ProxyJump String
+                input.form-control(
+                    type='text',
+                    placeholder='user@jump1.example.com,user@jump2.example.com:2222',
+                    [(ngModel)]='profile.options.proxyJump'
+                )
 
             .d-flex.w-100(*ngIf='connectionMode === "socksProxy"')
                 .mb-3.w-100.me-2

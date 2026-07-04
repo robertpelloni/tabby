@@ -66,6 +66,7 @@ type SSHConnectParams struct {
 	X11               bool              `json:"x11,omitempty"`
 	X11Display        string            `json:"x11Display,omitempty"`
 	JumpHost          *SSHConnectParams `json:"jumpHost,omitempty"`
+	ProxyJump         string            `json:"proxyJump,omitempty"`
 	Algorithms        *SSHAlgorithms    `json:"algorithms,omitempty"`
 	ProxyCommand      string            `json:"proxyCommand,omitempty"`
 	SocksProxyHost    string            `json:"socksProxyHost,omitempty"`

@@ -26,6 +26,7 @@ export class SSHProfilesService extends QuickConnectProfileProvider<SSHProfile> 
             x11: false,
             skipBanner: false,
             jumpHost: null,
+            proxyJump: null,
             agentForward: false,
             warnOnClose: null,
             algorithms: {

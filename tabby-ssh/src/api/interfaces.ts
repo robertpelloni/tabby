@@ -26,6 +26,7 @@ export interface SSHProfileOptions extends LoginScriptsOptions {
     x11: boolean
     skipBanner: boolean
     jumpHost: string | null
+    proxyJump: string | null
     agentForward: boolean
     warnOnClose: boolean | null
     algorithms: Record<SSHAlgorithmType, string[]>

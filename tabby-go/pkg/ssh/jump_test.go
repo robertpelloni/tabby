@@ -43,3 +43,21 @@ func TestJumpHostConfigBuilding(t *testing.T) {
 		t.Errorf("expected user jules, got %s", jumpConfig.User)
 	}
 }
+
+func TestProxyJumpParsingErrorHandling(t *testing.T) {
+	mgr := NewManager(func(method string, params interface{}) {})
+
+	// Ensure empty proxy jump returns error
+	_, err := mgr.connectViaProxyJump("", "127.0.0.1:22", nil)
+	if err == nil {
+		t.Fatal("expected error on empty proxy jump")
+	}
+
+	// For a real connection test, we'd need a mock SSH server.
+	// We just ensure it starts dialing and fails with a dial error
+	// rather than a parsing crash.
+	_, err = mgr.connectViaProxyJump("user@invalid.host.local:2222", "127.0.0.1:22", nil)
+	if err == nil {
+		t.Fatal("expected dial error to invalid host")
+	}
+}

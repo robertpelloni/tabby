@@ -19,7 +19,7 @@ export class SSHProfileSettingsComponent implements ProfileSettingsComponent<SSH
     profile: ProxifiedConfig<FullyDefined<SSHProfile>>
     hasSavedPassword: boolean
 
-    connectionMode: 'direct'|'proxyCommand'|'jumpHost'|'socksProxy'|'httpProxy' = 'direct'
+    connectionMode: 'direct'|'proxyCommand'|'jumpHost'|'proxyJump'|'socksProxy'|'httpProxy' = 'direct'
 
     SupportedAlgorithms = SupportedAlgorithms
     algorithms: Record<string, Record<string, boolean>> = {}
@@ -49,6 +49,8 @@ export class SSHProfileSettingsComponent implements ProfileSettingsComponent<SSH
             this.connectionMode = 'proxyCommand'
         } else if (this.profile.options.jumpHost) {
             this.connectionMode = 'jumpHost'
+        } else if (this.profile.options.proxyJump) {
+            this.connectionMode = 'proxyJump'
         } else if (this.profile.options.socksProxyHost) {
             this.connectionMode = 'socksProxy'
         } else if (this.profile.options.httpProxyHost) {
@@ -111,6 +113,9 @@ export class SSHProfileSettingsComponent implements ProfileSettingsComponent<SSH
         if (this.connectionMode !== 'jumpHost') {
             this.profile.options.jumpHost = null
         }
+        if (this.connectionMode !== 'proxyJump') {
+            this.profile.options.proxyJump = null
+        }
         if (this.connectionMode !== 'proxyCommand') {
             this.profile.options.proxyCommand = null
         }
@@ -139,6 +144,7 @@ export class SSHProfileSettingsComponent implements ProfileSettingsComponent<SSH
             direct: 'Direct',
             proxyCommand: 'Proxy command',
             jumpHost: 'Jump host',
+            proxyJump: 'Proxy jump string',
             socksProxy: 'SOCKS proxy',
             httpProxy: 'HTTP proxy',
         }[this.connectionMode]
