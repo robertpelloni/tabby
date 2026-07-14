@@ -1932,71 +1932,106 @@ function openLogDialog(tab) {
 // ===== SETTING DESCRIPTIONS =====
 
 const SETTING_DESCRIPTIONS = {
-	"s-color-scheme": "Choose a predefined color scheme for the terminal. Each scheme sets the background, text, and ANSI colors.",
-	"s-font-family": "Font used in the terminal. Supports fallback fonts separated by commas.",
+	"s-color-scheme":
+		"Choose a predefined color scheme for the terminal. Each scheme sets the background, text, and ANSI colors.",
+	"s-font-family":
+		"Font used in the terminal. Supports fallback fonts separated by commas.",
 	"s-font-size": "Base font size in pixels for terminal text.",
-	"s-fallback-font": "Fallback font used when the primary font lacks certain glyphs (e.g., Nerd Font icons).",
-	"s-font-weight": "Normal text weight. Common values: 400 (normal), 700 (bold).",
+	"s-fallback-font":
+		"Fallback font used when the primary font lacks certain glyphs (e.g., Nerd Font icons).",
+	"s-font-weight":
+		"Normal text weight. Common values: 400 (normal), 700 (bold).",
 	"s-font-weight-bold": "Weight used for bold text in the terminal.",
-	"s-line-height": "Spacing between lines of text as a multiplier of font size.",
+	"s-line-height":
+		"Spacing between lines of text as a multiplier of font size.",
 	"s-line-padding": "Extra vertical padding added to each line.",
 	"s-ligatures": "Enable font ligatures for programming symbols like -> or =>.",
-	"s-theme": "Color scheme mode: Auto (follows system), Always Dark, or Always Light.",
-	"s-opacity": "Terminal background opacity. Lower values make the window more transparent.",
+	"s-theme":
+		"Color scheme mode: Auto (follows system), Always Dark, or Always Light.",
+	"s-opacity":
+		"Terminal background opacity. Lower values make the window more transparent.",
 	"s-bg-color": "Custom terminal background color (overrides scheme default).",
 	"s-spaciness": "Controls the spacing density of the terminal UI elements.",
 	"s-animations": "Enable/disable UI animations throughout the application.",
-	"s-cursor-style": "Shape of the terminal cursor: Bar (|), Block (\u2588), or Underline (\u2581).",
+	"s-cursor-style":
+		"Shape of the terminal cursor: Bar (|), Block (\u2588), or Underline (\u2581).",
 	"s-cursor-blink": "Whether the terminal cursor blinks on and off.",
-	"s-frontend": "Terminal rendering engine: WebGL (fastest), Canvas, or experimental Block Frontend.",
-	"s-draw-bold-bright": "Draw bold text using bright/vivid colors instead of just a heavier weight.",
-	"s-min-contrast": "Minimum contrast ratio for text against background (1-21, higher = more contrast).",
+	"s-frontend":
+		"Terminal rendering engine: WebGL (fastest), Canvas, or experimental Block Frontend.",
+	"s-draw-bold-bright":
+		"Draw bold text using bright/vivid colors instead of just a heavier weight.",
+	"s-min-contrast":
+		"Minimum contrast ratio for text against background (1-21, higher = more contrast).",
 	"s-css": "Custom CSS injected into the terminal for advanced styling.",
-	"s-shell": "Default shell to launch (leave empty for system default: bash, zsh, pwsh).",
+	"s-shell":
+		"Default shell to launch (leave empty for system default: bash, zsh, pwsh).",
 	"s-scrollback": "Number of lines to keep in terminal scrollback buffer.",
 	"s-bell": "Terminal bell behavior: off, audible, or visual flash.",
-	"s-alt-is-meta": "Treat the Alt key as the Meta modifier (useful for emacs and other TUI apps).",
+	"s-alt-is-meta":
+		"Treat the Alt key as the Meta modifier (useful for emacs and other TUI apps).",
 	"s-scroll-on-input": "Automatically scroll to the bottom when you type.",
-	"s-use-conpty": "Use Windows ConPTY for improved pseudoterminal rendering (Windows only).",
-	"s-set-comspec": "Set COMSPEC environment variable to the configured shell on launch.",
-	"s-copy-on-select": "Automatically copy text to clipboard when it is selected with the mouse.",
-	"s-copy-as-html": "Preserve formatting when copying terminal output (e.g., to rich text editors).",
-	"s-bracketed-paste": "Enable bracketed paste mode to prevent auto-indent issues when pasting code.",
-	"s-session-logging": "Capture all terminal output to a session log that can be viewed via the toolbar button.",
+	"s-use-conpty":
+		"Use Windows ConPTY for improved pseudoterminal rendering (Windows only).",
+	"s-set-comspec":
+		"Set COMSPEC environment variable to the configured shell on launch.",
+	"s-copy-on-select":
+		"Automatically copy text to clipboard when it is selected with the mouse.",
+	"s-copy-as-html":
+		"Preserve formatting when copying terminal output (e.g., to rich text editors).",
+	"s-bracketed-paste":
+		"Enable bracketed paste mode to prevent auto-indent issues when pasting code.",
+	"s-session-logging":
+		"Capture all terminal output to a session log that can be viewed via the toolbar button.",
 	"s-warn-multiline": "Show a warning dialog when pasting multi-line content.",
-	"s-replace-newlines": "Replace newlines with spaces when pasting (useful for pasting into single-line prompts).",
-	"s-trim-whitespace": "Trim leading and trailing whitespace from pasted content.",
-	"s-right-click": "Behavior when right-clicking in the terminal: context menu, paste, or smart paste.",
-	"s-paste-middle-click": "Paste from clipboard when clicking the middle mouse button.",
-	"s-word-separator": "Characters treated as word separators for double-click word selection.",
+	"s-replace-newlines":
+		"Replace newlines with spaces when pasting (useful for pasting into single-line prompts).",
+	"s-trim-whitespace":
+		"Trim leading and trailing whitespace from pasted content.",
+	"s-right-click":
+		"Behavior when right-clicking in the terminal: context menu, paste, or smart paste.",
+	"s-paste-middle-click":
+		"Paste from clipboard when clicking the middle mouse button.",
+	"s-word-separator":
+		"Characters treated as word separators for double-click word selection.",
 	"s-tab-position": "Position of the tab bar: left side or top of the window.",
-	"s-last-tab-closes": "Behavior when the last tab is closed: close window or leave it open.",
+	"s-last-tab-closes":
+		"Behavior when the last tab is closed: close window or leave it open.",
 	"s-cycle-tabs": "Allow tab cycling from last to first tab and vice versa.",
 	"s-hide-close-button": "Hide the close button on individual tabs.",
-	"s-pane-resize-step": "Step size (as fraction) for resizing panes with keyboard shortcuts.",
-	"s-focus-follows-mouse": "Automatically focus the pane under the mouse cursor.",
+	"s-pane-resize-step":
+		"Step size (as fraction) for resizing panes with keyboard shortcuts.",
+	"s-focus-follows-mouse":
+		"Automatically focus the pane under the mouse cursor.",
 	"s-auto-open": "Automatically open a new terminal window on startup.",
 	"s-recover-tabs": "Restore tabs from the previous session on startup.",
 	"s-frame": "Window frame style: thin, full, or custom frame.",
-	"s-dock": "Dock the terminal to a screen edge (off, top, bottom, left, right).",
+	"s-dock":
+		"Dock the terminal to a screen edge (off, top, bottom, left, right).",
 	"s-dock-hide-blur": "Hide the docked terminal when it loses focus.",
 	"s-dock-on-top": "Keep the docked terminal always on top of other windows.",
 	"s-hide-tray": "Hide the system tray icon.",
 	"s-language": "UI language (leave empty for system default).",
-	"s-analytics": "Send anonymous usage analytics to help improve the application.",
+	"s-analytics":
+		"Send anonymous usage analytics to help improve the application.",
 	"s-auto-updates": "Automatically check for and install updates.",
 	"s-experimental": "Enable experimental features that may be unstable.",
-	"s-ssh-warn-close": "Show a confirmation dialog when closing an active SSH connection.",
-	"s-ssh-verify-keys": "Verify SSH host keys against known_hosts on first connection.",
-	"s-ssh-disable-title": "Prevent the remote host from changing the terminal title.",
-	"s-ssh-agent-type": "Type of SSH agent to use: auto-detect, pageant, or custom.",
+	"s-ssh-warn-close":
+		"Show a confirmation dialog when closing an active SSH connection.",
+	"s-ssh-verify-keys":
+		"Verify SSH host keys against known_hosts on first connection.",
+	"s-ssh-disable-title":
+		"Prevent the remote host from changing the terminal title.",
+	"s-ssh-agent-type":
+		"Type of SSH agent to use: auto-detect, pageant, or custom.",
 	"s-ssh-agent-path": "Path to the SSH agent socket or executable.",
 	"s-ssh-x11": "X11 display for SSH X11 forwarding (e.g., localhost:0).",
 	"s-serial-baud": "Baud rate for serial port communication (bits per second).",
-	"s-serial-data-bits": "Number of data bits per serial frame (typically 7 or 8).",
+	"s-serial-data-bits":
+		"Number of data bits per serial frame (typically 7 or 8).",
 	"s-serial-stop-bits": "Number of stop bits per serial frame (1 or 2).",
 	"s-serial-parity": "Parity checking mode for serial communication.",
-	"s-serial-flow": "Flow control method for serial connections: none, hardware (RTS/CTS), or software (XON/XOFF).",
+	"s-serial-flow":
+		"Flow control method for serial connections: none, hardware (RTS/CTS), or software (XON/XOFF).",
 };
 
 // ===== COMMAND PALETTE =====
@@ -4547,7 +4582,9 @@ function buildUI() {
 // Inject descriptions below each setting in the settings panel
 function applySettingDescriptions() {
 	// Remove any existing descriptions first
-	document.querySelectorAll(".setting-description").forEach((el) => el.remove());
+	document
+		.querySelectorAll(".setting-description")
+		.forEach((el) => el.remove());
 
 	Object.entries(SETTING_DESCRIPTIONS).forEach(([id, desc]) => {
 		const el = document.getElementById(id);
