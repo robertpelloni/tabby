@@ -286,6 +286,7 @@ export namespace api {
 	    x11?: boolean;
 	    x11Display?: string;
 	    jumpHost?: SSHConnectParams;
+	    proxyJump?: string;
 	    algorithms?: SSHAlgorithms;
 	    proxyCommand?: string;
 	    socksProxyHost?: string;
@@ -315,6 +316,7 @@ export namespace api {
 	        this.x11 = source["x11"];
 	        this.x11Display = source["x11Display"];
 	        this.jumpHost = this.convertValues(source["jumpHost"], SSHConnectParams);
+	        this.proxyJump = source["proxyJump"];
 	        this.algorithms = this.convertValues(source["algorithms"], SSHAlgorithms);
 	        this.proxyCommand = source["proxyCommand"];
 	        this.socksProxyHost = source["socksProxyHost"];

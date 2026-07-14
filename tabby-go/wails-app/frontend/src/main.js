@@ -94,6 +94,12 @@ import {
 import {
 	EventsOn,
 	WindowSetAlwaysOnTop,
+	WindowMinimise,
+	WindowMaximise,
+	WindowUnmaximise,
+	WindowIsMaximised,
+	WindowToggleMaximise,
+	Quit,
 	ClipboardSetText,
 	ClipboardGetText,
 } from "../wailsjs/runtime/runtime";
@@ -302,32 +308,39 @@ async function init() {
 	const btnMinimize = document.getElementById("btn-minimize");
 
 	if (btnClose) {
-		btnClose.onclick = () => window.close();
+		btnClose.onclick = () => Quit();
 	}
 	if (btnMaximize) {
 		btnMaximize.onclick = () => {
-			const isMaximized = window.outerWidth >= screen.availWidth - 10;
-			if (isMaximized) {
-				window.restore();
-			} else {
-				window.maximize();
-			}
+			WindowIsMaximised().then((isMaximised) => {
+				if (isMaximised) {
+					WindowUnmaximise();
+				} else {
+					WindowMaximise();
+				}
+			});
 		};
 	}
 	if (btnMinimize) {
-		btnMinimize.onclick = () => window.minimize();
+		btnMinimize.onclick = () => WindowMinimise();
 	}
 
 	// Handle maximize/restore state
-	window.addEventListener("resize", () => {
-		const btn = document.getElementById("btn-maximize");
-		if (btn) {
-			const isMaximized = window.outerWidth >= screen.availWidth - 10;
-			btn.innerHTML = isMaximized
-				? '<svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="4" height="4" stroke="currentColor" fill="none" stroke-width="1"/><rect x="6" y="6" width="4" height="4" stroke="currentColor" fill="none" stroke-width="1"/></svg>'
-				: '<svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" stroke="currentColor" fill="none" stroke-width="1"/></svg>';
-		}
-	});
+	const updateMaximizeBtn = () => {
+		WindowIsMaximised().then((isMaximised) => {
+			const btn = document.getElementById("btn-maximize");
+			if (btn) {
+				btn.innerHTML = isMaximised
+					? '<svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="4" height="4" stroke="currentColor" fill="none" stroke-width="1"/><rect x="6" y="6" width="4" height="4" stroke="currentColor" fill="none" stroke-width="1"/></svg>'
+					: '<svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" stroke="currentColor" fill="none" stroke-width="1"/></svg>';
+			}
+		});
+	};
+	updateMaximizeBtn();
+	window.addEventListener("resize", updateMaximizeBtn);
+
+	// Listen for Wails resize events to keep button state accurate
+	setInterval(updateMaximizeBtn, 2000);
 
 	if (!restored) newTab();
 }
@@ -1757,39 +1770,15 @@ function formatBytes(bytes) {
 function buildToolbar(tab) {
 	let html = '<div class="terminal-toolbar" id="toolbar-' + tab.id + '">';
 
+	// Toolbar action buttons
+
 	if (tab.isSSH) {
-		html += '<span class="toolbar-badge ssh">SSH</span>';
-
-		html +=
-			'<span class="toolbar-info">' + escHtml(tab.title || "ssh") + "</span>";
-
 		html +=
 			'<button class="toolbar-btn" onclick="openSFTPBrowser(getActiveTab().sshConnectionId)" title="SFTP">U0001f4c2</button>';
 
 		html +=
 			'<button class="toolbar-btn" onclick="openForwardDialog(getActiveTab().sshConnectionId)" title="Forward">U0001f504</button>';
-	} else if (tab.isSerial) {
-		html += '<span class="toolbar-badge serial">SER</span>';
-
-		html +=
-			'<span class="toolbar-info">' +
-			escHtml(tab.title || "serial") +
-			"</span>";
-	} else if (tab.isTelnet) {
-		html += '<span class="toolbar-badge telnet">TEL</span>';
-
-		html +=
-			'<span class="toolbar-info">' +
-			escHtml(tab.title || "telnet") +
-			"</span>";
-	} else {
-		html += '<span class="toolbar-badge local">LOCAL</span>';
-
-		html +=
-			'<span class="toolbar-info">' + escHtml(tab.title || "shell") + "</span>";
 	}
-
-	html += '<div class="toolbar-spacer"></div>';
 
 	html +=
 		'<button class="toolbar-btn" onclick="getActiveTab().copySelection()" title="Copy">C</button>';
@@ -3956,14 +3945,6 @@ function buildUI() {
             <div style="padding:0 12px 4px;font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.5px;">Profiles</div>
 
             <div id="profiles-list"></div>
-
-        </div>
-
-        <div id="sidebar-footer">
-
-            <div class="status-dot" id="status-dot"></div>
-
-            <div class="status-text" id="status-text">Ready</div>
 
         </div>
 
