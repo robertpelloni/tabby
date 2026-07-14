@@ -1,57 +1,84 @@
 # Changelog
 
+## [1.0.235] - 2026-07-13
+
+### Changed
+
+- Version bump to 1.0.235
+- Merge upstream/master (Eugeny/tabby) with 943 upstream commits
+- CI pipeline: windows-2022 runner, libsecret deps
+- Tab context menu: Pin tab, command labels
+- SSH: enhanced auth methods (publicKey, etc.)
+- Release notes: migrated axios→fetch, marked ESM
+
+### Added
+
+- Terminal Broadcast mode (Ctrl+Shift+B, antenna toolbar button)
+- Session Logging: capture output, view/download (📜 toolbar button)
+- Profile Group dropdown suggestions in profile editor
+- Settings Descriptions/Tooltips for all config options
+
 ## [1.0.231-nightly.19] - 2026-05-23
 
 ### Changed
+
 - Version bump
 
 ## [1.0.231-nightly.14] - 2026-05-12
+
 ### Added
+
 - Implemented a base `registerCompletionItemProvider` dictionary overlay on top of the Monaco IDE input window, providing intelligent Warp-style shell autocomplete suggestions.
 - Bound `Cmd+F` and `Ctrl+F` keystrokes inside the Monaco UI block to redirect focus automatically to Tabby's global terminal output search panel, removing the isolated/redundant Monaco native find widget.
 
-
 ## [1.0.231-nightly.13] - 2026-05-12
+
 ### Changed
+
 - Converted `generateCommand()` AI text generation to use an explicit overlay `prompt()` window, preventing the destruction of currently typed user command text in the Monaco IDE box (Warp parity).
 - Successfully hooked up the `ReactPluginDecorator` to the Angular lifecycle, validating that simple isolated React components can inject UI frames directly on top of the Terminal canvas without relying on standard Webpack/Angular DI modules.
 
-
 ## [1.0.231-nightly.12] - 2026-05-12
+
 ### Changed
+
 - Improved the Workflows Catalog Modal to actively parse template strings (e.g. `{port}`) and prompt the user to fulfill variables via a popup before pasting the finalized command string back into the Warp-style IDE Monaco editor.
 - Configured a persistent rolling `tabby-backend.log` file in the user's home directory (`os.UserHomeDir`) alongside `os.Stdout` to ensure trace logs and backend panics are easily retrievable by users reporting issues from the standalone daemon.
 
-
 ## [1.0.231-nightly.11] - 2026-05-12
+
 ### Added
+
 - Completed Tabby Agent Sidebar Chat integration, sending real conversation payloads containing `role` and `content` through the `ipcRenderer` directly to the `ai.agentChat` JSON-RPC orchestrator on the backend.
 - Extended the `CommandCatalogModalComponent` UI to properly format and highlight `{parameter}` blocks inline matching Warp Drive workflows.
 
-
 ## [1.0.231-nightly.10] - 2026-05-12
+
 ### Added
+
 - Created `ReactPluginDecorator` in the Angular frontend that exposes a `window['tabbyReactPlugins']` interface, giving users the ability to inject native React or DOM extensions over the Tabby window seamlessly (Hyper parity).
 - Initialized official Sentry Go error tracking on the Go daemon inside `main.go`. This automatically recovers and captures native panics on the daemon via the `SENTRY_DSN` env var.
 
-
 ## [1.0.231-nightly.8] - 2026-05-11
+
 ### Added
+
 - Integrated actual OpenAI API requests to the Go backend (`tabby-go/pkg/ai`) triggered by the `OPENAI_API_KEY` environment variable. If missing, it gracefully falls back to the local mock behavior.
 - Implemented Hyper-style hot-reloading configurations. The Go backend (`tabby-go/pkg/config`) now utilizes an `os.Stat` polling loop to watch the active YAML configuration file and broadcasts JSON-RPC `host:config-change` events instantly to the Angular frontend for zero-restart visual updates.
 
-
 ## [1.0.231-nightly.7] - 2026-05-11
+
 ### Changed
+
 - Extended `BlockFrontend` OSC rendering to support parsing and safely displaying inline image widgets and iframe/webview widgets, utilizing DOMPurify to prevent arbitrary XSS.
 - Refined the `tabby-go/pkg/ai` backend mock to intelligently parse errors for the `ExplainError` action, emitting structured Markdown diagnostic tips for common terminal failures like 'Permission Denied', 'Port in Use', and 'Command Not Found'.
 
-
 ## [1.0.231-nightly.6] - 2026-05-11
+
 ### Changed
+
 - Refactored `BlockFrontend` to isolate terminal output from UI actions, allowing clean "Copy Command" and "Copy Output" actions.
 - Implemented natural language to shell command generation logic in the AI backend integration mock.
-
 
 All notable changes to the Tabby (robertpelloni fork) project will be documented in this file.
 
@@ -63,11 +90,13 @@ Version number is maintained in [VERSION.md](VERSION.md) and is the single sourc
 ## [1.0.231-nightly.5] - 2026-04-23
 
 ### Changed
+
 - Version bump
 
 ## [1.0.231-nightly.4] - 2026-04-15
 
 ### Added (robertpelloni fork)
+
 - **Terminal Agent Chat UI** (Phase 3 Roadmap: Warp Parity)
   - Built a toggleable chat sidebar into the `baseTerminalTab` providing a dedicated interface for natural-language debugging and agentic chat. The interface routes input through `ai:explainError` placeholder IPC hooks.
 - **Port Forwarding Management UI** (Phase 6 Roadmap)
@@ -105,11 +134,13 @@ Version number is maintained in [VERSION.md](VERSION.md) and is the single sourc
   - Intercepts ANSI OSC 1337 (`\x1b]1337;WaveTermWidget=...`) payloads from the backend to instantly render Markdown, code, or images directly in the output stream.
 
 ### Changed
+
 - Version bump
 
 ## [1.0.231-nightly.3] - 2025-04-09
 
 ### Added (robertpelloni fork)
+
 - **Terminal Agent Chat UI** (Phase 3 Roadmap: Warp Parity)
   - Built a toggleable chat sidebar into the `baseTerminalTab` providing a dedicated interface for natural-language debugging and agentic chat. The interface routes input through `ai:explainError` placeholder IPC hooks.
 - **Port Forwarding Management UI** (Phase 6 Roadmap)
@@ -165,6 +196,7 @@ Version number is maintained in [VERSION.md](VERSION.md) and is the single sourc
 - **33 new tests** (157 total, all passing)
 
 ### Added (robertpelloni fork)
+
 - **Terminal Agent Chat UI** (Phase 3 Roadmap: Warp Parity)
   - Built a toggleable chat sidebar into the `baseTerminalTab` providing a dedicated interface for natural-language debugging and agentic chat. The interface routes input through `ai:explainError` placeholder IPC hooks.
 - **Port Forwarding Management UI** (Phase 6 Roadmap)
@@ -202,12 +234,14 @@ Version number is maintained in [VERSION.md](VERSION.md) and is the single sourc
   - Intercepts ANSI OSC 1337 (`\x1b]1337;WaveTermWidget=...`) payloads from the backend to instantly render Markdown, code, or images directly in the output stream.
 
 ### Changed
+
 - Binary size: 8.05MB (from 7.95MB)
 - Go codebase: 9,686 LOC across 32 source files, 14 packages
 
 ## [1.0.231-nightly.2] - 2025-04-08
 
 ### Added (robertpelloni fork)
+
 - **Terminal Agent Chat UI** (Phase 3 Roadmap: Warp Parity)
   - Built a toggleable chat sidebar into the `baseTerminalTab` providing a dedicated interface for natural-language debugging and agentic chat. The interface routes input through `ai:explainError` placeholder IPC hooks.
 - **Port Forwarding Management UI** (Phase 6 Roadmap)
@@ -264,6 +298,7 @@ Version number is maintained in [VERSION.md](VERSION.md) and is the single sourc
 ## [1.0.231-nightly.1] - 2025-04-08
 
 ### Added (robertpelloni fork)
+
 - **Terminal Agent Chat UI** (Phase 3 Roadmap: Warp Parity)
   - Built a toggleable chat sidebar into the `baseTerminalTab` providing a dedicated interface for natural-language debugging and agentic chat. The interface routes input through `ai:explainError` placeholder IPC hooks.
 - **Port Forwarding Management UI** (Phase 6 Roadmap)
@@ -307,10 +342,12 @@ Version number is maintained in [VERSION.md](VERSION.md) and is the single sourc
 ## [1.0.231-nightly.0] - 2025-04-08
 
 ### Upstream Sync
+
 - Synced fork with upstream Eugeny/tabby master (f05a07ae)
-- Configured upstream remote (https://github.com/Eugeny/tabby)
+- Configured upstream remote (<https://github.com/Eugeny/tabby>)
 
 ### Added
+
 - **russh-based SSH backend**: The SSH client now uses the `russh` Rust library (v0.1.36) via N-API bindings instead of the previous ssh2-based implementation. This provides better performance and reliability for SSH connections.
 - **SFTP context menu download**: Files can now be downloaded via SFTP context menu directly from SSH sessions (#10971)
 - **tabby:// URL scheme handler**: Custom URL protocol handler allows opening Tabby via `tabby://` URLs (#11005)
@@ -321,6 +358,7 @@ Version number is maintained in [VERSION.md](VERSION.md) and is the single sourc
 - **macOS dock hiding fix**: Fixed hiding the app from macOS dock when docking is enabled (#10960)
 
 ### Added (robertpelloni fork)
+
 - **Terminal Agent Chat UI** (Phase 3 Roadmap: Warp Parity)
   - Built a toggleable chat sidebar into the `baseTerminalTab` providing a dedicated interface for natural-language debugging and agentic chat. The interface routes input through `ai:explainError` placeholder IPC hooks.
 - **Port Forwarding Management UI** (Phase 6 Roadmap)
@@ -381,6 +419,7 @@ Version number is maintained in [VERSION.md](VERSION.md) and is the single sourc
   - `CLAUDE.md`, `GEMINI.md`, `GPT.md`, `copilot-instructions.md` — Model-specific instructions
 
 ### Project Modules
+
 | Module | Version | Description |
 |--------|---------|-------------|
 | tabby-core | 1.0.231-nightly.0 | Core UI framework, tab management, services |
@@ -402,6 +441,7 @@ Version number is maintained in [VERSION.md](VERSION.md) and is the single sourc
 | web | N/A | Web app entry point |
 
 ### Key Technologies
+
 - **Frontend**: TypeScript, Angular 15, Pug templates, SCSS
 - **Backend/Native**: Electron 38, Node.js, node-pty, russh (Rust SSH via N-API)
 - **Build**: Webpack 5, TypeScript 4.9, electron-builder
@@ -411,11 +451,11 @@ Version number is maintained in [VERSION.md](VERSION.md) and is the single sourc
 - **Config**: YAML-based configuration with platform-specific defaults
 
 ## v1.0.231-nightly.17
-* Create `tabby-go/pkg/sync` implementation representing the Warp Drive Cloud Sync backend stub.
-* Connect JSON-RPC `sync.push` and `sync.pull` commands to the `server.go` IPC handler to allow the frontend to serialize Workflows and Profiles.
-* Increment version tracking documents and prepare HANDOFF logic.
+- Create `tabby-go/pkg/sync` implementation representing the Warp Drive Cloud Sync backend stub.
+- Connect JSON-RPC `sync.push` and `sync.pull` commands to the `server.go` IPC handler to allow the frontend to serialize Workflows and Profiles.
+- Increment version tracking documents and prepare HANDOFF logic.
 
 ## v1.0.231-nightly.18
-* Create `tabby-core/src/services/sync.service.ts` to act as the Cloud Sync frontend proxy.
-* Expose `SyncService` through `tabby-core` index API, wired up to call `sync.push` and `sync.pull` JSON-RPC commands in the Go backend.
-* Increment version tracking documents and prepare HANDOFF logic.
+- Create `tabby-core/src/services/sync.service.ts` to act as the Cloud Sync frontend proxy.
+- Expose `SyncService` through `tabby-core` index API, wired up to call `sync.push` and `sync.pull` JSON-RPC commands in the Go backend.
+- Increment version tracking documents and prepare HANDOFF logic.

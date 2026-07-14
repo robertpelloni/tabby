@@ -3,6 +3,7 @@
 ## Critical / High Priority
 
 ### Warp & WaveTerm UI/UX Parity (Phase 2)
+
 - [x] **Block-Based Output Parsing (BlockFrontend)**:
   - Extend the experimental `tabby-terminal/src/frontends/blockFrontend.ts`.
   - Implement a basic ANSI-to-HTML parser (or adapt `xterm.js` logic) so `span.textContent` doesn't just swallow control codes.
@@ -23,12 +24,14 @@
   - Add logic to intercept specific OSC codes from the `tabby-go` backend that tell the frontend to render the next block as Markdown, an Image, or a Code Editor buffer.
 
 ### Agentic AI Integration (Phase 3)
+
 - [x] **AI Command Search**: Natural language to shell command generation within the IDE input box.
 - [x] **Explain Error Action**: A one-click button on failed blocks that reads the command, stderr, and environment to suggest a fix.
 - [x] **Terminal Agent Chat**: A dedicated sidebar/panel for conversational interaction with an AI.
 - [x] **Workflow Generation**: AI-assisted creation of parameterized, saved shell scripts.
 
 ### Workflows & Collaboration (Phase 4)
+
 - [x] **Command Catalog**: A searchable UI (Command Palette style) for saved, parameterized commands.
 - [ ] **Cloud Sync Backend**: A secure backend service to synchronize Workflows, Environment Variables, and SSH Profiles.
 
@@ -37,21 +40,24 @@
 ## Medium Priority
 
 ### Hyper Parity (Phase 5)
+
 - [x] **Hot Reloading Configuration**: Watch the Tabby config file and instantly re-render UI elements (like themes) without a restart.
 - [x] **React/Web Component Plugin API**: Develop a wrapper around the Angular Dependency Injection system so users can write simple scripts exporting React components to customize the terminal chrome.
 
 ### Feature Completeness & Polish (Phase 6)
+
 - [x] **SFTP File Manager UI**: Full bidirectional file browser, drag-and-drop file transfer, progress indicators, directory tree browsing.
 - [x] **Port Forwarding Management UI**: Add/remove forwards while connected, status indicators for active forwards.
 - [x] **Jump Host Chain Visualization**: Show jump host path in UI.
-- [ ] **SSH Config File Import**: Verify and enhance `sshImporters.ts`.
-- [ ] **Settings Descriptions/Tooltips**: Add descriptions to all config options in settings UI.
-- [ ] **Profile Group Management**: Improve group editing and organization.
-- [ ] **Terminal Broadcast**: Send input to all visible terminals.
-- [ ] **Session Logging**: Record terminal output to file.
+- [x] **SSH Config File Import**: Verify and enhance `sshImporters.ts`.
+- [x] **Settings Descriptions/Tooltips**: Add descriptions to all config options in settings UI.
+- [x] **Profile Group Management**: Datalist-based group suggestions in profile editor.
+- [x] **Terminal Broadcast**: Send input to all visible terminals.
+- [x] **Session Logging**: Record terminal output to file/view.
 - [ ] **Serial Terminal**: Hex view mode, advanced flow control settings, connection logging.
 
 ### Testing & Code Quality
+
 - [ ] **Sync Electron versions**: electron-builder.yml, package.json, CI all consistent.
 - [ ] **Automated release workflow**: Tag push → build → draft release.
 - [ ] **Unit test framework setup**: Jest or Karma for TypeScript tests.
@@ -62,6 +68,7 @@
 ---
 
 ## Completed ✓
+
 - [x] **Go Backend Parity (Phase 1)**: Integrated PTY, Serial, SSH, SFTP protocols within the Go daemon proxying through JSON-RPC 2.0. Finished proxyJump jump hosts integration and End-to-End integration testing.
 - [x] **X11 Forwarding**: Implemented X11 socket forwarding in the Go backend (`pkg/ssh/x11.go`). Sent `x11-req` payload packet correctly.
 - [x] **BlockFrontend Stub**: Built the experimental UI toggle for DOM-based block rendering over traditional `xterm.js` continuous streams.
