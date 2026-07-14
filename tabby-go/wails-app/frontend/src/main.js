@@ -136,7 +136,7 @@ let settings = {};
 
 let savedProfiles = [];
 
-const broadcastMode = false;
+let broadcastMode = false;
 
 // Broadcast input to all terminals
 function broadcastInput(data, sourceTab) {
