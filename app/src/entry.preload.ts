@@ -1,4 +1,5 @@
-import 'v8-compile-cache'
+require('module').enableCompileCache?.()
+
 import '../lib/lru'
 import 'core-js/proposals/reflect-metadata'
 import 'source-sans-pro/source-sans-pro.css'
