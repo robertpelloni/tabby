@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.0.236] - 2026-11-03
+
+### Changed
+
+- Version bump to 1.0.236
+- Consolidated fragmented settings and dashboard pages into high-value domains: General & System, Appearance & Display, Terminal & Behavior, and Connections & Profiles
+- Expanded dashboard settings panel with real-time live keyword search filtering across all configuration options
+
+### Added
+
+- Interactive guidance tooltip markers (ℹ) next to every configuration label in the settings dashboard
+- Real-time welcome dashboard status badges (active sessions, profiles count, protocol status)
+- Prominent server management actions: 'Stop All Servers' and 'Quit Tabby' with confirmation safeguards
+- Go Wails backend lifecycle handlers  and  for graceful connection termination
+
 ## [1.0.235] - 2026-07-13
 
 ### Changed

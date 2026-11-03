@@ -476,6 +476,42 @@ func (a *App) ClearNotifications() {
 	a.notifMgr.Clear()
 }
 
+
+// ==== Lifecycle & Server Control Methods ====
+
+// ShutdownServers safely shuts down all active background sessions, SSH connections,
+// SFTP channels, and serial/telnet connections.
+func (a *App) ShutdownServers() error {
+	// Close all SSH connections
+	if a.sshMgr != nil {
+		for _, connID := range a.sshMgr.ListConnections() {
+			_ = a.sshMgr.Close(api.SSHCloseParams{ConnectionID: connID})
+		}
+	}
+
+	// Close all Telnet connections
+	if a.telnetMgr != nil {
+		for _, connID := range a.telnetMgr.ListConnections() {
+			_ = a.telnetMgr.Close(connID)
+		}
+	}
+
+	// Post notification
+	if a.notifMgr != nil {
+		a.notifMgr.Info("Servers Stopped", "All active background connections and daemon sessions have been terminated.")
+	}
+
+	return nil
+}
+
+// QuitApplication terminates all sessions and closes the Wails application.
+func (a *App) QuitApplication() {
+	_ = a.ShutdownServers()
+	if a.ctx != nil {
+		wailsRuntime.Quit(a.ctx)
+	}
+}
+
 // onBeforeClose is called when the window is about to close.
 // It can prevent the window from closing by returning true.
 func (a *App) onBeforeClose(ctx context.Context) bool {

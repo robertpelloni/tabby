@@ -1703,3 +1703,141 @@ body.light-theme .profile-item:hover {
 	background: #e0e0e0;
 	color: #333;
 }
+
+/* ===== CONSOLIDATED DASHBOARD & SETTINGS STYLES ===== */
+.dashboard-banner {
+	display: flex;
+	gap: 12px;
+	justify-content: center;
+	align-items: center;
+	margin-bottom: 24px;
+	flex-wrap: wrap;
+}
+
+.banner-stat {
+	background: #252525;
+	border: 1px solid #333;
+	border-radius: 6px;
+	padding: 6px 12px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	min-width: 90px;
+}
+
+.banner-stat .stat-badge {
+	font-size: 13px;
+	font-weight: 600;
+	color: #0e639c;
+	font-family: monospace;
+}
+
+.banner-stat .stat-label {
+	font-size: 10px;
+	color: #777;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-top: 2px;
+}
+
+.tooltip-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background: #333;
+	color: #aaa;
+	font-size: 10px;
+	font-family: sans-serif;
+	font-style: normal;
+	font-weight: bold;
+	cursor: help;
+	margin-left: 6px;
+	vertical-align: middle;
+	transition: background 0.15s, color 0.15s;
+}
+
+.tooltip-badge:hover {
+	background: #0e639c;
+	color: #fff;
+}
+
+.settings-divider {
+	border: 0;
+	border-top: 1px solid #2b2b2b;
+	margin: 24px 0 16px;
+}
+
+.settings-category-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	background: #222;
+	border: 1px solid #333;
+	border-radius: 6px;
+	padding: 10px 14px;
+	margin-bottom: 18px;
+}
+
+.settings-category-header .category-icon {
+	font-size: 20px;
+}
+
+.settings-category-header .category-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: #eee;
+}
+
+.settings-category-header .category-desc {
+	font-size: 11px;
+	color: #888;
+	margin-top: 2px;
+	line-height: 1.3;
+}
+
+#settings-panel {
+	width: 440px !important;
+	right: -460px !important;
+}
+
+#settings-panel.active {
+	right: 0 !important;
+}
+
+.settings-tab {
+	white-space: nowrap;
+}
+
+.dashboard-server-actions button {
+	padding: 6px 12px;
+	font-size: 12px;
+	border-radius: 4px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	background: #252525;
+	border: 1px solid #3a3a3a;
+	color: #ccc;
+	transition: all 0.15s;
+}
+
+.dashboard-server-actions button:hover {
+	background: #333;
+	color: #fff;
+	border-color: #0e639c;
+}
+
+.dashboard-server-actions .btn-shutdown:hover {
+	background: #3a1c1c;
+	color: #ff6b6b;
+	border-color: #f44747;
+}
+
+.dashboard-server-actions .btn-quit:hover {
+	background: #3a1c1c;
+	color: #ff6b6b;
+	border-color: #f44747;
+}
