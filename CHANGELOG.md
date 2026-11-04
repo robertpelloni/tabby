@@ -1,5 +1,40 @@
 # Changelog
 
+## [1.0.237] - 2026-11-04
+
+### Changed
+
+- Version bump to 1.0.237
+- Enhanced desktop custom titlebar with an integrated System Tray / Server Control menu widget
+- Dynamic visibility for system tray trigger linked to user's `HideTray` preference
+- Cleaned up build scripts in `tabby-go/start.bat` to automatically build frontend Vite assets before compiling Wails Go binary
+
+### Added
+
+- Interactive System Tray popover menu featuring:
+  * Tabby Go core version and protocol status
+  * New Terminal Tab (`Ctrl+Shift+T`)
+  * Command Palette (`Ctrl+Shift+P`)
+  * Dashboard & Settings panel (`Ctrl+,`)
+  * Toggle Fullscreen & Minimize window controls
+  * Safe 'Stop All Servers' with active count indicator and 'Quit Tabby'
+- Exported `ShutdownServers` and `QuitApplication` methods into Wails JS bindings
+
+## [1.0.236] - 2026-11-03
+
+### Changed
+
+- Version bump to 1.0.236
+- Consolidated fragmented settings and dashboard pages into high-value domains: General & System, Appearance & Display, Terminal & Behavior, and Connections & Profiles
+- Expanded dashboard settings panel with real-time live keyword search filtering across all configuration options
+
+### Added
+
+- Interactive guidance tooltip markers (ℹ) next to every configuration label in the settings dashboard
+- Real-time welcome dashboard status badges (active sessions, profiles count, protocol status)
+- Prominent server management actions: 'Stop All Servers' and 'Quit Tabby' with confirmation safeguards
+- Go Wails backend lifecycle handlers `ShutdownServers` and `QuitApplication` for graceful connection termination
+
 ## [1.0.235] - 2026-07-13
 
 ### Changed

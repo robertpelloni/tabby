@@ -130,6 +130,10 @@ export function PTYWrite(arg1, arg2) {
   return window['go']['main']['App']['PTYWrite'](arg1, arg2);
 }
 
+export function QuitApplication() {
+  return window['go']['main']['App']['QuitApplication']();
+}
+
 export function ResetSettings() {
   return window['go']['main']['App']['ResetSettings']();
 }
@@ -244,6 +248,10 @@ export function SelectDirectory(arg1) {
 
 export function SerialClose(arg1) {
   return window['go']['main']['App']['SerialClose'](arg1);
+}
+
+export function ShutdownServers() {
+  return window['go']['main']['App']['ShutdownServers']();
 }
 
 export function SerialListPorts() {

@@ -306,6 +306,14 @@ async function init() {
 	const btnClose = document.getElementById("btn-close");
 	const btnMaximize = document.getElementById("btn-maximize");
 	const btnMinimize = document.getElementById("btn-minimize");
+	const btnSystemTray = document.getElementById("btn-system-tray");
+
+	if (btnSystemTray) {
+		btnSystemTray.onclick = (e) => {
+			e.stopPropagation();
+			toggleSystemTrayMenu(e);
+		};
+	}
 
 	if (btnClose) {
 		btnClose.onclick = () => Quit();
@@ -3807,6 +3815,7 @@ function importProfiles() {
 // ===== PROFILES =====
 
 function renderProfiles() {
+	updateDashboardStats();
 	const section = document.getElementById("profiles-section");
 	const list = document.getElementById("profiles-list");
 	const editor = document.getElementById("profiles-editor-list");
@@ -3990,20 +3999,37 @@ function buildUI() {
         <div id="welcome">
  <div class="welcome-screen">
  <div class="tabby-logo"><span class="logo-accent">⌘</span> Tabby <small>go</small></div>
- <p style="color:#777;font-size:14px;margin:8px 0 24px;">A modern terminal for a modern age</p>
- <div class="quick-connect-grid">
- <div class="quick-connect-btn" onclick="newTab()"><span class="qc-icon">⌘</span><div><div class="qc-name">Local Shell</div><div class="qc-desc">Open a terminal</div></div></div>
- <div class="quick-connect-btn" onclick="openSSHDialog()"><span class="qc-icon">🔐</span><div><div class="qc-name">SSH Connect</div><div class="qc-desc">Connect to a remote host</div></div></div>
- <div class="quick-connect-btn" onclick="openSerialDialog()"><span class="qc-icon">📡</span><div><div class="qc-name">Serial Port</div><div class="qc-desc">Connect to hardware</div></div></div>
- <div class="quick-connect-btn" onclick="openTelnetDialog()"><span class="qc-icon">🌐</span><div><div class="qc-name">Telnet</div><div class="qc-desc">Connect to a telnet server</div></div></div>
+ <p style="color:#777;font-size:14px;margin:8px 0 18px;">Agentic, Block-based, Collaborative Workspace</p>
+
+ <div class="dashboard-banner">
+    <div class="banner-stat"><span class="stat-badge">PROT: 272</span><span class="stat-label">Core Protocol</span></div>
+    <div class="banner-stat"><span class="stat-badge" id="dash-active-tabs">0 Tabs</span><span class="stat-label">Active Sessions</span></div>
+    <div class="banner-stat"><span class="stat-badge" id="dash-saved-profiles">Profiles</span><span class="stat-label">Saved Endpoints</span></div>
+    <div class="banner-stat"><span class="stat-badge" style="color:#4ec9b0;">● Online</span><span class="stat-label">Go Daemon</span></div>
  </div>
- <div class="shortcuts" style="margin-top:40px;">
+
+ <div class="quick-connect-grid">
+ <div class="quick-connect-btn" onclick="newTab()" title="Spawn local pseudo-terminal shell"><span class="qc-icon">⌘</span><div><div class="qc-name">Local Shell <span class="tooltip-badge" title="Launch a native PTY local shell session">ℹ</span></div><div class="qc-desc">Launch local PTY terminal</div></div></div>
+ <div class="quick-connect-btn" onclick="openSSHDialog()" title="Establish encrypted SSH connection"><span class="qc-icon">🔐</span><div><div class="qc-name">SSH Connect <span class="tooltip-badge" title="Connect to remote Linux/UNIX host via SSH">ℹ</span></div><div class="qc-desc">Secure shell remote host</div></div></div>
+ <div class="quick-connect-btn" onclick="openSerialDialog()" title="Connect to hardware serial COM/TTY port"><span class="qc-icon">📡</span><div><div class="qc-name">Serial Port <span class="tooltip-badge" title="Direct serial communication over COM / TTY">ℹ</span></div><div class="qc-desc">Hardware UART / COM bus</div></div></div>
+ <div class="quick-connect-btn" onclick="openTelnetDialog()" title="Connect to remote telnet host"><span class="qc-icon">🌐</span><div><div class="qc-name">Telnet <span class="tooltip-badge" title="Standard unencrypted or legacy network socket terminal">ℹ</span></div><div class="qc-desc">Legacy network socket</div></div></div>
+ </div>
+
+ <div class="dashboard-server-actions" style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+    <button class="btn-secondary" onclick="toggleSettings()" title="Open unified configuration dashboard (Ctrl+,)"><span style="margin-right:6px;">⚙</span> Dashboard &amp; Settings</button>
+    <button class="btn-secondary" onclick="toggleCommandPalette()" title="Search commands &amp; actions (Ctrl+Shift+P)"><span style="margin-right:6px;">🔍</span> Command Palette</button>
+    <button class="btn-secondary" onclick="showNotificationCenter()" title="View notifications and background events"><span style="margin-right:6px;">🔔</span> Activity Center</button>
+    <button class="btn-secondary btn-shutdown" onclick="shutdownAllServers()" title="Safely disconnect all active sessions and stop background workers" style="color:#f44747;border-color:#5a2d2d;"><span style="margin-right:6px;">🛑</span> Stop All Servers</button>
+    <button class="btn-secondary btn-quit" onclick="quitTabbyApplication()" title="Terminate all sessions and exit Tabby"><span style="margin-right:6px;">⏻</span> Quit Tabby</button>
+ </div>
+
+ <div class="shortcuts" style="margin-top:28px;">
  <div class="shortcut"><kbd>Ctrl+Shift+T</kbd> New Tab</div>
  <div class="shortcut"><kbd>Ctrl+W</kbd> Close Tab</div>
  <div class="shortcut"><kbd>Ctrl+Tab</kbd> Next Tab</div>
  <div class="shortcut"><kbd>Ctrl+Shift+P</kbd> Command Palette</div>
  <div class="shortcut"><kbd>Ctrl+Shift+F</kbd> Find</div>
- <div class="shortcut"><kbd>Ctrl+</kbd> Split Vertical</div>
+ <div class="shortcut"><kbd>Ctrl+\</kbd> Split Vertical</div>
  <div class="shortcut"><kbd>Ctrl+,</kbd> Settings</div>
  </div>
  </div>
@@ -4012,40 +4038,95 @@ function buildUI() {
 
         <div id="settings-header">
 
-            <h2>⚙ Settings</h2>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <h2 style="margin:0;font-size:15px;color:#e0e0e0;">⚙ Dashboard &amp; Settings</h2>
+                <span class="badge-pill" style="font-size:10px;padding:2px 7px;border-radius:10px;background:#0e639c;color:#fff;font-weight:600;">Unified</span>
+            </div>
 
-            <button id="settings-close" class="btn-icon">×</button>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <button id="settings-close" class="btn-icon" title="Close Settings">×</button>
+            </div>
 
+        </div>
+
+        <div id="settings-search-wrapper" style="padding:10px 16px;border-bottom:1px solid #2b2b2b;background:#181818;">
+            <div style="position:relative;display:flex;align-items:center;">
+                <span style="position:absolute;left:10px;color:#888;font-size:12px;pointer-events:none;">🔍</span>
+                <input type="text" id="settings-search-input" placeholder="Search preferences, commands &amp; parameters..." style="width:100%;padding:6px 10px 6px 30px;background:#242424;border:1px solid #3a3a3a;border-radius:4px;color:#eee;font-size:12px;outline:none;" />
+            </div>
         </div>
 
         <div id="settings-tabs">
 
-            <button class="settings-tab active" data-tab="appearance">🎨 Appearance</button>
+            <button class="settings-tab active" data-tab="all" title="View all preferences unified on one scrollable dashboard">🌟 All Preferences</button>
 
-            <button class="settings-tab" data-tab="terminal">⌨ Terminal</button>
+            <button class="settings-tab" data-tab="startup" title="General application settings, window framing, dock, and tray">🚀 General &amp; System</button>
 
-            <button class="settings-tab" data-tab="clipboard">📋 Clipboard</button>
+            <button class="settings-tab" data-tab="appearance" title="Visual themes, fonts, colors, and custom CSS styling">🎨 Appearance &amp; Display</button>
 
-            <button class="settings-tab" data-tab="mouse">🖱 Mouse</button>
+            <button class="settings-tab" data-tab="terminal" title="Terminal behavior, shell, clipboard, mouse, and tabs">⌨ Terminal &amp; Behavior</button>
 
-            <button class="settings-tab" data-tab="tabs">📑 Tabs</button>
-
-            <button class="settings-tab" data-tab="startup">🚀 Startup</button>
-
-            <button class="settings-tab" data-tab="ssh">🔐 SSH</button>
-
-            <button class="settings-tab" data-tab="serial">📡 Serial</button>
-
-            <button class="settings-tab" data-tab="profiles">📁 Profiles</button>
+            <button class="settings-tab" data-tab="connections" title="SSH, hardware Serial ports, and saved profiles">🌐 Connections &amp; Profiles</button>
 
         </div>
 
         <div id="settings-content">
 
-            <!-- Appearance -->
+            <!-- Section 1: General & System -->
+            <div class="settings-page active" id="settings-startup" data-category="startup">
+                <div class="settings-category-header">
+                    <span class="category-icon">🚀</span>
+                    <div>
+                        <div class="category-title">General &amp; System</div>
+                        <div class="category-desc">Application lifecycle, window presentation, system tray integration, and telemetry</div>
+                    </div>
+                </div>
+                <h3>Startup</h3>
 
-            <div class="settings-page active" id="settings-appearance">
+                <div class="setting-group"><label>Auto-open Terminal on Start</label><div class="toggle-container"><input type="checkbox" id="s-auto-open" checked><label for="s-auto-open" class="toggle-label"></label></div></div>
 
+                <div class="setting-group"><label>Restore Tabs on Restart</label><div class="toggle-container"><input type="checkbox" id="s-recover-tabs" checked><label for="s-recover-tabs" class="toggle-label"></label></div></div>
+
+                <h3>Window</h3>
+
+                <div class="setting-group"><label>Window Frame</label>
+
+                    <select id="s-frame"><option value="thin">Thin</option><option value="none">None (Borderless)</option><option value="native">Native</option></select>
+
+                </div>
+
+                <div class="setting-group"><label>Quake-style Dock</label>
+
+                    <select id="s-dock"><option value="off">Off</option><option value="bottom">Bottom</option><option value="top">Top</option><option value="left">Left</option><option value="right">Right</option></select>
+
+                </div>
+
+                <div class="setting-group"><label>Hide Dock on Blur</label><div class="toggle-container"><input type="checkbox" id="s-dock-hide-blur"><label for="s-dock-hide-blur" class="toggle-label"></label></div></div>
+
+                <div class="setting-group"><label>Dock Always on Top</label><div class="toggle-container"><input type="checkbox" id="s-dock-on-top" checked><label for="s-dock-on-top" class="toggle-label"></label></div></div>
+
+                <div class="setting-group"><label>Hide Tray Icon</label><div class="toggle-container"><input type="checkbox" id="s-hide-tray"><label for="s-hide-tray" class="toggle-label"></label></div></div>
+
+                <h3>Misc</h3>
+
+                <div class="setting-group"><label>Language</label><input type="text" id="s-language" placeholder="Auto"></div>
+
+                <div class="setting-group"><label>Enable Analytics</label><div class="toggle-container"><input type="checkbox" id="s-analytics" checked><label for="s-analytics" class="toggle-label"></label></div></div>
+
+                <div class="setting-group"><label>Automatic Updates</label><div class="toggle-container"><input type="checkbox" id="s-auto-updates" checked><label for="s-auto-updates" class="toggle-label"></label></div></div>
+
+                <div class="setting-group"><label>Experimental Features</label><div class="toggle-container"><input type="checkbox" id="s-experimental"><label for="s-experimental" class="toggle-label"></label></div></div>
+            </div>
+
+            <!-- Section 2: Appearance & Display -->
+            <div class="settings-page" id="settings-appearance" data-category="appearance">
+                <div class="settings-category-header">
+                    <span class="category-icon">🎨</span>
+                    <div>
+                        <div class="category-title">Appearance &amp; Display</div>
+                        <div class="category-desc">Color palettes, typography, rendering engines, cursor dynamics, and custom CSS</div>
+                    </div>
+                </div>
                 <h3>Color Scheme</h3>
 
                 <div class="setting-group"><label>Terminal Color Scheme</label><select id="s-color-scheme"></select></div>
@@ -4127,13 +4208,17 @@ function buildUI() {
                 <h3>Custom CSS</h3>
 
                 <div class="setting-group"><textarea id="s-css" rows="4" placeholder="/* Custom CSS */"></textarea></div>
-
             </div>
 
-            <!-- Terminal -->
-
-            <div class="settings-page" id="settings-terminal">
-
+            <!-- Section 3: Terminal & Behavior -->
+            <div class="settings-page" id="settings-terminal" data-category="terminal">
+                <div class="settings-category-header">
+                    <span class="category-icon">⌨</span>
+                    <div>
+                        <div class="category-title">Terminal &amp; Behavior</div>
+                        <div class="category-desc">Shell environments, scrollback buffers, clipboard handling, mouse gestures, and tab layout</div>
+                    </div>
+                </div>
                 <h3>Shell</h3>
 
                 <div class="setting-group"><label>Default Shell</label>
@@ -4167,13 +4252,7 @@ function buildUI() {
                 <div class="setting-group"><label>Set Tabby as %COMSPEC%</label><div class="toggle-container"><input type="checkbox" id="s-set-comspec"><label for="s-set-comspec" class="toggle-label"></label></div></div>
 
                 <h3>Toolbar</h3>
-
-            </div>
-
-            <!-- Clipboard -->
-
-            <div class="settings-page" id="settings-clipboard">
-
+                <hr class="settings-divider">
                 <h3>Clipboard</h3>
 
                 <div class="setting-group"><label>Copy on Select</label><div class="toggle-container"><input type="checkbox" id="s-copy-on-select"><label for="s-copy-on-select" class="toggle-label"></label></div></div>
@@ -4189,13 +4268,7 @@ function buildUI() {
                 <div class="setting-group"><label>Replace Line Breaks with Spaces on Paste</label><div class="toggle-container"><input type="checkbox" id="s-replace-newlines"><label for="s-replace-newlines" class="toggle-label"></label></div></div>
 
                 <div class="setting-group"><label>Trim Whitespace and Newlines</label><div class="toggle-container"><input type="checkbox" id="s-trim-whitespace" checked><label for="s-trim-whitespace" class="toggle-label"></label></div></div>
-
-            </div>
-
-            <!-- Mouse -->
-
-            <div class="settings-page" id="settings-mouse">
-
+                <hr class="settings-divider">
                 <h3>Mouse</h3>
 
                 <div class="setting-group"><label>Right Click</label>
@@ -4207,13 +4280,7 @@ function buildUI() {
                 <div class="setting-group"><label>Paste on Middle-Click</label><div class="toggle-container"><input type="checkbox" id="s-paste-middle-click" checked><label for="s-paste-middle-click" class="toggle-label"></label></div></div>
 
                 <div class="setting-group"><label>Word Separators</label><input type="text" id="s-word-separator" value=" ()[]{}'&quot;"></div>
-
-            </div>
-
-            <!-- Tabs -->
-
-            <div class="settings-page" id="settings-tabs">
-
+                <hr class="settings-divider">
                 <h3>Tabs</h3>
 
                 <div class="setting-group"><label>Tab Position</label>
@@ -4233,55 +4300,17 @@ function buildUI() {
                 <div class="setting-group"><label>Pane Resize Step</label><input type="number" id="s-pane-resize-step" min="0.01" max="1.0" step="0.01" value="0.1"></div>
 
                 <div class="setting-group"><label>Focus Follows Mouse</label><div class="toggle-container"><input type="checkbox" id="s-focus-follows-mouse"><label for="s-focus-follows-mouse" class="toggle-label"></label></div></div>
-
             </div>
 
-            <!-- Startup -->
-
-            <div class="settings-page" id="settings-startup">
-
-                <h3>Startup</h3>
-
-                <div class="setting-group"><label>Auto-open Terminal on Start</label><div class="toggle-container"><input type="checkbox" id="s-auto-open" checked><label for="s-auto-open" class="toggle-label"></label></div></div>
-
-                <div class="setting-group"><label>Restore Tabs on Restart</label><div class="toggle-container"><input type="checkbox" id="s-recover-tabs" checked><label for="s-recover-tabs" class="toggle-label"></label></div></div>
-
-                <h3>Window</h3>
-
-                <div class="setting-group"><label>Window Frame</label>
-
-                    <select id="s-frame"><option value="thin">Thin</option><option value="none">None (Borderless)</option><option value="native">Native</option></select>
-
+            <!-- Section 4: Connections & Profiles -->
+            <div class="settings-page" id="settings-connections" data-category="connections">
+                <div class="settings-category-header">
+                    <span class="category-icon">🌐</span>
+                    <div>
+                        <div class="category-title">Connections &amp; Profiles</div>
+                        <div class="category-desc">SSH options, hardware Serial COM interfaces, and persistent host configurations</div>
+                    </div>
                 </div>
-
-                <div class="setting-group"><label>Quake-style Dock</label>
-
-                    <select id="s-dock"><option value="off">Off</option><option value="bottom">Bottom</option><option value="top">Top</option><option value="left">Left</option><option value="right">Right</option></select>
-
-                </div>
-
-                <div class="setting-group"><label>Hide Dock on Blur</label><div class="toggle-container"><input type="checkbox" id="s-dock-hide-blur"><label for="s-dock-hide-blur" class="toggle-label"></label></div></div>
-
-                <div class="setting-group"><label>Dock Always on Top</label><div class="toggle-container"><input type="checkbox" id="s-dock-on-top" checked><label for="s-dock-on-top" class="toggle-label"></label></div></div>
-
-                <div class="setting-group"><label>Hide Tray Icon</label><div class="toggle-container"><input type="checkbox" id="s-hide-tray"><label for="s-hide-tray" class="toggle-label"></label></div></div>
-
-                <h3>Misc</h3>
-
-                <div class="setting-group"><label>Language</label><input type="text" id="s-language" placeholder="Auto"></div>
-
-                <div class="setting-group"><label>Enable Analytics</label><div class="toggle-container"><input type="checkbox" id="s-analytics" checked><label for="s-analytics" class="toggle-label"></label></div></div>
-
-                <div class="setting-group"><label>Automatic Updates</label><div class="toggle-container"><input type="checkbox" id="s-auto-updates" checked><label for="s-auto-updates" class="toggle-label"></label></div></div>
-
-                <div class="setting-group"><label>Experimental Features</label><div class="toggle-container"><input type="checkbox" id="s-experimental"><label for="s-experimental" class="toggle-label"></label></div></div>
-
-            </div>
-
-            <!-- SSH -->
-
-            <div class="settings-page" id="settings-ssh">
-
                 <h3>SSH</h3>
 
                 <div class="setting-group"><label>Warn When Closing Active Connections</label><div class="toggle-container"><input type="checkbox" id="s-ssh-warn-close"><label for="s-ssh-warn-close" class="toggle-label"></label></div></div>
@@ -4303,13 +4332,7 @@ function buildUI() {
                 <h3>X11 Forwarding</h3>
 
                 <div class="setting-group"><label>Override X11 Display</label><input type="text" id="s-ssh-x11" placeholder="Auto-detect"></div>
-
-            </div>
-
-            <!-- Serial -->
-
-            <div class="settings-page" id="settings-serial">
-
+                <hr class="settings-divider">
                 <h3>Serial Port Defaults</h3>
 
                 <div class="setting-group"><label>Baud Rate</label>
@@ -4349,17 +4372,12 @@ function buildUI() {
                     <select id="s-serial-flow"><option value="none" selected>None</option><option value="hardware">Hardware (RTS/CTS)</option><option value="software">Software (XON/XOFF)</option></select>
 
                 </div>
-
-            </div>
-
-            <div class="settings-page" id="settings-profiles">
-
+                <hr class="settings-divider">
                 <h3>Saved Profiles</h3>
 
                 <div id="profiles-editor-list" style="margin-bottom:12px;"></div>
 
                 <button class="btn-primary" id="btn-add-profile" style="width:100%;margin-bottom:8px;">+ Add SSH Profile</button>
-
             </div>
 
         </div>
@@ -4407,7 +4425,7 @@ function buildUI() {
 
 	renderProfiles();
 
-	// Settings tab navigation
+	// Settings tab navigation & unified filter
 
 	document.querySelectorAll(".settings-tab").forEach((btn) => {
 		btn.onclick = () => {
@@ -4415,17 +4433,59 @@ function buildUI() {
 				.querySelectorAll(".settings-tab")
 				.forEach((b) => b.classList.remove("active"));
 
-			document
-				.querySelectorAll(".settings-page")
-				.forEach((p) => p.classList.remove("active"));
-
 			btn.classList.add("active");
+			const tabName = btn.dataset.tab;
 
-			document
-				.getElementById(`settings-${btn.dataset.tab}`)
-				.classList.add("active");
+			if (tabName === "all") {
+				// Show all consolidated sections
+				document
+					.querySelectorAll(".settings-page")
+					.forEach((p) => p.classList.add("active"));
+			} else {
+				document
+					.querySelectorAll(".settings-page")
+					.forEach((p) => {
+						if (p.id === `settings-${tabName}`) {
+							p.classList.add("active");
+						} else {
+							p.classList.remove("active");
+						}
+					});
+			}
 		};
 	});
+
+	// Live Search in Settings Dashboard
+	const searchInput = document.getElementById("settings-search-input");
+	if (searchInput) {
+		searchInput.oninput = () => {
+			const query = searchInput.value.trim().toLowerCase();
+			const pages = document.querySelectorAll(".settings-page");
+			const tabs = document.querySelectorAll(".settings-tab");
+
+			if (query) {
+				// Automatically switch to showing all sections for search results
+				tabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === "all"));
+				pages.forEach((page) => {
+					let hasVisibleInPage = false;
+					const groups = page.querySelectorAll(".setting-group");
+					groups.forEach((group) => {
+						const text = group.textContent.toLowerCase();
+						const matches = text.includes(query);
+						group.style.display = matches ? "" : "none";
+						if (matches) hasVisibleInPage = true;
+					});
+					page.classList.toggle("active", hasVisibleInPage);
+				});
+			} else {
+				// Restore all setting groups visibility
+				document.querySelectorAll(".setting-group").forEach((g) => (g.style.display = ""));
+				// Trigger the currently active tab
+				const activeTab = document.querySelector(".settings-tab.active") || document.querySelector(".settings-tab[data-tab='all']");
+				if (activeTab) activeTab.click();
+			}
+		};
+	}
 
 	// Live-update sliders
 
@@ -4579,11 +4639,14 @@ function buildUI() {
 
 // ===== SETTINGS APPLY/SAVE =====
 
-// Inject descriptions below each setting in the settings panel
+// Inject descriptions below each setting in the settings panel and add interactive tooltip markers
 function applySettingDescriptions() {
-	// Remove any existing descriptions first
+	// Remove any existing descriptions & tooltip badges first
 	document
 		.querySelectorAll(".setting-description")
+		.forEach((el) => el.remove());
+	document
+		.querySelectorAll(".setting-tooltip-marker")
 		.forEach((el) => el.remove());
 
 	Object.entries(SETTING_DESCRIPTIONS).forEach(([id, desc]) => {
@@ -4598,6 +4661,16 @@ function applySettingDescriptions() {
 		}
 		if (!group) return;
 
+		// Add tooltip marker icon next to the label if present
+		const label = group.querySelector("label");
+		if (label && !label.querySelector(".setting-tooltip-marker")) {
+			const badge = document.createElement("span");
+			badge.className = "tooltip-badge setting-tooltip-marker";
+			badge.title = desc;
+			badge.textContent = "ℹ";
+			label.appendChild(badge);
+		}
+
 		const descEl = document.createElement("div");
 		descEl.className = "setting-description";
 		descEl.textContent = desc;
@@ -4605,8 +4678,93 @@ function applySettingDescriptions() {
 	});
 }
 
+// Toggle system tray menu popup
+function toggleSystemTrayMenu(event) {
+	const existing = document.getElementById("system-tray-dropdown");
+	if (existing) {
+		existing.remove();
+		return;
+	}
+
+	const menu = document.createElement("div");
+	menu.id = "system-tray-dropdown";
+	menu.className = "system-tray-menu";
+
+	const activeCount = tabs.length;
+	menu.innerHTML = `
+		<div class="tray-header">
+			<span><span class="tray-status-dot"></span>Tabby Go</span>
+			<span style="font-size:10px;color:#aaa;">v1.0.237</span>
+		</div>
+		<div class="tray-item" data-action="new-tab">
+			<span>⌘ New Terminal Tab</span>
+			<span style="font-size:10px;color:#888;">Ctrl+Shift+T</span>
+		</div>
+		<div class="tray-item" data-action="command-palette">
+			<span>🔍 Command Palette</span>
+			<span style="font-size:10px;color:#888;">Ctrl+Shift+P</span>
+		</div>
+		<div class="tray-item" data-action="settings">
+			<span>⚙ Settings &amp; Dashboard</span>
+			<span style="font-size:10px;color:#888;">Ctrl+,</span>
+		</div>
+		<div class="tray-divider"></div>
+		<div class="tray-item" data-action="toggle-fullscreen">
+			<span>⛶ Toggle Fullscreen</span>
+		</div>
+		<div class="tray-item" data-action="minimize">
+			<span>🗕 Minimize Window</span>
+		</div>
+		<div class="tray-divider"></div>
+		<div class="tray-item danger" data-action="stop-servers">
+			<span>🛑 Stop All Servers (${activeCount} active)</span>
+		</div>
+		<div class="tray-item danger" data-action="quit">
+			<span>⏻ Quit Tabby</span>
+		</div>
+	`;
+
+	const rect = event.currentTarget.getBoundingClientRect();
+	menu.style.right = `${window.innerWidth - rect.right}px`;
+	menu.style.top = `${rect.bottom + 6}px`;
+
+	document.body.appendChild(menu);
+
+	menu.onclick = (e) => {
+		const item = e.target.closest(".tray-item");
+		if (!item) return;
+		const action = item.dataset.action;
+		menu.remove();
+
+		if (action === "new-tab") newTab();
+		else if (action === "command-palette") toggleCommandPalette();
+		else if (action === "settings") toggleSettings();
+		else if (action === "toggle-fullscreen") {
+			WindowIsMaximised().then((m) => (m ? WindowUnmaximise() : WindowMaximise()));
+		} else if (action === "minimize") WindowMinimise();
+		else if (action === "stop-servers") shutdownAllServers();
+		else if (action === "quit") quitTabbyApplication();
+	};
+
+	setTimeout(() => {
+		const dismiss = (ev) => {
+			if (!menu.contains(ev.target)) {
+				menu.remove();
+				document.removeEventListener("click", dismiss);
+			}
+		};
+		document.addEventListener("click", dismiss);
+	}, 10);
+}
+
 function applySettingsToUI() {
 	const s = settings;
+
+	// Toggle tray widget visibility based on settings
+	const trayBtn = document.getElementById("btn-system-tray");
+	if (trayBtn) {
+		trayBtn.style.display = s.HideTray ? "none" : "flex";
+	}
 
 	const set = (id, val) => {
 		const el = document.getElementById(id);
@@ -7022,3 +7180,64 @@ window.addEventListener("beforeunload", () => {
 });
 
 init();
+
+
+// ===== APPLICATION LIFECYCLE & SERVER SHUTDOWN =====
+
+window.shutdownAllServers = async function() {
+	if (!confirm("Are you sure you want to disconnect all active sessions and stop background daemons?")) {
+		return;
+	}
+	try {
+		const openTabs = [...tabs];
+		for (const t of openTabs) {
+			try {
+				t.close();
+			} catch (e) {
+				console.warn("Error closing tab during shutdown:", e);
+			}
+		}
+		if (window.go && window.go.main && window.go.main.App && window.go.main.App.ShutdownServers) {
+			await window.go.main.App.ShutdownServers();
+		}
+		showToast("All background servers and terminal sessions have been stopped.", "info");
+		updateDashboardStats();
+	} catch (err) {
+		console.error("Failed to shutdown servers:", err);
+		showToast("Failed to stop servers: " + err, "error");
+	}
+};
+
+window.quitTabbyApplication = async function() {
+	if (tabs.length > 0) {
+		if (!confirm(`You have ${tabs.length} active tab(s). Exit Tabby and terminate all sessions?`)) {
+			return;
+		}
+	}
+	try {
+		for (const t of [...tabs]) {
+			try {
+				t.close();
+			} catch (_) {}
+		}
+		if (window.go && window.go.main && window.go.main.App && window.go.main.App.QuitApplication) {
+			await window.go.main.App.QuitApplication();
+		} else {
+			Quit();
+		}
+	} catch (err) {
+		console.warn("Quit handler fallback:", err);
+		Quit();
+	}
+};
+
+function updateDashboardStats() {
+	const tabsStat = document.getElementById("dash-active-tabs");
+	if (tabsStat) {
+		tabsStat.textContent = `${tabs.length} Tab${tabs.length === 1 ? "" : "s"}`;
+	}
+	const profilesStat = document.getElementById("dash-saved-profiles");
+	if (profilesStat) {
+		profilesStat.textContent = `${savedProfiles.length} Profile${savedProfiles.length === 1 ? "" : "s"}`;
+	}
+}
