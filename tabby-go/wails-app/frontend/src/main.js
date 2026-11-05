@@ -169,6 +169,28 @@ function b64ToBytes(b64) {
 	return bytes;
 }
 
+// Format raw byte buffer into a clean hex dump view with ASCII representation
+function formatHexDump(bytes, startOffset = 0) {
+	let output = "";
+	for (let i = 0; i < bytes.length; i += 16) {
+		const chunk = bytes.slice(i, Math.min(i + 16, bytes.length));
+		const hexParts = [];
+		let asciiParts = "";
+		for (let j = 0; j < 16; j++) {
+			if (j < chunk.length) {
+				const b = chunk[j];
+				hexParts.push(b.toString(16).padStart(2, "0").toUpperCase());
+				asciiParts += b >= 32 && b <= 126 ? String.fromCharCode(b) : ".";
+			} else {
+				hexParts.push("  ");
+			}
+		}
+		const offset = (startOffset + i).toString(16).padStart(4, "0").toUpperCase();
+		output += `\x1b[36m${offset}\x1b[0m  \x1b[33m${hexParts.slice(0, 8).join(" ")}\x1b[0m  \x1b[33m${hexParts.slice(8).join(" ")}\x1b[0m  |\x1b[32m${asciiParts}\x1b[0m|\r\n`;
+	}
+	return output;
+}
+
 // ===== INIT =====
 
 // Idle connection monitor
@@ -751,6 +773,18 @@ async function doSerialConnect() {
 
 	const parity = document.getElementById("serial-parity").value;
 
+	const flowControl = document.getElementById("serial-flow-control")
+		? document.getElementById("serial-flow-control").value
+		: "none";
+
+	const hexMode = document.getElementById("serial-hex-mode")
+		? document.getElementById("serial-hex-mode").checked
+		: false;
+
+	const logging = document.getElementById("serial-logging")
+		? document.getElementById("serial-logging").checked
+		: false;
+
 	if (!port) {
 		showToast("Select a serial port", "error");
 		return;
@@ -778,6 +812,8 @@ async function doSerialConnect() {
 			dataBits,
 			stopBits,
 			parity,
+			flowControl,
+			logging,
 		});
 
 		setTabStatus(tab, "connected");
@@ -792,13 +828,45 @@ async function doSerialConnect() {
 
 		tab.serialBaud = baud;
 
-		tab.sessionData = JSON.stringify({ type: "serial", port, baudRate: baud });
+		tab.serialHexMode = hexMode;
+
+		tab.serialOffset = 0;
+
+		tab.loggingEnabled = logging || tab.loggingEnabled;
+
+		tab.sessionData = JSON.stringify({
+			type: "serial",
+			port,
+			baudRate: baud,
+			dataBits,
+			stopBits,
+			parity,
+			flowControl,
+			hexMode,
+			logging,
+		});
 
 		tab.setTitle(port.split("/").pop().split("\\").pop());
 
+		if (tab.serialHexMode) {
+			tab.term.writeln("\x1b[1;36m[Hex View Enabled - Serial Port " + port + "]\x1b[0m");
+		}
+
 		tab.serialDataHandler = (params) => {
-			if ((params.serialId || params.SerialID) === tab.serialId)
-				tab.term.write(b64ToBytes(params.data || params.Data));
+			if ((params.serialId || params.SerialID) === tab.serialId) {
+				const rawBytes = b64ToBytes(params.data || params.Data);
+				if (tab.serialHexMode) {
+					const hexFormatted = formatHexDump(rawBytes, tab.serialOffset || 0);
+					tab.serialOffset = (tab.serialOffset || 0) + rawBytes.length;
+					tab.term.write(hexFormatted);
+				} else {
+					tab.term.write(rawBytes);
+				}
+				if (tab.loggingEnabled) {
+					tab.logBuffer.push(new TextDecoder().decode(rawBytes));
+				}
+				tab.lastActivity = Date.now();
+			}
 		};
 
 		window.__serialDataHandlers = window.__serialDataHandlers || [];
@@ -810,7 +878,7 @@ async function doSerialConnect() {
 				setTabStatus(tab, "disconnected");
 				tab.term.writeln(`
 
-[1;33m[Serial port closed][0m`);
+\x1b[1;33m[Serial port closed]\x1b[0m`);
 				tab.setTitle(tab.title + " [disconnected]");
 			}
 		};
@@ -837,7 +905,7 @@ async function doSerialConnect() {
 				id: "serial-" + Date.now(),
 				type: "serial",
 				name: port + " @ " + baud,
-				options: { port, baudRate: baud, dataBits, stopBits, parity },
+				options: { port, baudRate: baud, dataBits, stopBits, parity, flowControl, hexMode, logging },
 				createdAt: new Date().toISOString(),
 				updatedAt: new Date().toISOString(),
 			});
@@ -1782,10 +1850,17 @@ function buildToolbar(tab) {
 
 	if (tab.isSSH) {
 		html +=
-			'<button class="toolbar-btn" onclick="openSFTPBrowser(getActiveTab().sshConnectionId)" title="SFTP">U0001f4c2</button>';
+			'<button class="toolbar-btn" onclick="openSFTPBrowser(getActiveTab().sshConnectionId)" title="SFTP">📁</button>';
 
 		html +=
-			'<button class="toolbar-btn" onclick="openForwardDialog(getActiveTab().sshConnectionId)" title="Forward">U0001f504</button>';
+			'<button class="toolbar-btn" onclick="openForwardDialog(getActiveTab().sshConnectionId)" title="Forward">🔄</button>';
+	}
+
+	if (tab.isSerial) {
+		html +=
+			'<button class="toolbar-btn" onclick="toggleSerialHexMode(getActiveTab())" title="Toggle Hex View Mode (HEX/ASCII)" style="' +
+			(tab.serialHexMode ? "color:#4ade80;font-weight:bold;" : "") +
+			'">HEX</button>';
 	}
 
 	html +=
@@ -1869,6 +1944,18 @@ function toggleBroadcast() {
 		}, 3000);
 	}
 	showToast(broadcastMode ? "Broadcast ON" : "Broadcast OFF", "info");
+}
+
+function toggleSerialHexMode(tab) {
+	if (!tab || !tab.isSerial) return;
+	tab.serialHexMode = !tab.serialHexMode;
+	if (tab.serialHexMode) {
+		tab.term.writeln("\r\n\x1b[1;36m[Hex View Enabled]\x1b[0m");
+	} else {
+		tab.term.writeln("\r\n\x1b[1;33m[Hex View Disabled - Raw ASCII/ANSI stream]\x1b[0m");
+	}
+	updateToolbar(tab);
+	showToast(tab.serialHexMode ? "Serial Hex View ON" : "Serial Hex View OFF", "info");
 }
 
 // ===== SESSION LOG =====
@@ -5704,7 +5791,13 @@ class Tab {
 				this.lastActivity = Date.now();
 			} else if (this.isSerial && serid && serid === this.serialId) {
 				const bytes = b64ToBytes(params.data);
-				this.term.write(bytes);
+				if (this.serialHexMode) {
+					const hexFormatted = formatHexDump(bytes, this.serialOffset || 0);
+					this.serialOffset = (this.serialOffset || 0) + bytes.length;
+					this.term.write(hexFormatted);
+				} else {
+					this.term.write(bytes);
+				}
 				if (this.loggingEnabled)
 					this.logBuffer.push(new TextDecoder().decode(bytes));
 				this.lastActivity = Date.now();
@@ -6601,8 +6694,20 @@ async function reconnectTab(tab) {
 				);
 
 				tab.serialDataHandler = (params) => {
-					if ((params.serialId || params.SerialID) === tab.serialId)
-						tab.term.write(b64ToBytes(params.data || params.Data));
+					if ((params.serialId || params.SerialID) === tab.serialId) {
+						const rawBytes = b64ToBytes(params.data || params.Data);
+						if (tab.serialHexMode) {
+							const hexFormatted = formatHexDump(rawBytes, tab.serialOffset || 0);
+							tab.serialOffset = (tab.serialOffset || 0) + rawBytes.length;
+							tab.term.write(hexFormatted);
+						} else {
+							tab.term.write(rawBytes);
+						}
+						if (tab.loggingEnabled) {
+							tab.logBuffer.push(new TextDecoder().decode(rawBytes));
+						}
+						tab.lastActivity = Date.now();
+					}
 				};
 
 				window.__serialDataHandlers = window.__serialDataHandlers || [];

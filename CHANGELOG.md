@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.238] - 2026-11-04
+
+### Added
+
+- Serial Terminal Flow Control: Support for Hardware RTS/CTS, Software XON/XOFF, and None options in `tabby-go/pkg/serial` and frontend connection dialog.
+- Serial Terminal Hex View Mode: Two-column hex dump with printable ASCII sidebar, supporting dynamic toggling directly via `HEX` toolbar button.
+- Serial Session Logging: Ability to capture incoming/outgoing serial data to disk in timestamped `.log` files in `~/.tabby/serial-logs/` and live session log buffer viewer.
+- Serial Unit Tests: Added comprehensive unit tests in `tabby-go/pkg/serial/serial_test.go` verifying mode construction, flow control handshake settings, lifecycle management, and session log streaming.
+
+### Changed
+
+- Version bump to 1.0.238
+- Updated `tabby-go/pkg/api/types.go` with `FlowControl`, `Logging`, and `LogPath` fields for serial sessions.
+
 ## [1.0.237] - 2026-11-04
 
 ### Changed

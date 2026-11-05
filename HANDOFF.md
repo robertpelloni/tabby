@@ -1,4 +1,31 @@
-# Session Handoff — Dashboard UI Consolidation, System Tray & Server Lifecycle
+# Session Handoff — Serial Terminal Hex View, Flow Control & Session Logging (v1.0.238)
+
+## Completed Operations
+
+### 1. Serial Port Backend Enhancements (`tabby-go/pkg/serial`)
+- Updated `tabby-go/pkg/serial/serial_unix.go` and `serial_windows.go` with full support for:
+  * Flow Control configurations: Hardware RTS/CTS (`SetRTS(true)` and `SetDTR(true)` modem output bits), Software XON/XOFF, and None.
+  * StopBits mapping: Correctly mapped 1 stop bit to `serial.OneStopBit` and 2 stop bits to `serial.TwoStopBits`.
+  * Session Logging: Configurable session logging to timestamped files in `~/.tabby/serial-logs/` with detailed timestamps and Direction indicators (`[IN]`, `[OUT]`).
+  * Concurrency safety with mutex locks for log writers.
+- Updated `tabby-go/pkg/api/types.go` to add `FlowControl`, `Logging`, `LogDir`, and `LogPath` to serial open structures.
+
+### 2. Serial Unit Testing
+- Created unit tests in `tabby-go/pkg/serial/serial_test.go`:
+  * Default mode validation (BaudRate, DataBits, StopBits, Parity).
+  * Custom mode and hardware flow control RTS/DTR handshake assertion.
+  * Connection manager lifecycle & invalid ID handling.
+  * Session file logging verification.
+
+### 3. Frontend Serial Dialog & UI (`tabby-go/wails-app/frontend`)
+- Added Flow Control selector, Hex View mode toggle, and Session Logging toggle to `#serial-dialog` in `index.html` with detailed interactive tooltips (`ℹ`).
+- Implemented Hex View mode formatting function (`formatHexDump`) and live stream converter in `src/main.js`.
+- Added a `HEX` toolbar action toggle button to active serial terminal tabs allowing dynamic switching between formatted hex view and raw ASCII stream.
+- Re-built production Vite frontend assets into `tabby-go/wails-app/frontend/dist` for Go embedding.
+
+---
+
+# Previous Handoff — Dashboard UI Consolidation, System Tray & Server Lifecycle (v1.0.237)
 
 ## Completed Operations
 

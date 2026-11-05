@@ -39,7 +39,7 @@ Build a complete, self-contained Wails Go application with feature parity to the
 
 ### Remaining
 
-* **Serial Terminal enhancements**: Hex view mode, advanced flow control, connection logging
+* **Serial Terminal enhancements**: Hex view mode, advanced flow control, connection logging. ✅
 * **Profile Group Management**: Full group editor UI (rename, delete groups)
 * **SSH Config Import polish**: Better error handling, merge strategy
 
@@ -144,7 +144,7 @@ Ensure every legacy feature is fully wired up, tested, and comprehensively repre
 3. **Terminal Features**: Split pane management improvements, custom shell profile configuration polish, terminal broadcast input (send to all tabs).
 4. **Settings UI**: All config options represented with proper descriptions/tooltips, import/export configuration, profile group management, consolidated dashboard view with real-time keyword search.
 5. **System Tray & Lifecycle**: Titlebar tray widget with instant popup menu, server shutdown controls, and window presentation actions.
-6. **Serial Terminal**: Hex view mode, advanced flow control settings, connection logging.
+6. **Serial Terminal**: Hex view mode, advanced flow control settings, connection logging. ✅
 
 ## Phase 7: Universal Frontends
 

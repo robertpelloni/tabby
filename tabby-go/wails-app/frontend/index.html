@@ -342,6 +342,32 @@
             <option value="odd">Odd</option>
           </select>
         </div>
+        <div class="setting-group">
+          <label>Flow Control <span class="tooltip-badge" title="Configure hardware RTS/CTS or software XON/XOFF flow control protocol for serial communication.">ℹ</span></label>
+          <select id="serial-flow-control">
+            <option value="none" selected>None</option>
+            <option value="hardware">Hardware (RTS/CTS)</option>
+            <option value="software">Software (XON/XOFF)</option>
+          </select>
+        </div>
+        <div class="setting-group">
+          <label>Hex View Mode <span class="tooltip-badge" title="Display incoming and outgoing serial bytes as hexadecimal dumps with ASCII sidebars.">ℹ</span></label>
+          <div class="toggle-container">
+            <input type="checkbox" id="serial-hex-mode" /><label
+              for="serial-hex-mode"
+              class="toggle-label"
+            ></label>
+          </div>
+        </div>
+        <div class="setting-group">
+          <label>Session Logging <span class="tooltip-badge" title="Record incoming and outgoing serial communication to a session log file for auditing and debugging.">ℹ</span></label>
+          <div class="toggle-container">
+            <input type="checkbox" id="serial-logging" /><label
+              for="serial-logging"
+              class="toggle-label"
+            ></label>
+          </div>
+        </div>
 
         <div class="setting-group">
           <label>Save as Profile</label>

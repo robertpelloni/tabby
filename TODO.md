@@ -56,7 +56,7 @@
 - [x] **Session Logging**: Record terminal output to file/view.
 - [x] **System Tray Integration**: Custom desktop titlebar system tray widget and popover menu with window controls and server shutdown.
 - [x] **Dashboard UI Consolidation**: Grouped 9 fragmented setting tabs into 4 clear domains + single-page view with real-time search.
-- [ ] **Serial Terminal**: Hex view mode, advanced flow control settings, connection logging.
+- [x] **Serial Terminal**: Hex view mode, advanced flow control settings, connection logging.
 
 ### Testing & Code Quality
 
