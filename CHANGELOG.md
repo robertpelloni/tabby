@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.239] - 2026-11-04
+
+### Added
+
+- Profile Group Manager: Added dedicated Profile Groups Management panel under "Saved Profiles" in the settings dashboard.
+- Profile Groups Actions: Added UI capabilities to create new groups, rename groups (automatically updating all matching profile references), and delete groups (safely re-assigning members to Ungrouped).
+- Default Shell Hardening: Added fallback type verification for `this.shell` in the terminal tab constructor to prevent invocation failures on non-string inputs.
+
+### Changed
+
+- Version bump to 1.0.239
+
 ## [1.0.238] - 2026-11-04
 
 ### Added

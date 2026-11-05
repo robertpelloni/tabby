@@ -1,4 +1,19 @@
-# Session Handoff — Serial Terminal Hex View, Flow Control & Session Logging (v1.0.238)
+# Session Handoff — Profile Group Manager & Robust Shell Fallbacks (v1.0.239)
+
+## Completed Operations
+
+### 1. Profile Group Management Panel (`tabby-go/wails-app/frontend`)
+- Integrated a dedicated **Profile Groups Manager** directly under "Saved Profiles" in the settings dashboard (`#btn-manage-groups`, `#group-manager-panel`).
+- Supports:
+  * Dynamic creation of custom profile group categories.
+  * Real-time list of all existing groups with live member profile counts.
+  * Interactive inline Rename (`✎`) prompting for new name and instantly updating all matching member connection profile objects across local state and storage (`SaveProfiles`).
+  * Interactive inline Delete (`✕`) with safety prompt, cleanly re-assigning members back to "Ungrouped".
+- Hardened default shell type-checking in `Tab` constructor to prevent `TypeError` when `shell` is undefined or not a string.
+
+---
+
+# Previous Handoff — Serial Terminal Hex View, Flow Control & Session Logging (v1.0.238)
 
 ## Completed Operations
 

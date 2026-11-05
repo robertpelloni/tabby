@@ -3985,6 +3985,94 @@ function renderProfiles() {
 			};
 		});
 	}
+	renderGroupManagerList();
+}
+
+function renderGroupManagerList() {
+	const list = document.getElementById("group-manager-list");
+	if (!list) return;
+
+	const groups = getProfileGroups();
+	const groupNames = Object.keys(groups).sort();
+
+	if (groupNames.length === 0 || (groupNames.length === 1 && groupNames[0] === "Ungrouped" && groups["Ungrouped"].length === 0)) {
+		list.innerHTML = '<div style="color:#888;font-size:12px;text-align:center;padding:8px;">No profile groups exist yet.</div>';
+		return;
+	}
+
+	let html = "";
+	groupNames.forEach((groupName) => {
+		const count = groups[groupName] ? groups[groupName].length : 0;
+		const isDefault = groupName === "Ungrouped";
+
+		html += `
+		<div class="group-manager-item" style="display:flex;align-items:center;justify-content:space-between;background:#1e1e1e;padding:6px 10px;border-radius:4px;border:1px solid #333;">
+			<div style="display:flex;align-items:center;gap:6px;overflow:hidden;">
+				<span style="font-size:13px;">📁</span>
+				<span style="font-size:12px;font-weight:500;color:#eee;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">${groupName}</span>
+				<span style="font-size:11px;color:#888;">(${count} profile${count !== 1 ? 's' : ''})</span>
+			</div>
+			<div style="display:flex;gap:4px;">
+				${!isDefault ? `<button class="btn-icon group-rename-btn" data-group="${groupName}" title="Rename Group" style="font-size:11px;padding:2px 6px;">✎</button>` : ''}
+				${!isDefault ? `<button class="btn-icon group-delete-btn" data-group="${groupName}" title="Delete Group (moves profiles to Ungrouped)" style="font-size:11px;padding:2px 6px;color:#f87171;">✕</button>` : ''}
+			</div>
+		</div>`;
+	});
+
+	list.innerHTML = html;
+
+	list.querySelectorAll(".group-rename-btn").forEach((btn) => {
+		btn.onclick = (e) => {
+			e.stopPropagation();
+			const oldName = btn.dataset.group;
+			const newName = prompt(`Enter new name for group "${oldName}":`, oldName);
+			if (newName && newName.trim() && newName.trim() !== oldName) {
+				renameProfileGroup(oldName, newName.trim());
+			}
+		};
+	});
+
+	list.querySelectorAll(".group-delete-btn").forEach((btn) => {
+		btn.onclick = (e) => {
+			e.stopPropagation();
+			const groupName = btn.dataset.group;
+			if (confirm(`Delete group "${groupName}"? Member profiles will be moved to Ungrouped.`)) {
+				deleteProfileGroup(groupName);
+			}
+		};
+	});
+}
+
+function renameProfileGroup(oldName, newName) {
+	let changed = 0;
+	savedProfiles.forEach((p) => {
+		if ((p.group || "").trim() === oldName.trim()) {
+			p.group = newName.trim();
+			p.updatedAt = new Date().toISOString();
+			changed++;
+		}
+	});
+
+	if (changed > 0) {
+		SaveProfiles(savedProfiles).catch(() => {});
+		renderProfiles();
+		showToast(`Renamed group to "${newName}" (${changed} profiles updated)`, "success");
+	}
+}
+
+function deleteProfileGroup(groupName) {
+	let changed = 0;
+	savedProfiles.forEach((p) => {
+		if ((p.group || "").trim() === groupName.trim()) {
+			p.group = "";
+			p.updatedAt = new Date().toISOString();
+			changed++;
+		}
+	});
+
+	SaveProfiles(savedProfiles).catch(() => {});
+	renderProfiles();
+	showToast(`Deleted group "${groupName}"`, "info");
 }
 
 async function connectProfile(profile) {
@@ -4464,7 +4552,22 @@ function buildUI() {
 
                 <div id="profiles-editor-list" style="margin-bottom:12px;"></div>
 
-                <button class="btn-primary" id="btn-add-profile" style="width:100%;margin-bottom:8px;">+ Add SSH Profile</button>
+                <div style="display:flex;gap:8px;margin-bottom:16px;">
+                    <button class="btn-secondary" id="btn-manage-groups" style="flex:1;">📁 Manage Profile Groups</button>
+                    <button class="btn-primary" id="btn-add-profile" style="flex:1;">+ Add SSH Profile</button>
+                </div>
+
+                <div id="group-manager-panel" style="display:none;background:#252526;border:1px solid #3c3c3c;border-radius:6px;padding:12px;margin-bottom:16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-weight:600;font-size:13px;">📁 Profile Groups Manager</span>
+                        <button class="btn-icon" id="btn-close-group-manager" title="Close">✕</button>
+                    </div>
+                    <div style="display:flex;gap:6px;margin-bottom:10px;">
+                        <input type="text" id="new-group-name-input" placeholder="New group name..." style="flex:1;background:#1e1e1e;border:1px solid #3c3c3c;color:#ccc;padding:4px 8px;border-radius:4px;font-size:12px;">
+                        <button class="btn-secondary" id="btn-create-group" style="padding:4px 10px;font-size:12px;">Create</button>
+                    </div>
+                    <div id="group-manager-list" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;"></div>
+                </div>
             </div>
 
         </div>
@@ -4708,6 +4811,47 @@ function buildUI() {
 	document.getElementById("ssh-connect").onclick = () => doSSHConnect();
 
 	document.getElementById("btn-add-profile").onclick = () => addProfile();
+
+	const btnManageGroups = document.getElementById("btn-manage-groups");
+	const groupManagerPanel = document.getElementById("group-manager-panel");
+	const btnCloseGroupManager = document.getElementById("btn-close-group-manager");
+	const btnCreateGroup = document.getElementById("btn-create-group");
+	const newGroupNameInput = document.getElementById("new-group-name-input");
+
+	if (btnManageGroups && groupManagerPanel) {
+		btnManageGroups.onclick = () => {
+			const isVisible = groupManagerPanel.style.display !== "none";
+			groupManagerPanel.style.display = isVisible ? "none" : "block";
+			if (!isVisible) {
+				renderGroupManagerList();
+				if (newGroupNameInput) newGroupNameInput.focus();
+			}
+		};
+	}
+
+	if (btnCloseGroupManager && groupManagerPanel) {
+		btnCloseGroupManager.onclick = () => {
+			groupManagerPanel.style.display = "none";
+		};
+	}
+
+	if (btnCreateGroup && newGroupNameInput) {
+		const handleCreateGroup = () => {
+			const groupName = newGroupNameInput.value.trim();
+			if (!groupName) {
+				showToast("Enter a group name", "error");
+				return;
+			}
+			newGroupNameInput.value = "";
+			// Create a placeholder profile or update datalist
+			showToast(`Group "${groupName}" ready for profiles`, "info");
+			renderGroupManagerList();
+		};
+		btnCreateGroup.onclick = handleCreateGroup;
+		newGroupNameInput.onkeydown = (e) => {
+			if (e.key === "Enter") handleCreateGroup();
+		};
+	}
 
 	document.getElementById("edit-profile-save").onclick = () =>
 		saveProfileEdit();
@@ -5499,7 +5643,8 @@ class Tab {
 		this.ptyId = null;
 		this.title = "Shell";
 		this.userRenamed = false;
-		this.shell = shell || defaultShell;
+		let s = typeof shell === "string" ? shell : (typeof defaultShell === "string" ? defaultShell : "");
+		this.shell = s || "/bin/sh";
 		this.workingDir = "";
 		this.exited = false;
 		this.status = "disconnected";

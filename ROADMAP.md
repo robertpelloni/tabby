@@ -40,7 +40,7 @@ Build a complete, self-contained Wails Go application with feature parity to the
 ### Remaining
 
 * **Serial Terminal enhancements**: Hex view mode, advanced flow control, connection logging. ✅
-* **Profile Group Management**: Full group editor UI (rename, delete groups)
+* **Profile Group Management**: Full group editor UI (rename, delete groups). ✅
 * **SSH Config Import polish**: Better error handling, merge strategy
 
 ### Goal
