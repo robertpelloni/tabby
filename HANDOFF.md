@@ -1,4 +1,21 @@
-# Session Handoff — SSH Config Import Polish & Merge Strategy (v1.0.240)
+# Session Handoff — Cloud Sync Test Coverage & Block Actions Validation (v1.0.241)
+
+## Completed Operations
+
+### 1. Cloud Sync Backend Verification (`tabby-go/pkg/sync`)
+- Implemented and ran unit test suite `TestSyncPushAndPull` in `tabby-go/pkg/sync/sync_test.go`:
+  * Tests initial empty pull behavior returning clean default slices for Workflows, Profiles, and EnvVars without error.
+  * Tests serialization, storage directory creation, and atomic persistence of sync payloads.
+  * Tests accurate deserialization and retrieval of pushed items.
+
+### 2. Block Actions UI Documentation Update
+- Reviewed and audited implementation in `tabby-terminal/src/frontends/blockFrontend.ts`.
+- Verified UI actions: Copy Command, Copy Output, In-block Filtering/Search, Share URL, and Ctrl+ArrowUp/Down keyboard block navigation.
+- Updated `TODO.md` and `ROADMAP.md` reflecting completed status.
+
+---
+
+# Previous Handoff — SSH Config Import Polish & Merge Strategy (v1.0.240)
 
 ## Completed Operations
 

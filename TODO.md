@@ -15,7 +15,7 @@
   - Implement Multi-cursor editing (`Alt+Click`, `Cmd+D`).
   - Implement Intelligent fuzzy-search Tab completion.
   - Implement Real-time syntax highlighting and error validation (red squiggles).
-- [ ] **Block Actions UI**:
+- [x] **Block Actions UI**:
   - Implement Copy command / Copy output for a specific block.
   - Implement Filtering/searching within a block.
   - Implement Generating shareable web links for a block.
@@ -33,7 +33,7 @@
 ### Workflows & Collaboration (Phase 4)
 
 - [x] **Command Catalog**: A searchable UI (Command Palette style) for saved, parameterized commands.
-- [ ] **Cloud Sync Backend**: A secure backend service to synchronize Workflows, Environment Variables, and SSH Profiles.
+- [x] **Cloud Sync Backend**: A secure backend service to synchronize Workflows, Environment Variables, and SSH Profiles.
 
 ---
 

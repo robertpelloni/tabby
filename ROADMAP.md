@@ -80,7 +80,7 @@ Completely overhaul the traditional continuous text stream (`xterm.js`) into an 
     * Multi-cursor editing (`Alt+Click`, `Cmd+D`).
     * Intelligent fuzzy-search Tab completion.
     * Real-time syntax highlighting and error validation (red squiggles).
-3. **Block Actions**: Implement UI for:
+3. **Block Actions**: Implement UI for: ✅
     * Copying command/output of a specific block.
     * Filtering/searching within a block.
     * Generating shareable web links for a block.

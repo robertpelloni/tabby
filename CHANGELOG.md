@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.241] - 2026-11-04
+
+### Added
+
+- Cloud Sync Testing: Added unit test suite `TestSyncPushAndPull` in `tabby-go/pkg/sync/sync_test.go` covering Push, Pull, and initial empty state fallback.
+- Block Actions UI Documentation: Formally validated and marked Phase 2 Block Actions UI features (Copy Command, Copy Output, Filter/Search, Share, Keyboard Navigation) as complete in `TODO.md` and `ROADMAP.md`.
+
+### Changed
+
+- Version bump to 1.0.241
+
 ## [1.0.240] - 2026-11-04
 
 ### Added
