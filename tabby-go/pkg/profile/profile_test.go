@@ -228,3 +228,69 @@ func TestGetDefaultSSHConfigPath(t *testing.T) {
 		t.Errorf("Path should be absolute: %q", path)
 	}
 }
+
+func TestImportSSHConfigAsProfiles(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config")
+
+	content := `
+# Global catch-all
+Host *
+    ForwardAgent yes
+    ServerAliveInterval 60
+
+Host prod-server
+    HostName "192.168.1.100"
+    User ubuntu
+    Port 2222
+    IdentityFile "~/.ssh/id_rsa"
+    ProxyJump "bastion.example.com"
+    ServerAliveCountMax 5
+    ConnectTimeout 15
+
+Host bastion.example.com
+    User root
+    Port 22
+`
+	if err := os.WriteFile(configPath, []byte(content), 0600); err != nil {
+		t.Fatalf("failed to write test ssh config: %v", err)
+	}
+
+	profiles, err := ImportSSHConfigAsProfiles(configPath)
+	if err != nil {
+		t.Fatalf("unexpected error importing ssh config: %v", err)
+	}
+
+	if len(profiles) != 2 {
+		t.Fatalf("expected 2 profiles (excluding Host *), got %d", len(profiles))
+	}
+
+	p1 := profiles[0]
+	if p1.Name != "prod-server" {
+		t.Errorf("expected prod-server, got %s", p1.Name)
+	}
+	opts1, ok := p1.Options.(*SSHProfileOptions)
+	if !ok {
+		t.Fatalf("expected *SSHProfileOptions, got %T", p1.Options)
+	}
+	if opts1.Host != "192.168.1.100" {
+		t.Errorf("expected Host 192.168.1.100, got %s", opts1.Host)
+	}
+	if opts1.User != "ubuntu" {
+		t.Errorf("expected User ubuntu, got %s", opts1.User)
+	}
+	if opts1.Port != 2222 {
+		t.Errorf("expected Port 2222, got %d", opts1.Port)
+	}
+	if opts1.ProxyJump != "bastion.example.com" {
+		t.Errorf("expected ProxyJump bastion.example.com, got %s", opts1.ProxyJump)
+	}
+	if opts1.KeepaliveCountMax != 5 || opts1.ReadyTimeout != 15 {
+		t.Errorf("expected keepalive/timeout params, got %d, %d", opts1.KeepaliveCountMax, opts1.ReadyTimeout)
+	}
+
+	p2 := profiles[1]
+	if p2.Name != "bastion.example.com" {
+		t.Errorf("expected bastion.example.com, got %s", p2.Name)
+	}
+}

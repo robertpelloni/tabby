@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.240] - 2026-11-04
+
+### Added
+
+- Enhanced OpenSSH Config Parser: Added quote-trimming on configuration values, automatic skipping of wildcard catch-all blocks (`Host *`), path normalization for `IdentityFile`, and support for `ProxyJump`.
+- Unit Tests for SSH Config Importer: Added `TestImportSSHConfigAsProfiles` in `tabby-go/pkg/profile/profile_test.go`.
+- Merge Strategy for SSH Import: Supported merge strategies in frontend `importSSHConfig(overwriteExisting)`: skip duplicates by default or update existing profiles with Shift-click, displaying granular counts of added, updated, and skipped profiles.
+
+### Changed
+
+- Version bump to 1.0.240
+
 ## [1.0.239] - 2026-11-04
 
 ### Added

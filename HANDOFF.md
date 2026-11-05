@@ -1,4 +1,25 @@
-# Session Handoff — Profile Group Manager & Robust Shell Fallbacks (v1.0.239)
+# Session Handoff — SSH Config Import Polish & Merge Strategy (v1.0.240)
+
+## Completed Operations
+
+### 1. SSH Config Parser Enhancements (`tabby-go/pkg/profile/profile_persist.go`)
+- Enhanced OpenSSH config parser `ImportSSHConfigAsProfiles`:
+  * Automatically trims surrounding single and double quotes around hostnames, users, and proxy commands.
+  * Skips generic wildcard catch-all blocks (`Host *` or empty hosts).
+  * Expands and cleans file paths for `IdentityFile`.
+  * Preserves and parses `ProxyJump` and custom keepalive/timeout settings.
+- Added comprehensive unit test `TestImportSSHConfigAsProfiles` in `tabby-go/pkg/profile/profile_test.go`.
+
+### 2. Frontend Merge Strategy (`tabby-go/wails-app/frontend/src/main.js` + `index.html`)
+- Added merge options to `importSSHConfig(overwriteExisting)`:
+  * Default import skips existing profiles with identical host specifications.
+  * Shift-click import updates and overwrites existing matching profile options.
+  * Shows toast notification with summary of added, updated, and skipped profiles.
+  * Assigns imported profiles to "Imported SSH" group.
+
+---
+
+# Previous Handoff — Profile Group Manager & Robust Shell Fallbacks (v1.0.239)
 
 ## Completed Operations
 

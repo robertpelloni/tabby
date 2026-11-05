@@ -2626,58 +2626,60 @@ async function reloadColorSchemes() {
 
 // ===== SSH CONFIG IMPORT =====
 
-async function importSSHConfig() {
+async function importSSHConfig(overwriteExisting = false) {
 	try {
+		showToast("Reading ~/.ssh/config...", "info");
 		const result = await ImportSSHConfig();
 
 		if (result && result.length > 0) {
 			let imported = 0;
-
+			let updated = 0;
 			let skipped = 0;
 
-			for (var i = 0; i < result.length; i++) {
-				var host = result[i];
+			for (let i = 0; i < result.length; i++) {
+				const host = result[i];
+				const opts = host.options || host.Options || {};
+				const h = opts.host || opts.Host || "";
+				const p = opts.port || opts.Port || 22;
+				const u = opts.user || opts.User || "root";
+				const profileName = host.name || (u + "@" + h);
 
-				var opts = host.options || host.Options || {};
-
-				var h = opts.host || opts.Host || "";
-
-				var p = opts.port || opts.Port || 22;
-
-				var u = opts.user || opts.User || "root";
-
-				var name = u + "@" + h;
-
-				var exists = savedProfiles.find(
-					(pr) => pr.name === name && pr.type === "ssh",
+				const existingIdx = savedProfiles.findIndex(
+					(pr) => (pr.name === profileName || (pr.options && pr.options.host === h && pr.options.port === p && pr.options.user === u)) && pr.type === "ssh",
 				);
 
-				if (exists) {
-					skipped++;
+				const profileOpts = {
+					host: h,
+					port: p,
+					user: u,
+					auth:
+						(opts.privateKeys && opts.privateKeys.length) || (opts.PrivateKeys && opts.PrivateKeys.length)
+							? "publicKey"
+							: "agent",
+					privateKeys: opts.privateKeys || opts.PrivateKeys || [],
+					jumpHost: opts.jumpHost || opts.JumpHost || "",
+					proxyJump: opts.proxyJump || opts.ProxyJump || "",
+					proxyCommand: opts.proxyCommand || opts.ProxyCommand || "",
+				};
+
+				if (existingIdx !== -1) {
+					if (overwriteExisting) {
+						savedProfiles[existingIdx].options = Object.assign(savedProfiles[existingIdx].options, profileOpts);
+						savedProfiles[existingIdx].updatedAt = new Date().toISOString();
+						updated++;
+					} else {
+						skipped++;
+					}
 					continue;
 				}
 
 				savedProfiles.push({
 					id: "ssh-import-" + Date.now() + "-" + imported,
-
 					type: "ssh",
-
-					name: name,
-
-					options: {
-						host: h,
-						port: p,
-						user: u,
-						auth:
-							opts.privateKeys && opts.privateKeys.length
-								? "publicKey"
-								: "agent",
-						privateKeys: opts.privateKeys || opts.PrivateKeys || [],
-						jumpHost: opts.jumpHost || opts.JumpHost || "",
-					},
-
+					name: profileName,
+					group: "Imported SSH",
+					options: profileOpts,
 					createdAt: new Date().toISOString(),
-
 					updatedAt: new Date().toISOString(),
 				});
 
@@ -2685,18 +2687,17 @@ async function importSSHConfig() {
 			}
 
 			await SaveProfiles(savedProfiles);
-
 			renderProfiles();
 
-			showToast(
-				"Imported " +
-					imported +
-					" hosts" +
-					(skipped ? ", skipped " + skipped + " duplicates" : ""),
-				"success",
-			);
+			const msgParts = [];
+			if (imported > 0) msgParts.push(`${imported} added`);
+			if (updated > 0) msgParts.push(`${updated} updated`);
+			if (skipped > 0) msgParts.push(`${skipped} skipped`);
+			const summary = msgParts.join(", ") || "No changes";
+
+			showToast(`SSH Config: ${summary}`, "success");
 		} else {
-			showToast("No SSH hosts found in config", "info");
+			showToast("No SSH hosts found in ~/.ssh/config", "info");
 		}
 	} catch (err) {
 		showToast("SSH config import failed: " + err, "error");

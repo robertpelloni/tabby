@@ -282,7 +282,8 @@
           <button
             class="btn-secondary"
             style="font-size: 11px"
-            onclick="importSSHConfig()"
+            onclick="importSSHConfig(event.shiftKey)"
+            title="Click to import ~/.ssh/config. Shift-click to overwrite/update existing profiles."
           >
             Import ~/.ssh/config
           </button>
