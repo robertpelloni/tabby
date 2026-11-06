@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.244] - 2026-11-04
+
+### Added
+
+- Electron Version Synchronization: Explicitly defined `electronVersion: 38.0.0` in `electron-builder.yml` to ensure build consistency with `package.json` devDependency `"electron": "38"`.
+- Trailing Host Wildcard SSH Fix: Handled edge cases in `ImportSSHConfigAsProfiles` ensuring preceding profiles are saved before encountering `Host *` blocks at the end of files.
+
+### Changed
+
+- Version bump to 1.0.244
+
 ## [1.0.243] - 2026-11-04
 
 ### Added

@@ -104,14 +104,14 @@ func ImportSSHConfigAsProfiles(path string) ([]ConnectionProfile, error) {
 
 		switch keyword {
 		case "host":
-			// Skip generic catch-all patterns like Host * or empty hosts
-			if value == "*" || value == "" {
-				current = nil
-				currentOpts = nil
-				continue
-			}
 			if current != nil {
 				imported = append(imported, *current)
+				current = nil
+				currentOpts = nil
+			}
+			// Skip generic catch-all patterns like Host * or empty hosts
+			if value == "*" || value == "" {
+				continue
 			}
 			currentOpts = &SSHProfileOptions{Host: value, Port: 22, Auth: "agent"}
 			current = &ConnectionProfile{

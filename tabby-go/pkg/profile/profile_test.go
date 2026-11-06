@@ -294,3 +294,36 @@ Host bastion.example.com
 		t.Errorf("expected bastion.example.com, got %s", p2.Name)
 	}
 }
+
+func TestImportSSHConfigTrailingCatchAll(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config_trailing")
+
+	content := `
+Host server-alpha
+    HostName "alpha.example.com"
+    User admin
+    Port 22
+
+# Trailing catch-all at the end of file
+Host *
+    ForwardAgent yes
+    ServerAliveInterval 60
+`
+	if err := os.WriteFile(configPath, []byte(content), 0600); err != nil {
+		t.Fatalf("failed to write test config: %v", err)
+	}
+
+	profiles, err := ImportSSHConfigAsProfiles(configPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(profiles) != 1 {
+		t.Fatalf("expected 1 profile preceding Host *, got %d", len(profiles))
+	}
+
+	if profiles[0].Name != "server-alpha" {
+		t.Errorf("expected server-alpha, got %s", profiles[0].Name)
+	}
+}

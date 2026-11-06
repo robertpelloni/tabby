@@ -60,7 +60,7 @@
 
 ### Testing & Code Quality
 
-- [ ] **Sync Electron versions**: electron-builder.yml, package.json, CI all consistent.
+- [x] **Sync Electron versions**: electron-builder.yml, package.json, CI all consistent.
 - [ ] **Automated release workflow**: Tag push → build → draft release.
 - [ ] **Unit test framework setup**: Jest or Karma for TypeScript tests.
 - [ ] **Core service tests**: ConfigService, HotkeysService, TabsService.

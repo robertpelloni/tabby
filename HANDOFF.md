@@ -1,4 +1,18 @@
-# Session Handoff — Titlebar Double-Click Toggle & Window Control Refinements (v1.0.243)
+# Session Handoff — Electron Build Version Sync & Trailing Host * Polish (v1.0.244)
+
+## Completed Operations
+
+### 1. Electron Packaging Consistency (`electron-builder.yml`)
+- Explicitly specified `electronVersion: 38.0.0` in `electron-builder.yml` to align with the root `package.json` dependency `"electron": "38"`.
+- Updated `TODO.md` to reflect consistency between `electron-builder.yml`, `package.json`, and CI.
+
+### 2. Trailing Host * Edge Case Fix in SSH Config Parser (`tabby-go/pkg/profile/profile_persist.go`)
+- Ensured any preceding `current` profile is committed and appended prior to skipping `Host *` or empty host lines.
+- Added regression test `TestImportSSHConfigTrailingCatchAll` in `tabby-go/pkg/profile/profile_test.go`.
+
+---
+
+# Previous Handoff — Titlebar Double-Click Toggle & Window Control Refinements (v1.0.243)
 
 ## Completed Operations
 
