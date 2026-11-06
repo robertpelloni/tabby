@@ -1,4 +1,14 @@
-# Session Handoff — Electron Build Version Sync & Trailing Host * Polish (v1.0.244)
+# Session Handoff — Fullscreen & Window Controls Wails Runtime Integration (v1.0.245)
+
+## Completed Operations
+
+### 1. Wails Window Runtime Controls (`tabby-go/wails-app/frontend/src/main.js`)
+- Wired `WindowFullscreen`, `WindowUnfullscreen`, and `WindowIsFullscreen` runtime APIs to the system tray fullscreen action.
+- Added graceful fallback to `WindowMaximise`/`WindowUnmaximise` if fullscreen queries are unsupported.
+
+---
+
+# Previous Handoff — Electron Build Version Sync & Trailing Host * Polish (v1.0.244)
 
 ## Completed Operations
 

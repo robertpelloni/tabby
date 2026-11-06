@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.245] - 2026-11-04
+
+### Added
+
+- Wails Window Runtime Controls: Integrated `WindowFullscreen`, `WindowUnfullscreen`, and `WindowIsFullscreen` into system tray actions with automatic fallback to maximize/unmaximize.
+
+### Changed
+
+- Version bump to 1.0.245
+
 ## [1.0.244] - 2026-11-04
 
 ### Added

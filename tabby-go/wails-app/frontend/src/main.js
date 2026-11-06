@@ -99,6 +99,9 @@ import {
 	WindowUnmaximise,
 	WindowIsMaximised,
 	WindowToggleMaximise,
+	WindowFullscreen,
+	WindowUnfullscreen,
+	WindowIsFullscreen,
 	Quit,
 	ClipboardSetText,
 	ClipboardGetText,
@@ -4986,7 +4989,12 @@ function toggleSystemTrayMenu(event) {
 		else if (action === "command-palette") toggleCommandPalette();
 		else if (action === "settings") toggleSettings();
 		else if (action === "toggle-fullscreen") {
-			WindowIsMaximised().then((m) => (m ? WindowUnmaximise() : WindowMaximise()));
+			WindowIsFullscreen().then((isFs) => {
+				if (isFs) WindowUnfullscreen();
+				else WindowFullscreen();
+			}).catch(() => {
+				WindowIsMaximised().then((m) => (m ? WindowUnmaximise() : WindowMaximise()));
+			});
 		} else if (action === "minimize") WindowMinimise();
 		else if (action === "stop-servers") shutdownAllServers();
 		else if (action === "quit") quitTabbyApplication();
