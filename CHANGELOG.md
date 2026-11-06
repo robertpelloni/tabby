@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.243] - 2026-11-04
+
+### Added
+
+- Titlebar Double-Click Toggle: Added double-click event listener to the custom titlebar drag handle (`#titlebar-drag`) to dynamically toggle window maximize/restore via Wails runtime.
+
+### Changed
+
+- Version bump to 1.0.243
+
 ## [1.0.242] - 2026-11-04
 
 ### Added

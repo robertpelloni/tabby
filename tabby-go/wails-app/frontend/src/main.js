@@ -355,6 +355,20 @@ async function init() {
 		btnMinimize.onclick = () => WindowMinimise();
 	}
 
+	const titlebarDrag = document.getElementById("titlebar-drag");
+	if (titlebarDrag) {
+		titlebarDrag.ondblclick = () => {
+			if (typeof WindowToggleMaximise === "function") {
+				WindowToggleMaximise();
+			} else {
+				WindowIsMaximised().then((isMaximised) => {
+					if (isMaximised) WindowUnmaximise();
+					else WindowMaximise();
+				}).catch(() => {});
+			}
+		};
+	}
+
 	// Handle maximize/restore state
 	const updateMaximizeBtn = () => {
 		WindowIsMaximised().then((isMaximised) => {

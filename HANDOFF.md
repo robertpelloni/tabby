@@ -1,4 +1,14 @@
-# Session Handoff — Unified Multiplatform Build Script & Deployment Docs (v1.0.242)
+# Session Handoff — Titlebar Double-Click Toggle & Window Control Refinements (v1.0.243)
+
+## Completed Operations
+
+### 1. Titlebar Double-Click Window Maximization (`tabby-go/wails-app/frontend/src/main.js`)
+- Added double-click listener on `#titlebar-drag` to toggle maximization state using Wails runtime APIs (`WindowToggleMaximise` / `WindowIsMaximised`).
+- Verified responsive state updating on `#btn-maximize` SVG icon.
+
+---
+
+# Previous Handoff — Unified Multiplatform Build Script & Deployment Docs (v1.0.242)
 
 ## Completed Operations
 
