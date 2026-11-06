@@ -1,4 +1,17 @@
-# Session Handoff — Cloud Sync Test Coverage & Block Actions Validation (v1.0.241)
+# Session Handoff — Unified Multiplatform Build Script & Deployment Docs (v1.0.242)
+
+## Completed Operations
+
+### 1. Unified Multiplatform Build Automation (`tabby-go/build.sh`)
+- Created `tabby-go/build.sh` providing end-to-end build orchestration on Linux/macOS:
+  * Runs all Go backend tests (`go test ./...`).
+  * Checks dependencies and builds production Vite frontend assets into `tabby-go/wails-app/frontend/dist`.
+  * Detects host environment (native GTK/WebKit headers) and cross-compiles Windows binaries if native GTK headers are unavailable.
+- Updated `DEPLOY.md` to document the unified build process.
+
+---
+
+# Previous Handoff — Cloud Sync Test Coverage & Block Actions Validation (v1.0.241)
 
 ## Completed Operations
 

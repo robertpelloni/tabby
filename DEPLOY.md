@@ -35,6 +35,17 @@ GOOS=darwin GOARCH=arm64 go build -o bin/tabby-backend-darwin-arm64 ./cmd/tabby-
 GOOS=linux GOARCH=amd64 go build -o bin/tabby-backend-linux-amd64 ./cmd/tabby-backend
 ```
 
+### Unified Wails Go UI Build
+For building the standalone Wails Go application (frontend + native runtime):
+
+```bash
+# On Linux / macOS:
+./tabby-go/build.sh
+
+# On Windows:
+tabby-go\start.bat
+```
+
 *Note: `electron-builder` is configured to copy the contents of `tabby-go/bin/` into the final application bundle under `resources/`.*
 
 ## 2. Building the Frontend Workspaces

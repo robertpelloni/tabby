@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.242] - 2026-11-04
+
+### Added
+
+- Unified Build Script: Added `tabby-go/build.sh` providing automated test running, frontend Vite asset bundling, and cross-platform compilation of the Wails Go binary.
+- Documentation: Updated `DEPLOY.md` to document the unified build workflow for both Unix (`build.sh`) and Windows (`start.bat`).
+
+### Changed
+
+- Version bump to 1.0.242
+
 ## [1.0.241] - 2026-11-04
 
 ### Added
