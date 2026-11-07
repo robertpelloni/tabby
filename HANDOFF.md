@@ -1,19 +1,15 @@
-# Session Handoff — Backend Server Lifecycle & Test Target Directness (v1.0.250)
+# Session Handoff — Window Controls Hotkeys & Wails Runtime Integration (v1.0.251)
 
 ## Completed Operations
 
-### 1. Wails Go Backend Lifecycle Methods (`tabby-go/wails-app/app.go`)
-- Implemented `ShutdownServers() error` and `QuitApplication() error` on `App` struct in `tabby-go/wails-app/app.go`.
-- Ensured `QuitApplication` invokes `ShutdownServers()` and triggers `wailsRuntime.Quit(a.ctx)`.
-
-### 2. Frontend State Hoisting & Rebuild (`tabby-go/wails-app/frontend`)
-- Hoisted `alwaysOnTop` global variable to the top of `src/main.js` before any UI event handlers or menu listeners.
+### 1. Window Control Keybindings (`tabby-go/wails-app/frontend/src/main.js`)
+- Added global keyboard shortcuts to `bindGlobalKeys()`:
+  * `F11`: Toggle Fullscreen via Wails runtime (`WindowIsFullscreen`, `WindowFullscreen`, `WindowUnfullscreen`).
+  * `Ctrl+Shift+M`: Minimize window (`WindowMinimise`).
+  * `Ctrl+Shift+A`: Toggle Always on Top (`toggleAlwaysOnTop`).
+- Registered window control actions with shortcut badges inside the Command Palette.
 - Re-built production Vite frontend assets into `tabby-go/wails-app/frontend/dist`.
 
-### 3. Direct Unit Testing of Core (`test/core/utfSplitter.test.mjs`)
-- Exported and wired tests directly to `tabby-core/src/utfSplitter.js`.
-- Verified 100% test pass rate via `npm test`.
-
-### 4. Versioning & Documentation
-- Bumped `VERSION.md` to `1.0.250`.
-- Documented changes in `CHANGELOG.md` and `HANDOFF.md`.
+### 2. Versioning & Documentation
+- Bumped `VERSION.md` to `1.0.251`.
+- Updated `CHANGELOG.md` and `HANDOFF.md`.

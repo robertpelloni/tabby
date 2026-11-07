@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.251] - 2026-11-04
+
+### Added
+
+- Window Management Hotkeys: Integrated global keyboard shortcuts in Wails desktop app: `F11` (Toggle Fullscreen), `Ctrl+Shift+M` (Minimize Window), and `Ctrl+Shift+A` (Toggle Always on Top).
+- Command Palette Window Actions: Registered Fullscreen, Minimize, and Always on Top commands with shortcut badges in the Command Palette.
+
+### Changed
+
+- Version bump to 1.0.251
+
 ## [1.0.250] - 2026-11-04
 
 ### Added

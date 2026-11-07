@@ -2406,9 +2406,35 @@ const PALETTE_COMMANDS = [
 	},
 
 	{
+		id: "toggle-fullscreen",
+		label: "Toggle Fullscreen",
+		icon: "⛶",
+		shortcut: "F11",
+		action: () => {
+			WindowIsFullscreen().then((isFs) => {
+				if (isFs) WindowUnfullscreen();
+				else WindowFullscreen();
+			}).catch(() => {
+				WindowIsMaximised().then((m) => (m ? WindowUnmaximise() : WindowMaximise()));
+			});
+		},
+	},
+
+	{
+		id: "minimize-window",
+		label: "Minimize Window",
+		icon: "🗕",
+		shortcut: "Ctrl+Shift+M",
+		action: () => {
+			WindowMinimise();
+		},
+	},
+
+	{
 		id: "always-on-top",
 		label: "Toggle Always on Top",
 		icon: "📌",
+		shortcut: "Ctrl+Shift+A",
 		action: () => {
 			toggleAlwaysOnTop();
 		},
@@ -7295,9 +7321,32 @@ function bindGlobalKeys() {
 			exportProfiles();
 		}
 
-		if (ctrl && shift && e.key === "B") {
+		if (ctrl && shift && (e.key === "B" || e.key === "b")) {
 			e.preventDefault();
 			toggleBroadcast();
+		}
+
+		if (e.key === "F11") {
+			e.preventDefault();
+			WindowIsFullscreen().then((isFs) => {
+				if (isFs) WindowUnfullscreen();
+				else WindowFullscreen();
+			}).catch(() => {
+				WindowIsMaximised().then((m) => (m ? WindowUnmaximise() : WindowMaximise()));
+			});
+			return;
+		}
+
+		if (ctrl && shift && (e.key === "M" || e.key === "m")) {
+			e.preventDefault();
+			WindowMinimise();
+			return;
+		}
+
+		if (ctrl && shift && (e.key === "A" || e.key === "a")) {
+			e.preventDefault();
+			toggleAlwaysOnTop();
+			return;
 		}
 
 		if (ctrl && !shift && e.key === "\\") {
