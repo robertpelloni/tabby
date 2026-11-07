@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.252] - 2026-11-04
+
+### Added
+
+- Desktop Window Title Sync: Automatically synchronize native operating system window title (`SetWindowTitle`) on tab activation and restore cleanly to "Tabby" when all tabs are closed.
+
+### Changed
+
+- Version bump to 1.0.252
+
 ## [1.0.251] - 2026-11-04
 
 ### Added

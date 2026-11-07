@@ -6088,6 +6088,9 @@ class Tab {
 		this.wrapper.classList.add("active");
 		this.tabEl.classList.add("active");
 		activeTabId = this.id;
+		if (this.title) {
+			SetWindowTitle(`Tabby — ${this.title}`);
+		}
 		updateToolbar(this);
 
 		this.term.focus();
@@ -6152,6 +6155,7 @@ class Tab {
 			if (tabs.length > 0) tabs[Math.min(idx, tabs.length - 1)].activate();
 			else {
 				activeTabId = null;
+				SetWindowTitle("Tabby");
 				const w = document.getElementById("welcome");
 				if (w) w.style.display = "flex";
 			}

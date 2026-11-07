@@ -1,15 +1,12 @@
-# Session Handoff — Window Controls Hotkeys & Wails Runtime Integration (v1.0.251)
+# Session Handoff — Desktop Window Title Synchronization (v1.0.252)
 
 ## Completed Operations
 
-### 1. Window Control Keybindings (`tabby-go/wails-app/frontend/src/main.js`)
-- Added global keyboard shortcuts to `bindGlobalKeys()`:
-  * `F11`: Toggle Fullscreen via Wails runtime (`WindowIsFullscreen`, `WindowFullscreen`, `WindowUnfullscreen`).
-  * `Ctrl+Shift+M`: Minimize window (`WindowMinimise`).
-  * `Ctrl+Shift+A`: Toggle Always on Top (`toggleAlwaysOnTop`).
-- Registered window control actions with shortcut badges inside the Command Palette.
+### 1. Window Title Synchronization (`tabby-go/wails-app/frontend/src/main.js`)
+- In `Tab.activate()`, synchronized the native OS window title immediately via `SetWindowTitle(`Tabby — ${this.title}`)`.
+- In `Tab.close()`, ensured that when all tabs are closed and the welcome view is displayed, the window title is reset cleanly to `"Tabby"`.
 - Re-built production Vite frontend assets into `tabby-go/wails-app/frontend/dist`.
 
 ### 2. Versioning & Documentation
-- Bumped `VERSION.md` to `1.0.251`.
+- Bumped `VERSION.md` to `1.0.252`.
 - Updated `CHANGELOG.md` and `HANDOFF.md`.
