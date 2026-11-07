@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.246] - 2026-11-04
+
+### Added
+
+- Automated Release Workflow: Verified and documented the tagged release workflow (`.github/workflows/release.yml`) triggering on `v*` tags with `action-automatic-releases`.
+
+### Changed
+
+- Version bump to 1.0.246
+
 ## [1.0.245] - 2026-11-04
 
 ### Added

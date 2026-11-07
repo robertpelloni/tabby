@@ -1,4 +1,14 @@
-# Session Handoff — Fullscreen & Window Controls Wails Runtime Integration (v1.0.245)
+# Session Handoff — Automated Release Verification (v1.0.246)
+
+## Completed Operations
+
+### 1. Release Automation Validation (`.github/workflows/release.yml`)
+- Audited automated draft release action configured on `v*` tag pushes.
+- Validated `TODO.md` checklist items.
+
+---
+
+# Previous Handoff — Fullscreen & Window Controls Wails Runtime Integration (v1.0.245)
 
 ## Completed Operations
 

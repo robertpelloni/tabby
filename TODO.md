@@ -61,7 +61,7 @@
 ### Testing & Code Quality
 
 - [x] **Sync Electron versions**: electron-builder.yml, package.json, CI all consistent.
-- [ ] **Automated release workflow**: Tag push → build → draft release.
+- [x] **Automated release workflow**: Tag push → build → draft release.
 - [ ] **Unit test framework setup**: Jest or Karma for TypeScript tests.
 - [ ] **Core service tests**: ConfigService, HotkeysService, TabsService.
 - [ ] **Migrate to TypeScript 5.x**: Currently on 4.9 (Angular 15 may need update).
