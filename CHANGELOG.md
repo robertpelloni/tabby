@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.254] - 2026-11-04
+
+### Added
+
+- Build Pipeline Validation: Executed end-to-end `tabby-go/build.sh` pipeline on Linux, compiling Vite production assets and generating the cross-compiled desktop binary `tabby-go/wails-app/bin/tabby-wails.exe` (19MB).
+
+### Changed
+
+- Version bump to 1.0.254
+
 ## [1.0.253] - 2026-11-04
 
 ### Added
