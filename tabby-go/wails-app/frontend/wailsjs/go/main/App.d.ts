@@ -73,6 +73,8 @@ export function PTYSpawn(arg1:api.PTYSpawnParams):Promise<api.PTYSpawnResult>;
 
 export function PTYWrite(arg1:string,arg2:string):Promise<void>;
 
+export function QuitApplication():Promise<void>;
+
 export function ResetSettings():Promise<void>;
 
 export function SFTPChmod(arg1:string,arg2:string,arg3:number):Promise<void>;
@@ -130,6 +132,8 @@ export function SaveSettings(arg1:settings.Settings):Promise<void>;
 export function SelectDirectory(arg1:string):Promise<string>;
 
 export function SerialClose(arg1:string):Promise<void>;
+
+export function ShutdownServers():Promise<void>;
 
 export function SerialListPorts():Promise<Array<api.SerialPortInfo>>;
 

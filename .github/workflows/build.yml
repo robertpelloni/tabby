@@ -28,6 +28,20 @@ jobs:
     - name: Build typings
       run: yarn run build:typings
 
+    - name: Unit tests
+      run: npm test
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+        cache-dependency-path: tabby-go/go.sum
+
+    - name: Go backend tests
+      run: |
+        cd tabby-go
+        env CGO_ENABLED=1 go test ./...
+
     - name: Lint
       run: yarn run lint
 

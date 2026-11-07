@@ -1,5 +1,205 @@
 # Changelog
 
+## [1.0.252] - 2026-11-04
+
+### Added
+
+- Desktop Window Title Sync: Automatically synchronize native operating system window title (`SetWindowTitle`) on tab activation and restore cleanly to "Tabby" when all tabs are closed.
+
+### Changed
+
+- Version bump to 1.0.252
+
+## [1.0.251] - 2026-11-04
+
+### Added
+
+- Window Management Hotkeys: Integrated global keyboard shortcuts in Wails desktop app: `F11` (Toggle Fullscreen), `Ctrl+Shift+M` (Minimize Window), and `Ctrl+Shift+A` (Toggle Always on Top).
+- Command Palette Window Actions: Registered Fullscreen, Minimize, and Always on Top commands with shortcut badges in the Command Palette.
+
+### Changed
+
+- Version bump to 1.0.251
+
+## [1.0.250] - 2026-11-04
+
+### Added
+
+- Go Wails Backend Lifecycle: Implemented `ShutdownServers()` and `QuitApplication()` methods on `App` struct in `tabby-go/wails-app/app.go` ensuring background sessions are closed gracefully before application exit.
+- Direct UTF8Splitter Testing: Connected `test/core/utfSplitter.test.mjs` directly to `tabby-core/src/utfSplitter.js` verifying module boundary buffering and splitting.
+
+### Changed
+
+- Version bump to 1.0.250
+- Hoisted `alwaysOnTop` global state in Wails frontend to prevent any runtime reference ordering errors.
+
+## [1.0.249] - 2026-11-04
+
+### Added
+
+- Always on Top Window Control: Integrated `toggleAlwaysOnTop` into the desktop titlebar system tray dropdown menu with real-time state feedback (Enabled/Disabled) using Wails runtime `WindowSetAlwaysOnTop`.
+
+### Changed
+
+- Version bump to 1.0.249
+
+## [1.0.248] - 2026-11-04
+
+### Added
+
+- CI/CD Pipeline Automation: Integrated `npm test` unit tests and `tabby-go` backend test suite (`go test ./...`) into the `Lint` validation gate in `.github/workflows/build.yml` using `actions/setup-go@v5`.
+
+### Changed
+
+- Version bump to 1.0.248
+
+## [1.0.247] - 2026-11-04
+
+### Added
+
+- Unit Testing Framework: Configured `npm test` utilizing Node.js built-in test runner for rapid, zero-dependency unit testing across core TypeScript and JavaScript utilities.
+- Core Utilities Test Suite: Created `test/core/utfSplitter.test.mjs` verifying multi-byte character boundary buffering, fragmented stream handling, and buffer flushing for `UTF8Splitter`.
+
+### Changed
+
+- Version bump to 1.0.247
+
+## [1.0.246] - 2026-11-04
+
+### Added
+
+- Automated Release Workflow: Verified and documented the tagged release workflow (`.github/workflows/release.yml`) triggering on `v*` tags with `action-automatic-releases`.
+
+### Changed
+
+- Version bump to 1.0.246
+
+## [1.0.245] - 2026-11-04
+
+### Added
+
+- Wails Window Runtime Controls: Integrated `WindowFullscreen`, `WindowUnfullscreen`, and `WindowIsFullscreen` into system tray actions with automatic fallback to maximize/unmaximize.
+
+### Changed
+
+- Version bump to 1.0.245
+
+## [1.0.244] - 2026-11-04
+
+### Added
+
+- Electron Version Synchronization: Explicitly defined `electronVersion: 38.0.0` in `electron-builder.yml` to ensure build consistency with `package.json` devDependency `"electron": "38"`.
+- Trailing Host Wildcard SSH Fix: Handled edge cases in `ImportSSHConfigAsProfiles` ensuring preceding profiles are saved before encountering `Host *` blocks at the end of files.
+
+### Changed
+
+- Version bump to 1.0.244
+
+## [1.0.243] - 2026-11-04
+
+### Added
+
+- Titlebar Double-Click Toggle: Added double-click event listener to the custom titlebar drag handle (`#titlebar-drag`) to dynamically toggle window maximize/restore via Wails runtime.
+
+### Changed
+
+- Version bump to 1.0.243
+
+## [1.0.242] - 2026-11-04
+
+### Added
+
+- Unified Build Script: Added `tabby-go/build.sh` providing automated test running, frontend Vite asset bundling, and cross-platform compilation of the Wails Go binary.
+- Documentation: Updated `DEPLOY.md` to document the unified build workflow for both Unix (`build.sh`) and Windows (`start.bat`).
+
+### Changed
+
+- Version bump to 1.0.242
+
+## [1.0.241] - 2026-11-04
+
+### Added
+
+- Cloud Sync Testing: Added unit test suite `TestSyncPushAndPull` in `tabby-go/pkg/sync/sync_test.go` covering Push, Pull, and initial empty state fallback.
+- Block Actions UI Documentation: Formally validated and marked Phase 2 Block Actions UI features (Copy Command, Copy Output, Filter/Search, Share, Keyboard Navigation) as complete in `TODO.md` and `ROADMAP.md`.
+
+### Changed
+
+- Version bump to 1.0.241
+
+## [1.0.240] - 2026-11-04
+
+### Added
+
+- Enhanced OpenSSH Config Parser: Added quote-trimming on configuration values, automatic skipping of wildcard catch-all blocks (`Host *`), path normalization for `IdentityFile`, and support for `ProxyJump`.
+- Unit Tests for SSH Config Importer: Added `TestImportSSHConfigAsProfiles` in `tabby-go/pkg/profile/profile_test.go`.
+- Merge Strategy for SSH Import: Supported merge strategies in frontend `importSSHConfig(overwriteExisting)`: skip duplicates by default or update existing profiles with Shift-click, displaying granular counts of added, updated, and skipped profiles.
+
+### Changed
+
+- Version bump to 1.0.240
+
+## [1.0.239] - 2026-11-04
+
+### Added
+
+- Profile Group Manager: Added dedicated Profile Groups Management panel under "Saved Profiles" in the settings dashboard.
+- Profile Groups Actions: Added UI capabilities to create new groups, rename groups (automatically updating all matching profile references), and delete groups (safely re-assigning members to Ungrouped).
+- Default Shell Hardening: Added fallback type verification for `this.shell` in the terminal tab constructor to prevent invocation failures on non-string inputs.
+
+### Changed
+
+- Version bump to 1.0.239
+
+## [1.0.238] - 2026-11-04
+
+### Added
+
+- Serial Terminal Flow Control: Support for Hardware RTS/CTS, Software XON/XOFF, and None options in `tabby-go/pkg/serial` and frontend connection dialog.
+- Serial Terminal Hex View Mode: Two-column hex dump with printable ASCII sidebar, supporting dynamic toggling directly via `HEX` toolbar button.
+- Serial Session Logging: Ability to capture incoming/outgoing serial data to disk in timestamped `.log` files in `~/.tabby/serial-logs/` and live session log buffer viewer.
+- Serial Unit Tests: Added comprehensive unit tests in `tabby-go/pkg/serial/serial_test.go` verifying mode construction, flow control handshake settings, lifecycle management, and session log streaming.
+
+### Changed
+
+- Version bump to 1.0.238
+- Updated `tabby-go/pkg/api/types.go` with `FlowControl`, `Logging`, and `LogPath` fields for serial sessions.
+
+## [1.0.237] - 2026-11-04
+
+### Changed
+
+- Version bump to 1.0.237
+- Enhanced desktop custom titlebar with an integrated System Tray / Server Control menu widget
+- Dynamic visibility for system tray trigger linked to user's `HideTray` preference
+- Cleaned up build scripts in `tabby-go/start.bat` to automatically build frontend Vite assets before compiling Wails Go binary
+
+### Added
+
+- Interactive System Tray popover menu featuring:
+  * Tabby Go core version and protocol status
+  * New Terminal Tab (`Ctrl+Shift+T`)
+  * Command Palette (`Ctrl+Shift+P`)
+  * Dashboard & Settings panel (`Ctrl+,`)
+  * Toggle Fullscreen & Minimize window controls
+  * Safe 'Stop All Servers' with active count indicator and 'Quit Tabby'
+- Exported `ShutdownServers` and `QuitApplication` methods into Wails JS bindings
+
+## [1.0.236] - 2026-11-03
+
+### Changed
+
+- Version bump to 1.0.236
+- Consolidated fragmented settings and dashboard pages into high-value domains: General & System, Appearance & Display, Terminal & Behavior, and Connections & Profiles
+- Expanded dashboard settings panel with real-time live keyword search filtering across all configuration options
+
+### Added
+
+- Interactive guidance tooltip markers (ℹ) next to every configuration label in the settings dashboard
+- Real-time welcome dashboard status badges (active sessions, profiles count, protocol status)
+- Prominent server management actions: 'Stop All Servers' and 'Quit Tabby' with confirmation safeguards
+- Go Wails backend lifecycle handlers `ShutdownServers` and `QuitApplication` for graceful connection termination
+
 ## [1.0.235] - 2026-07-13
 
 ### Changed

@@ -15,7 +15,7 @@
   - Implement Multi-cursor editing (`Alt+Click`, `Cmd+D`).
   - Implement Intelligent fuzzy-search Tab completion.
   - Implement Real-time syntax highlighting and error validation (red squiggles).
-- [ ] **Block Actions UI**:
+- [x] **Block Actions UI**:
   - Implement Copy command / Copy output for a specific block.
   - Implement Filtering/searching within a block.
   - Implement Generating shareable web links for a block.
@@ -33,7 +33,7 @@
 ### Workflows & Collaboration (Phase 4)
 
 - [x] **Command Catalog**: A searchable UI (Command Palette style) for saved, parameterized commands.
-- [ ] **Cloud Sync Backend**: A secure backend service to synchronize Workflows, Environment Variables, and SSH Profiles.
+- [x] **Cloud Sync Backend**: A secure backend service to synchronize Workflows, Environment Variables, and SSH Profiles.
 
 ---
 
@@ -54,13 +54,15 @@
 - [x] **Profile Group Management**: Datalist-based group suggestions in profile editor.
 - [x] **Terminal Broadcast**: Send input to all visible terminals.
 - [x] **Session Logging**: Record terminal output to file/view.
-- [ ] **Serial Terminal**: Hex view mode, advanced flow control settings, connection logging.
+- [x] **System Tray Integration**: Custom desktop titlebar system tray widget and popover menu with window controls and server shutdown.
+- [x] **Dashboard UI Consolidation**: Grouped 9 fragmented setting tabs into 4 clear domains + single-page view with real-time search.
+- [x] **Serial Terminal**: Hex view mode, advanced flow control settings, connection logging.
 
 ### Testing & Code Quality
 
-- [ ] **Sync Electron versions**: electron-builder.yml, package.json, CI all consistent.
-- [ ] **Automated release workflow**: Tag push → build → draft release.
-- [ ] **Unit test framework setup**: Jest or Karma for TypeScript tests.
+- [x] **Sync Electron versions**: electron-builder.yml, package.json, CI all consistent.
+- [x] **Automated release workflow**: Tag push → build → draft release.
+- [x] **Unit test framework setup**: Node 22 built-in test runner for core TypeScript/JavaScript modules (`npm test`).
 - [ ] **Core service tests**: ConfigService, HotkeysService, TabsService.
 - [ ] **Migrate to TypeScript 5.x**: Currently on 4.9 (Angular 15 may need update).
 - [ ] **ESLint strict mode**: Enable stricter linting rules.
