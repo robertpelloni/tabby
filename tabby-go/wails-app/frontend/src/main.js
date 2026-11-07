@@ -4971,7 +4971,7 @@ function toggleSystemTrayMenu(event) {
 	menu.innerHTML = `
 		<div class="tray-header">
 			<span><span class="tray-status-dot"></span>Tabby Go</span>
-			<span style="font-size:10px;color:#aaa;">v1.0.249</span>
+			<span id="tray-version-badge" style="font-size:10px;color:#aaa;">v1.0.256</span>
 		</div>
 		<div class="tray-item" data-action="new-tab">
 			<span>⌘ New Terminal Tab</span>
@@ -5010,6 +5010,13 @@ function toggleSystemTrayMenu(event) {
 	menu.style.top = `${rect.bottom + 6}px`;
 
 	document.body.appendChild(menu);
+
+	GetPlatform().then((plat) => {
+		const badge = document.getElementById("tray-version-badge");
+		if (badge && plat && plat.version) {
+			badge.textContent = `v${plat.version}`;
+		}
+	}).catch(() => {});
 
 	menu.onclick = (e) => {
 		const item = e.target.closest(".tray-item");

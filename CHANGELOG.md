@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.256] - 2026-11-04
+
+### Added
+
+- Dynamic System Tray Version: Updated `GetPlatform()` version response in Go backend to `1.0.256` and wired asynchronous dynamic badge updating (`#tray-version-badge`) in `toggleSystemTrayMenu`.
+
+### Changed
+
+- Version bump to 1.0.256
+
 ## [1.0.255] - 2026-11-04
 
 ### Added
