@@ -109,6 +109,8 @@ import {
 
 // ===== GLOBALS =====
 
+let alwaysOnTop = false;
+
 const COLOR_SCHEMES = {};
 
 window.__serialDataHandlers = [];
@@ -4943,7 +4945,7 @@ function toggleSystemTrayMenu(event) {
 	menu.innerHTML = `
 		<div class="tray-header">
 			<span><span class="tray-status-dot"></span>Tabby Go</span>
-			<span style="font-size:10px;color:#aaa;">v1.0.237</span>
+			<span style="font-size:10px;color:#aaa;">v1.0.249</span>
 		</div>
 		<div class="tray-item" data-action="new-tab">
 			<span>⌘ New Terminal Tab</span>
@@ -4958,6 +4960,10 @@ function toggleSystemTrayMenu(event) {
 			<span style="font-size:10px;color:#888;">Ctrl+,</span>
 		</div>
 		<div class="tray-divider"></div>
+		<div class="tray-item" data-action="toggle-always-on-top">
+			<span>${alwaysOnTop ? "✓ Always on Top" : "📌 Pin Always on Top"}</span>
+			<span style="font-size:10px;color:#888;">${alwaysOnTop ? "Enabled" : "Disabled"}</span>
+		</div>
 		<div class="tray-item" data-action="toggle-fullscreen">
 			<span>⛶ Toggle Fullscreen</span>
 		</div>
@@ -4988,6 +4994,7 @@ function toggleSystemTrayMenu(event) {
 		if (action === "new-tab") newTab();
 		else if (action === "command-palette") toggleCommandPalette();
 		else if (action === "settings") toggleSettings();
+		else if (action === "toggle-always-on-top") toggleAlwaysOnTop();
 		else if (action === "toggle-fullscreen") {
 			WindowIsFullscreen().then((isFs) => {
 				if (isFs) WindowUnfullscreen();
@@ -5459,8 +5466,6 @@ function hideSettings() {
 }
 
 // ===== WINDOW CONTROLS =====
-
-let alwaysOnTop = false;
 
 async function toggleAlwaysOnTop() {
 	alwaysOnTop = !alwaysOnTop;

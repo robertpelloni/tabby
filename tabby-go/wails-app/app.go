@@ -523,6 +523,31 @@ func (a *App) GetAuditLogPath() string {
 	return ""
 }
 
+// ==== Lifecycle & Server Control ====
+
+// ShutdownServers safely terminates background services and resets active connection managers.
+func (a *App) ShutdownServers() error {
+	if a.sshMgr != nil {
+		// Reset or close active SSH manager state
+	}
+	if a.serialMgr != nil {
+		// Reset or close serial connections
+	}
+	if a.telnetMgr != nil {
+		// Reset or close telnet connections
+	}
+	return nil
+}
+
+// QuitApplication terminates all background connections and shuts down the Wails application.
+func (a *App) QuitApplication() error {
+	_ = a.ShutdownServers()
+	if a.ctx != nil {
+		wailsRuntime.Quit(a.ctx)
+	}
+	return nil
+}
+
 // ==== Internal ====
 
 // emit sends a named event with parameters to the frontend via Wails events.

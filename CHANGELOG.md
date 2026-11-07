@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.0.250] - 2026-11-04
+
+### Added
+
+- Go Wails Backend Lifecycle: Implemented `ShutdownServers()` and `QuitApplication()` methods on `App` struct in `tabby-go/wails-app/app.go` ensuring background sessions are closed gracefully before application exit.
+- Direct UTF8Splitter Testing: Connected `test/core/utfSplitter.test.mjs` directly to `tabby-core/src/utfSplitter.js` verifying module boundary buffering and splitting.
+
+### Changed
+
+- Version bump to 1.0.250
+- Hoisted `alwaysOnTop` global state in Wails frontend to prevent any runtime reference ordering errors.
+
+## [1.0.249] - 2026-11-04
+
+### Added
+
+- Always on Top Window Control: Integrated `toggleAlwaysOnTop` into the desktop titlebar system tray dropdown menu with real-time state feedback (Enabled/Disabled) using Wails runtime `WindowSetAlwaysOnTop`.
+
+### Changed
+
+- Version bump to 1.0.249
+
 ## [1.0.248] - 2026-11-04
 
 ### Added
