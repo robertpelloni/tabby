@@ -528,13 +528,10 @@ func (a *App) GetAuditLogPath() string {
 // ShutdownServers safely terminates background services and resets active connection managers.
 func (a *App) ShutdownServers() error {
 	if a.sshMgr != nil {
-		// Reset or close active SSH manager state
-	}
-	if a.serialMgr != nil {
-		// Reset or close serial connections
+		a.sshMgr.CloseAll()
 	}
 	if a.telnetMgr != nil {
-		// Reset or close telnet connections
+		a.telnetMgr.CloseAll()
 	}
 	return nil
 }

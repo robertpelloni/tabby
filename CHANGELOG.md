@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.255] - 2026-11-04
+
+### Added
+
+- Server Teardown Implementation: Implemented `CloseAll()` routines in `ssh` and `telnet` packages to enumerate and cleanly disconnect active connections. Wired into `ShutdownServers()` and `QuitApplication()` in `tabby-go/wails-app/app.go`.
+
+### Changed
+
+- Version bump to 1.0.255
+
 ## [1.0.254] - 2026-11-04
 
 ### Added
