@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.257] - 2026-11-04
+
+### Added
+
+- Module ESM Optimization: Added `"type": "module"` to `tabby-core/package.json` to eliminate Node.js typeless module warnings during test runs and optimize ESM loader resolution.
+
+### Changed
+
+- Version bump to 1.0.257
+
 ## [1.0.256] - 2026-11-04
 
 ### Added

@@ -1,12 +1,12 @@
-# Session Handoff — Dynamic System Tray Version Display (v1.0.256)
+# Session Handoff — Module ESM Optimization (v1.0.257)
 
 ## Completed Operations
 
-### 1. Dynamic System Tray Header Version (`tabby-go/wails-app/frontend/src/main.js` + `app.go`)
-- Updated `GetPlatform()` in `tabby-go/wails-app/app.go` to return current version string `1.0.256`.
-- Updated `toggleSystemTrayMenu` to dynamically resolve version info via `GetPlatform()` and populate `#tray-version-badge`.
-- Re-built production Vite frontend assets into `tabby-go/wails-app/frontend/dist`.
+### 1. Module ESM Optimization (`tabby-core/package.json`)
+- Added `"type": "module"` to `tabby-core/package.json`.
+- Eliminates Node.js `MODULE_TYPELESS_PACKAGE_JSON` warning during test execution.
+- Verified test suite executes cleanly with 0 warnings or errors via `npm test`.
 
 ### 2. Versioning & Documentation
-- Bumped `VERSION.md` to `1.0.256`.
+- Bumped `VERSION.md` to `1.0.257`.
 - Updated `CHANGELOG.md` and `HANDOFF.md`.

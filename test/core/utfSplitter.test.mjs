@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { UTF8Splitter } from '../../tabby-core/src/utfSplitter.js'
+import { UTF8Splitter } from '../../tabby-core/src/utfSplitter.mjs'
 
 test('UTF8Splitter - complete ASCII bytes pass through directly', () => {
     const splitter = new UTF8Splitter()
