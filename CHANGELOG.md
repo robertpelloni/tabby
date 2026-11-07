@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.253] - 2026-11-04
+
+### Added
+
+- Core Utility Unit Tests: Added `test/core/utils.test.mjs` verifying `TAB_COLORS` palette constants, `ResettableTimeout` lifecycle execution/cancellation, and `serializeFunction` FIFO asynchronous execution.
+
+### Changed
+
+- Version bump to 1.0.253
+
 ## [1.0.252] - 2026-11-04
 
 ### Added

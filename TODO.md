@@ -63,6 +63,7 @@
 - [x] **Sync Electron versions**: electron-builder.yml, package.json, CI all consistent.
 - [x] **Automated release workflow**: Tag push → build → draft release.
 - [x] **Unit test framework setup**: Node 22 built-in test runner for core TypeScript/JavaScript modules (`npm test`).
+- [x] **Core utilities and service tests**: Added unit tests in `test/core/utils.test.mjs` (ResettableTimeout, serializeFunction, TAB_COLORS) and `test/core/utfSplitter.test.mjs` (UTF8Splitter).
 - [ ] **Core service tests**: ConfigService, HotkeysService, TabsService.
 - [ ] **Migrate to TypeScript 5.x**: Currently on 4.9 (Angular 15 may need update).
 - [ ] **ESLint strict mode**: Enable stricter linting rules.
