@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.247] - 2026-11-04
+
+### Added
+
+- Unit Testing Framework: Configured `npm test` utilizing Node.js built-in test runner for rapid, zero-dependency unit testing across core TypeScript and JavaScript utilities.
+- Core Utilities Test Suite: Created `test/core/utfSplitter.test.mjs` verifying multi-byte character boundary buffering, fragmented stream handling, and buffer flushing for `UTF8Splitter`.
+
+### Changed
+
+- Version bump to 1.0.247
+
 ## [1.0.246] - 2026-11-04
 
 ### Added

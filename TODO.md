@@ -62,7 +62,7 @@
 
 - [x] **Sync Electron versions**: electron-builder.yml, package.json, CI all consistent.
 - [x] **Automated release workflow**: Tag push → build → draft release.
-- [ ] **Unit test framework setup**: Jest or Karma for TypeScript tests.
+- [x] **Unit test framework setup**: Node 22 built-in test runner for core TypeScript/JavaScript modules (`npm test`).
 - [ ] **Core service tests**: ConfigService, HotkeysService, TabsService.
 - [ ] **Migrate to TypeScript 5.x**: Currently on 4.9 (Angular 15 may need update).
 - [ ] **ESLint strict mode**: Enable stricter linting rules.
