@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.248] - 2026-11-04
+
+### Added
+
+- CI/CD Pipeline Automation: Integrated `npm test` unit tests and `tabby-go` backend test suite (`go test ./...`) into the `Lint` validation gate in `.github/workflows/build.yml` using `actions/setup-go@v5`.
+
+### Changed
+
+- Version bump to 1.0.248
+
 ## [1.0.247] - 2026-11-04
 
 ### Added
