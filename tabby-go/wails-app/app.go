@@ -285,7 +285,7 @@ func (a *App) GetPlatform() map[string]string {
 	return map[string]string{
 		"os":      runtime.GOOS,
 		"arch":    runtime.GOARCH,
-		"version": "1.0.261",
+		"version": "1.0.262",
 	}
 }
 

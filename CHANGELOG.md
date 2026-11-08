@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.262] - 2026-11-04
+
+### Added
+
+- Core Utility Unit Testing: Added `test/core/resettableTimeout.test.mjs` verifying callback execution, timer clearing, and timer rescheduling for `ResettableTimeout` from `tabby-core/src/utils.ts`.
+
+### Changed
+
+- Version bump to 1.0.262
+
 ## [1.0.261] - 2026-11-04
 
 ### Added
