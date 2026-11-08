@@ -4936,7 +4936,18 @@ function buildUI() {
 	document.getElementById("tab-search-input").oninput = () => filterTabs();
 
 	document.getElementById("tab-search-input").onkeydown = (e) => {
-		if (e.key === "Escape") toggleTabSearch();
+		if (e.key === "Escape") {
+			toggleTabSearch();
+		} else if (e.key === "Enter") {
+			const firstItem = document.querySelector("#tab-search-results .tab-search-item");
+			if (firstItem && firstItem.dataset.tabId) {
+				const tab = tabs.find((t) => t.id === firstItem.dataset.tabId);
+				if (tab) {
+					tab.activate();
+					toggleTabSearch();
+				}
+			}
+		}
 	};
 
 	document.getElementById("btn-reset").onclick = () => doResetSettings();
