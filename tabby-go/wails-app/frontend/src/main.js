@@ -344,7 +344,7 @@ async function init() {
 	}
 
 	if (btnClose) {
-		btnClose.onclick = () => Quit();
+		btnClose.onclick = () => quitTabbyApplication();
 	}
 	if (btnMaximize) {
 		btnMaximize.onclick = () => {

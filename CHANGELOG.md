@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.264] - 2026-11-04
+
+### Added
+
+- Titlebar Close Confirmation: Wired `btn-close` click handler to `quitTabbyApplication()` to safeguard running sessions and ensure background servers disconnect before closing.
+
+### Changed
+
+- Version bump to 1.0.264
+
 ## [1.0.263] - 2026-11-04
 
 ### Added
