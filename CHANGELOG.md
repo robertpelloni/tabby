@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.258] - 2026-11-04
+
+### Added
+
+- Session State Controls: Added "Clear Saved Session State" action to Command Palette invoking `ClearSessionState()` with toast feedback, and toast notification on "Save Session State".
+
+### Changed
+
+- Version bump to 1.0.258
+
 ## [1.0.257] - 2026-11-04
 
 ### Added

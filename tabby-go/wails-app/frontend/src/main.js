@@ -2348,6 +2348,18 @@ const PALETTE_COMMANDS = [
 		icon: "S",
 		action: () => {
 			saveSession();
+			showToast("Session state saved", "info");
+		},
+	},
+
+	{
+		id: "clear-session",
+		label: "Clear Saved Session State",
+		icon: "🗑",
+		action: () => {
+			ClearSessionState()
+				.then(() => showToast("Saved session state cleared", "info"))
+				.catch((err) => showToast("Failed to clear session: " + err, "error"));
 		},
 	},
 
