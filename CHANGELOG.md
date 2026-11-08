@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.259] - 2026-11-04
+
+### Added
+
+- Titlebar Maximize Refinements: Added dynamic tooltip guidance (`title="Restore"` vs `"Maximize"`) and immediate asynchronous state updating to `btn-maximize`.
+
+### Changed
+
+- Version bump to 1.0.259
+
 ## [1.0.258] - 2026-11-04
 
 ### Added

@@ -353,6 +353,7 @@ async function init() {
 				} else {
 					WindowMaximise();
 				}
+				setTimeout(updateMaximizeBtn, 100);
 			});
 		};
 	}
@@ -379,6 +380,7 @@ async function init() {
 		WindowIsMaximised().then((isMaximised) => {
 			const btn = document.getElementById("btn-maximize");
 			if (btn) {
+				btn.title = isMaximised ? "Restore" : "Maximize";
 				btn.innerHTML = isMaximised
 					? '<svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="4" height="4" stroke="currentColor" fill="none" stroke-width="1"/><rect x="6" y="6" width="4" height="4" stroke="currentColor" fill="none" stroke-width="1"/></svg>'
 					: '<svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" stroke="currentColor" fill="none" stroke-width="1"/></svg>';
