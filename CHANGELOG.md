@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.261] - 2026-11-04
+
+### Added
+
+- Terminal Font Zoom Keybindings: Bound `Ctrl+=` (zoom in), `Ctrl+-` (zoom out), and `Ctrl+0` (zoom reset) into global keyboard handler, with shortcut markers in the Command Palette.
+
+### Changed
+
+- Version bump to 1.0.261
+
 ## [1.0.260] - 2026-11-04
 
 ### Added

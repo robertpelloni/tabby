@@ -2278,6 +2278,7 @@ const PALETTE_COMMANDS = [
 		id: "zoom-in",
 		label: "Increase Font Size",
 		icon: "+",
+		shortcut: "Ctrl+=",
 		action: () => {
 			fontSize = Math.min(32, fontSize + 1);
 			tabs.forEach((t) => {
@@ -2291,6 +2292,7 @@ const PALETTE_COMMANDS = [
 		id: "zoom-out",
 		label: "Decrease Font Size",
 		icon: "-",
+		shortcut: "Ctrl+-",
 		action: () => {
 			fontSize = Math.max(8, fontSize - 1);
 			tabs.forEach((t) => {
@@ -2304,6 +2306,7 @@ const PALETTE_COMMANDS = [
 		id: "zoom-reset",
 		label: "Reset Font Size",
 		icon: "0",
+		shortcut: "Ctrl+0",
 		action: () => {
 			fontSize = 14;
 			tabs.forEach((t) => {
@@ -7388,6 +7391,39 @@ function bindGlobalKeys() {
 		if (ctrl && shift && (e.key === "A" || e.key === "a")) {
 			e.preventDefault();
 			toggleAlwaysOnTop();
+			return;
+		}
+
+		if (ctrl && (e.key === "=" || e.key === "+")) {
+			e.preventDefault();
+			fontSize = Math.min(32, fontSize + 1);
+			tabs.forEach((t) => {
+				t.term.options.fontSize = fontSize;
+				t.fitAddon.fit();
+			});
+			showToast("Font: " + fontSize, "info");
+			return;
+		}
+
+		if (ctrl && (e.key === "-" || e.key === "_")) {
+			e.preventDefault();
+			fontSize = Math.max(8, fontSize - 1);
+			tabs.forEach((t) => {
+				t.term.options.fontSize = fontSize;
+				t.fitAddon.fit();
+			});
+			showToast("Font: " + fontSize, "info");
+			return;
+		}
+
+		if (ctrl && e.key === "0") {
+			e.preventDefault();
+			fontSize = 14;
+			tabs.forEach((t) => {
+				t.term.options.fontSize = fontSize;
+				t.fitAddon.fit();
+			});
+			showToast("Font: 14", "info");
 			return;
 		}
 
