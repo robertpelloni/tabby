@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.263] - 2026-11-04
+
+### Added
+
+- Hotkey Parsing Unit Tests: Added `test/core/hotkeysUtil.test.mjs` verifying key mapping (`getKeyName`) for modifiers, mouse, wheel, and alphanumeric codes, as well as strict canonical ordering (`getKeystrokeName`) from `tabby-core/src/services/hotkeys.util.ts`.
+
+### Changed
+
+- Version bump to 1.0.263
+
 ## [1.0.262] - 2026-11-04
 
 ### Added
