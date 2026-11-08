@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.265] - 2026-11-04
+
+### Added
+
+- Agentic Workflow Cancellation: Added `StatusCancelled` task status, context cancellation lifecycle to `Workflow`, and `CancelWorkflow` method to `WorkflowManager` in `tabby-go/pkg/agent`.
+
+### Changed
+
+- Version bump to 1.0.265
+
 ## [1.0.264] - 2026-11-04
 
 ### Added

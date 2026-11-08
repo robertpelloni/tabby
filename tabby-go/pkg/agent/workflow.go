@@ -29,6 +29,8 @@ type Workflow struct {
 	CreatedAt    time.Time        `json:"createdAt"`
 	PhaseData    map[string]any   `json:"phaseData"`
 	UserInput    chan string      `json:"-"`
+	ctx          context.Context  `json:"-"`
+	cancel       context.CancelFunc `json:"-"`
 }
 
 type WorkflowManager struct {
@@ -45,6 +47,7 @@ func NewWorkflowManager(notify NotifyFunc) *WorkflowManager {
 }
 
 func (wm *WorkflowManager) StartWorkflow(ctx context.Context, description string) *Workflow {
+	wfCtx, cancel := context.WithCancel(ctx)
 	wf := &Workflow{
 		ID:           uuid.New().String(),
 		Description:  description,
@@ -53,6 +56,8 @@ func (wm *WorkflowManager) StartWorkflow(ctx context.Context, description string
 		CreatedAt:    time.Now(),
 		PhaseData:    make(map[string]any),
 		UserInput:    make(chan string),
+		ctx:          wfCtx,
+		cancel:       cancel,
 	}
 
 	wm.mu.Lock()
@@ -74,11 +79,25 @@ func (wm *WorkflowManager) runWorkflow(wf *Workflow) {
 		wf.CurrentPhase = phase
 		wm.emitUpdate(wf)
 
+		select {
+		case <-wf.ctx.Done():
+			wf.Status = StatusCancelled
+			wf.PhaseData["error"] = "workflow cancelled"
+			wm.emitUpdate(wf)
+			return
+		default:
+		}
+
 		if phase == PhaseClarification {
 			// Wait for user input
 			select {
 			case input := <-wf.UserInput:
 				wf.PhaseData["clarification_response"] = input
+			case <-wf.ctx.Done():
+				wf.Status = StatusCancelled
+				wf.PhaseData["error"] = "workflow cancelled"
+				wm.emitUpdate(wf)
+				return
 			case <-time.After(5 * time.Minute):
 				wf.Status = StatusFailed
 				wf.PhaseData["error"] = "timeout waiting for user clarification"
@@ -87,7 +106,14 @@ func (wm *WorkflowManager) runWorkflow(wf *Workflow) {
 			}
 		} else {
 			// Simulate work for other phases
-			time.Sleep(1 * time.Second)
+			select {
+			case <-wf.ctx.Done():
+				wf.Status = StatusCancelled
+				wf.PhaseData["error"] = "workflow cancelled"
+				wm.emitUpdate(wf)
+				return
+			case <-time.After(50 * time.Millisecond):
+			}
 		}
 	}
 
@@ -116,6 +142,23 @@ func (wm *WorkflowManager) emitUpdate(wf *Workflow) {
 	if wm.notify != nil {
 		wm.notify("agent.workflowUpdated", wf)
 	}
+}
+
+func (wm *WorkflowManager) CancelWorkflow(id string) error {
+	wm.mu.RLock()
+	wf, ok := wm.workflows[id]
+	wm.mu.RUnlock()
+
+	if !ok {
+		return fmt.Errorf("workflow not found: %s", id)
+	}
+
+	if wf.cancel != nil {
+		wf.cancel()
+	}
+	wf.Status = StatusCancelled
+	wm.emitUpdate(wf)
+	return nil
 }
 
 func (wm *WorkflowManager) GetWorkflow(id string) (*Workflow, bool) {
