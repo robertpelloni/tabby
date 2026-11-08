@@ -1,13 +1,14 @@
-# Session Handoff — Window Controls Maximize State Refinement (v1.0.259)
+# Session Handoff — Center Window Runtime Control (v1.0.260)
 
 ## Completed Operations
 
-### 1. Titlebar Maximize State & Tooltip Refinement (`tabby-go/wails-app/frontend/src/main.js`)
-- Dynamically updated `#btn-maximize` title attribute to `"Restore"` when window is maximized and `"Maximize"` when unmaximized.
-- Added delayed instant refresh after click to keep visual SVG icon and tooltip in sync with OS window state transitions.
-- Updated `GetPlatform()` in `app.go` to `1.0.259`.
-- Re-built Vite production assets in `tabby-go/wails-app/frontend/dist`.
+### 1. Window Center Control (`tabby-go/wails-app/frontend/src/main.js`)
+- Imported `WindowCenter` runtime API from `../wailsjs/runtime/runtime`.
+- Added "Center Window on Screen" command in the Command Palette (`🎯`).
+- Added "Center Window" item to the titlebar system tray dropdown menu.
+- Updated `GetPlatform()` in `app.go` to version `1.0.260`.
+- Re-built production Vite frontend assets into `tabby-go/wails-app/frontend/dist`.
 
 ### 2. Versioning & Documentation
-- Bumped `VERSION.md` to `1.0.259`.
+- Bumped `VERSION.md` to `1.0.260`.
 - Updated `CHANGELOG.md` and `HANDOFF.md`.

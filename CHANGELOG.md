@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.260] - 2026-11-04
+
+### Added
+
+- Center Window Action: Imported `WindowCenter` runtime function and added Center Window on Screen action to Command Palette and System Tray dropdown.
+
+### Changed
+
+- Version bump to 1.0.260
+
 ## [1.0.259] - 2026-11-04
 
 ### Added

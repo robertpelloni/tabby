@@ -102,6 +102,7 @@ import {
 	WindowFullscreen,
 	WindowUnfullscreen,
 	WindowIsFullscreen,
+	WindowCenter,
 	Quit,
 	ClipboardSetText,
 	ClipboardGetText,
@@ -2441,6 +2442,16 @@ const PALETTE_COMMANDS = [
 		shortcut: "Ctrl+Shift+M",
 		action: () => {
 			WindowMinimise();
+		},
+	},
+
+	{
+		id: "center-window",
+		label: "Center Window on Screen",
+		icon: "🎯",
+		action: () => {
+			WindowCenter();
+			showToast("Window centered", "info");
 		},
 	},
 
@@ -5007,6 +5018,9 @@ function toggleSystemTrayMenu(event) {
 		<div class="tray-item" data-action="toggle-fullscreen">
 			<span>⛶ Toggle Fullscreen</span>
 		</div>
+		<div class="tray-item" data-action="center">
+			<span>🎯 Center Window</span>
+		</div>
 		<div class="tray-item" data-action="minimize">
 			<span>🗕 Minimize Window</span>
 		</div>
@@ -5049,6 +5063,9 @@ function toggleSystemTrayMenu(event) {
 			}).catch(() => {
 				WindowIsMaximised().then((m) => (m ? WindowUnmaximise() : WindowMaximise()));
 			});
+		} else if (action === "center") {
+			WindowCenter();
+			showToast("Window centered", "info");
 		} else if (action === "minimize") WindowMinimise();
 		else if (action === "stop-servers") shutdownAllServers();
 		else if (action === "quit") quitTabbyApplication();
