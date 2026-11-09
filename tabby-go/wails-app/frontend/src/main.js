@@ -373,6 +373,7 @@ async function init() {
 					else WindowMaximise();
 				}).catch(() => {});
 			}
+			setTimeout(updateMaximizeBtn, 100);
 		};
 	}
 
@@ -2435,6 +2436,20 @@ const PALETTE_COMMANDS = [
 			}).catch(() => {
 				WindowIsMaximised().then((m) => (m ? WindowUnmaximise() : WindowMaximise()));
 			});
+		},
+	},
+
+	{
+		id: "toggle-maximize",
+		label: "Toggle Maximize / Restore",
+		icon: "🗖",
+		action: () => {
+			if (typeof WindowToggleMaximise === "function") {
+				WindowToggleMaximise();
+			} else {
+				WindowIsMaximised().then((m) => (m ? WindowUnmaximise() : WindowMaximise())).catch(() => {});
+			}
+			setTimeout(updateMaximizeBtn, 100);
 		},
 	},
 
@@ -5014,7 +5029,7 @@ function toggleSystemTrayMenu(event) {
 	menu.innerHTML = `
 		<div class="tray-header">
 			<span><span class="tray-status-dot"></span>Tabby Go</span>
-			<span id="tray-version-badge" style="font-size:10px;color:#aaa;">v1.0.270</span>
+			<span id="tray-version-badge" style="font-size:10px;color:#aaa;">v1.0.272</span>
 		</div>
 		<div class="tray-item" data-action="new-tab">
 			<span>⌘ New Terminal Tab</span>
@@ -5035,6 +5050,9 @@ function toggleSystemTrayMenu(event) {
 		</div>
 		<div class="tray-item" data-action="toggle-fullscreen">
 			<span>⛶ Toggle Fullscreen</span>
+		</div>
+		<div class="tray-item" data-action="toggle-maximize">
+			<span>🗖 Toggle Maximize</span>
 		</div>
 		<div class="tray-item" data-action="center">
 			<span>🎯 Center Window</span>
@@ -5081,6 +5099,13 @@ function toggleSystemTrayMenu(event) {
 			}).catch(() => {
 				WindowIsMaximised().then((m) => (m ? WindowUnmaximise() : WindowMaximise()));
 			});
+		} else if (action === "toggle-maximize") {
+			if (typeof WindowToggleMaximise === "function") {
+				WindowToggleMaximise();
+			} else {
+				WindowIsMaximised().then((m) => (m ? WindowUnmaximise() : WindowMaximise())).catch(() => {});
+			}
+			setTimeout(updateMaximizeBtn, 100);
 		} else if (action === "center") {
 			WindowCenter();
 			showToast("Window centered", "info");

@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.272] - 2026-11-04
+
+### Added
+
+- Window Toggle Maximize Controls: Added "Toggle Maximize" action to the system tray popup and command palette, alongside instant maximize button visual synchronization on double-click of the titlebar.
+
+### Changed
+
+- Version bump to 1.0.272
+
 ## [1.0.271] - 2026-11-04
 
 ### Added
