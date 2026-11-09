@@ -1,12 +1,13 @@
-# Session Handoff — CI Wails Frontend Build Automation (v1.0.267)
+# Session Handoff — Command Palette Shortcut Badges (v1.0.268)
 
 ## Completed Operations
 
-### 1. Wails Frontend CI Build Gate (`.github/workflows/build.yml`)
-- Added `Build Wails frontend` step (`cd tabby-go/wails-app/frontend && npm install && npm run build`) into the initial `Lint` validation job in `.github/workflows/build.yml`.
-- Guarantees that window controls, Wails runtime declarations, and frontend assets compile cleanly on every pull request and release build.
-- Updated `GetPlatform()` in `app.go` to version `1.0.267`.
+### 1. Command Palette Shortcut Badges (`tabby-go/wails-app/frontend/src/main.js` + `app.css`)
+- Rendered keyboard shortcut badges (`<span class="palette-shortcut">`) alongside palette command labels when `cmd.shortcut` is present.
+- Added custom styling in `app.css` providing subtle contrast in dark and light themes.
+- Updated `GetPlatform()` in `app.go` to version `1.0.268`.
+- Re-built Vite production assets in `tabby-go/wails-app/frontend/dist`.
 
 ### 2. Versioning & Documentation
-- Bumped `VERSION.md` to `1.0.267`.
+- Bumped `VERSION.md` to `1.0.268`.
 - Updated `CHANGELOG.md` and `HANDOFF.md`.

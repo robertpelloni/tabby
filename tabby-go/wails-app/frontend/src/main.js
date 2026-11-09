@@ -2633,7 +2633,11 @@ function filterCommandPalette() {
 				"</span>" +
 				'<span class="palette-label">' +
 				cmd.label +
-				"</span></div>",
+				"</span>" +
+				(cmd.shortcut
+					? '<span class="palette-shortcut">' + cmd.shortcut + "</span>"
+					: "") +
+				"</div>",
 		)
 		.join("");
 

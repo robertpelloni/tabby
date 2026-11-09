@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.268] - 2026-11-04
+
+### Added
+
+- Command Palette Shortcut Badges: Displayed keyboard shortcut badges (`<span class="palette-shortcut">`) next to command items with dark/light theme styling in `tabby-go/wails-app/frontend`.
+
+### Changed
+
+- Version bump to 1.0.268
+
 ## [1.0.267] - 2026-11-04
 
 ### Added
