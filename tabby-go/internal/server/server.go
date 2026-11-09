@@ -59,6 +59,8 @@
 //   - session.save                - Save current tab session state
 //   - session.load                - Load last saved session state
 //   - session.clear               - Clear saved session state
+//   - audit.log                   - Record an audit event
+//   - audit.getPath               - Get audit log file path
 package server
 
 import (
@@ -75,6 +77,7 @@ import (
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ai"
 	tabbysync "github.com/robertpelloni/tabby/tabby-go/pkg/sync"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/api"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/audit"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/config"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/knownhosts"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/notification"
@@ -82,6 +85,7 @@ import (
 	"github.com/robertpelloni/tabby/tabby-go/pkg/recovery"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/serial"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/session"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/settings"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/sftp"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ssh"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/telnet"
@@ -101,6 +105,7 @@ type Server struct {
 	notifMgr     *notification.Manager
 	recoveryMgr  *recovery.Manager
 	configMgr    *config.Manager
+	auditLog     *audit.Logger
 	reader       *bufio.Reader
 	writer       io.Writer
 	mu           sync.Mutex
@@ -128,6 +133,12 @@ func New() *Server {
 		s.sendNotification("notifications.changed", notifs)
 	})
 	s.configMgr = config.NewManager()
+
+	logDir, err := settings.ConfigDir()
+	if err != nil {
+		logDir = os.TempDir()
+	}
+	s.auditLog, _ = audit.NewLogger(logDir)
 
 	// Start polling the config file from the standard path and emit host:config-change IPC
 	configPath := config.GetConfigPath()
@@ -158,6 +169,12 @@ func NewWithIO(in io.Reader, out io.Writer) *Server {
 	s.notifMgr = notification.NewManager()
 	s.recoveryMgr = recovery.NewManager()
 	s.configMgr = config.NewManager()
+
+	logDir, err := settings.ConfigDir()
+	if err != nil {
+		logDir = os.TempDir()
+	}
+	s.auditLog, _ = audit.NewLogger(logDir)
 
 	// Start polling the config file from the standard path and emit host:config-change IPC
 	configPath := config.GetConfigPath()
@@ -406,6 +423,21 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 		result, err = s.handleSessionLoad()
 	case "session.clear":
 		err = s.handleSessionClear()
+
+	// ---- Audit ----
+	case "audit.log":
+		var ev audit.Event
+		if err = reMarshal(req.Params, &ev); err == nil {
+			if s.auditLog != nil {
+				err = s.auditLog.Log(ev)
+			}
+		}
+	case "audit.getPath":
+		if s.auditLog != nil {
+			result = s.auditLog.GetPath()
+		} else {
+			result = ""
+		}
 
 	default:
 		s.sendError(req.ID, api.ErrorMethodNotFound, fmt.Sprintf("Method not found: %s", req.Method), nil)

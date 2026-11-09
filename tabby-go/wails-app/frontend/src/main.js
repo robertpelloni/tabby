@@ -5052,7 +5052,7 @@ function toggleSystemTrayMenu(event) {
 	menu.innerHTML = `
 		<div class="tray-header">
 			<span><span class="tray-status-dot"></span>Tabby Go</span>
-			<span id="tray-version-badge" style="font-size:10px;color:#aaa;">v1.0.278</span>
+			<span id="tray-version-badge" style="font-size:10px;color:#aaa;">v1.0.279</span>
 		</div>
 		<div class="tray-item" data-action="new-tab">
 			<span>⌘ New Terminal Tab</span>

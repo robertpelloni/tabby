@@ -348,6 +348,62 @@ func TestAgentWorkflowRPC(t *testing.T) {
 	outWriter.Close()
 }
 
+// TestAuditRPC verifies audit.log and audit.getPath JSON-RPC methods
+func TestAuditRPC(t *testing.T) {
+	inReader, inWriter := io.Pipe()
+	outReader, outWriter := io.Pipe()
+
+	srv := NewWithIO(inReader, outWriter)
+	go srv.Run()
+
+	decoder := json.NewDecoder(outReader)
+
+	// 1. audit.getPath
+	pathReq := `{"jsonrpc": "2.0", "method": "audit.getPath", "id": 30}` + "\n"
+	io.WriteString(inWriter, pathReq)
+
+	var pathResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode audit.getPath response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 30 {
+			pathResp = msg
+			break
+		}
+	}
+	if pathResp["error"] != nil {
+		t.Fatalf("audit.getPath error: %v", pathResp["error"])
+	}
+	pathRes, ok := pathResp["result"].(string)
+	if !ok || pathRes == "" {
+		t.Errorf("Expected valid log path, got: %v", pathResp)
+	}
+
+	// 2. audit.log
+	logReq := `{"jsonrpc": "2.0", "method": "audit.log", "params": {"type": "connect", "protocol": "ssh", "host": "127.0.0.1", "port": 22}, "id": 31}` + "\n"
+	io.WriteString(inWriter, logReq)
+
+	var logResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode audit.log response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 31 {
+			logResp = msg
+			break
+		}
+	}
+	if logResp["error"] != nil {
+		t.Fatalf("audit.log error: %v", logResp["error"])
+	}
+
+	inWriter.Close()
+	outWriter.Close()
+}
+
 // TestAIRPC verifies ai.generateCommand, ai.explainError, and ai.chat JSON-RPC methods
 func TestAIRPC(t *testing.T) {
 	inReader, inWriter := io.Pipe()

@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.279] - 2026-11-04
+
+### Added
+
+- Audit Logging Protocol Endpoints: Exposed `audit.log` and `audit.getPath` over JSON-RPC in `tabby-go/internal/server`.
+- Server RPC Audit Tests: Added `TestAuditRPC` in `tabby-go/internal/server/server_test.go` verifying audit event writing and log file path querying.
+
+### Changed
+
+- Version bump to 1.0.279
+
 ## [1.0.278] - 2026-11-04
 
 ### Added
