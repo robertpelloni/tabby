@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.273] - 2026-11-04
+
+### Added
+
+- Native App Test Suite: Added unit tests in `tabby-go/pkg/nativeapp/nativeapp_test.go` covering initialization and notification routing for the experimental native frontend.
+
+### Changed
+
+- Version bump to 1.0.273
+
 ## [1.0.272] - 2026-11-04
 
 ### Added
