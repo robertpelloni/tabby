@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.278] - 2026-11-04
+
+### Added
+
+- Window Reload & OS Theme Sync: Added "Reload Window" (`WindowReloadApp`) to system tray and command palette, and wired OS window frame theme synchronization (`WindowSetLightTheme` / `WindowSetDarkTheme`) on color scheme updates in `tabby-go/wails-app/frontend`.
+
+### Changed
+
+- Version bump to 1.0.278
+
 ## [1.0.277] - 2026-11-04
 
 ### Added

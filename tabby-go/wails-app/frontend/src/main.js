@@ -103,6 +103,9 @@ import {
 	WindowUnfullscreen,
 	WindowIsFullscreen,
 	WindowCenter,
+	WindowReloadApp,
+	WindowSetDarkTheme,
+	WindowSetLightTheme,
 	Quit,
 	ClipboardSetText,
 	ClipboardGetText,
@@ -453,9 +456,15 @@ function applyColorScheme(name) {
 	if (isSchemeLight(name)) {
 		document.body.classList.add("light-theme");
 		document.body.classList.remove("dark-theme");
+		try {
+			if (typeof WindowSetLightTheme === "function") WindowSetLightTheme();
+		} catch (e) {}
 	} else {
 		document.body.classList.add("dark-theme");
 		document.body.classList.remove("light-theme");
+		try {
+			if (typeof WindowSetDarkTheme === "function") WindowSetDarkTheme();
+		} catch (e) {}
 	}
 	renderColorSchemePreview(name);
 }
@@ -2470,6 +2479,20 @@ const PALETTE_COMMANDS = [
 		action: () => {
 			WindowCenter();
 			showToast("Window centered", "info");
+		},
+	},
+
+	{
+		id: "reload-window",
+		label: "Reload Window & UI",
+		icon: "🔄",
+		shortcut: "Ctrl+R",
+		action: () => {
+			if (typeof WindowReloadApp === "function") {
+				WindowReloadApp();
+			} else {
+				window.location.reload();
+			}
 		},
 	},
 
@@ -5029,7 +5052,7 @@ function toggleSystemTrayMenu(event) {
 	menu.innerHTML = `
 		<div class="tray-header">
 			<span><span class="tray-status-dot"></span>Tabby Go</span>
-			<span id="tray-version-badge" style="font-size:10px;color:#aaa;">v1.0.277</span>
+			<span id="tray-version-badge" style="font-size:10px;color:#aaa;">v1.0.278</span>
 		</div>
 		<div class="tray-item" data-action="new-tab">
 			<span>⌘ New Terminal Tab</span>
@@ -5059,6 +5082,10 @@ function toggleSystemTrayMenu(event) {
 		</div>
 		<div class="tray-item" data-action="minimize">
 			<span>🗕 Minimize Window</span>
+		</div>
+		<div class="tray-item" data-action="reload-app">
+			<span>🔄 Reload Window</span>
+			<span style="font-size:10px;color:#888;">Ctrl+R</span>
 		</div>
 		<div class="tray-divider"></div>
 		<div class="tray-item" data-action="zoom-in">
@@ -5124,6 +5151,9 @@ function toggleSystemTrayMenu(event) {
 			showToast("Window centered", "info");
 		} else if (action === "minimize") {
 			WindowMinimise();
+		} else if (action === "reload-app") {
+			if (typeof WindowReloadApp === "function") WindowReloadApp();
+			else window.location.reload();
 		} else if (action === "zoom-in") {
 			fontSize = Math.min(32, fontSize + 1);
 			tabs.forEach((t) => {
