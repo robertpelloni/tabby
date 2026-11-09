@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.276] - 2026-11-04
+
+### Added
+
+- AI Unit Test Suite: Added comprehensive unit tests in `tabby-go/pkg/ai/ai_test.go` covering `GenerateCommand`, `ExplainError`, and `Chat`.
+- Fixed command generation prompt precedence for process kill requests.
+
+### Changed
+
+- Version bump to 1.0.276
+
 ## [1.0.275] - 2026-11-04
 
 ### Added

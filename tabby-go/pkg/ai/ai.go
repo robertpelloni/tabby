@@ -94,10 +94,10 @@ func (m *Manager) GenerateCommand(params GenerateCommandParams) (*GenerateComman
 	var command string
 	if strings.Contains(prompt, "extract tar") || strings.Contains(prompt, "unzip tar") {
 		command = "tar -xvf archive.tar.gz"
-	} else if strings.Contains(prompt, "find port") || strings.Contains(prompt, "process on port") {
-		command = "lsof -i :<port>"
 	} else if strings.Contains(prompt, "kill") && strings.Contains(prompt, "port") {
 		command = "kill $(lsof -t -i :<port>)"
+	} else if strings.Contains(prompt, "find port") || strings.Contains(prompt, "process on port") {
+		command = "lsof -i :<port>"
 	} else if strings.Contains(prompt, "disk space") {
 		command = "df -h"
 	} else if strings.Contains(prompt, "undo") && strings.Contains(prompt, "commit") {
