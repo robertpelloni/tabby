@@ -42,6 +42,12 @@ jobs:
         cd tabby-go
         env CGO_ENABLED=1 go test ./...
 
+    - name: Build Wails frontend
+      run: |
+        cd tabby-go/wails-app/frontend
+        npm install
+        npm run build
+
     - name: Lint
       run: yarn run lint
 

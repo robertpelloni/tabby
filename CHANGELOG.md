@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.267] - 2026-11-04
+
+### Added
+
+- CI Wails Frontend Build Gate: Added `Build Wails frontend` step (`cd tabby-go/wails-app/frontend && npm install && npm run build`) into `.github/workflows/build.yml` to validate Wails UI production bundling during CI.
+
+### Changed
+
+- Version bump to 1.0.267
+
 ## [1.0.266] - 2026-11-04
 
 ### Added
