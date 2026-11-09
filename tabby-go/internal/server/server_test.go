@@ -3,6 +3,8 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -262,4 +264,85 @@ func TestInvalidJSON(t *testing.T) {
 	if response["error"] == nil {
 		t.Errorf("Expected error for invalid JSON")
 	}
+}
+
+// TestAgentWorkflowRPC verifies startWorkflow, getWorkflow, and cancelWorkflow RPC methods
+func TestAgentWorkflowRPC(t *testing.T) {
+	inReader, inWriter := io.Pipe()
+	outReader, outWriter := io.Pipe()
+
+	srv := NewWithIO(inReader, outWriter)
+	go srv.Run()
+
+	decoder := json.NewDecoder(outReader)
+
+	// 1. Start workflow
+	startReq := `{"jsonrpc": "2.0", "method": "agent.startWorkflow", "params": {"description": "Test Workflow"}, "id": 1}` + "\n"
+	io.WriteString(inWriter, startReq)
+
+	var startResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode JSON-RPC output: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 1 {
+			startResp = msg
+			break
+		}
+	}
+
+	wfResult, ok := startResp["result"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Workflow result is invalid: %v", startResp)
+	}
+
+	wfID, ok := wfResult["id"].(string)
+	if !ok || wfID == "" {
+		t.Fatalf("Workflow ID missing from result: %v", wfResult)
+	}
+
+	// 2. Get workflow details
+	getReq := fmt.Sprintf(`{"jsonrpc": "2.0", "method": "agent.getWorkflow", "params": {"id": "%s"}, "id": 2}`, wfID) + "\n"
+	io.WriteString(inWriter, getReq)
+
+	var getResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode JSON-RPC output: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 2 {
+			getResp = msg
+			break
+		}
+	}
+
+	getWf, ok := getResp["result"].(map[string]interface{})
+	if !ok || getWf["id"] != wfID {
+		t.Errorf("getWorkflow returned unexpected result: %v", getResp)
+	}
+
+	// 3. Cancel workflow
+	cancelReq := fmt.Sprintf(`{"jsonrpc": "2.0", "method": "agent.cancelWorkflow", "params": {"id": "%s"}, "id": 3}`, wfID) + "\n"
+	io.WriteString(inWriter, cancelReq)
+
+	var cancelResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode JSON-RPC output: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 3 {
+			cancelResp = msg
+			break
+		}
+	}
+
+	if cancelResp["error"] != nil {
+		t.Errorf("cancelWorkflow returned error: %v", cancelResp["error"])
+	}
+
+	inWriter.Close()
+	outWriter.Close()
 }

@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.269] - 2026-11-04
+
+### Added
+
+- Agent Workflow Protocol RPCs: Exposed `agent.cancelWorkflow` and `agent.getWorkflow` over the JSON-RPC server in `tabby-go/internal/server`.
+- Server RPC Unit Tests: Added `TestAgentWorkflowRPC` in `tabby-go/internal/server/server_test.go` verifying workflow start, status retrieval, and cancellation over the JSON-RPC pipe.
+
+### Changed
+
+- Version bump to 1.0.269
+
 ## [1.0.268] - 2026-11-04
 
 ### Added

@@ -44,6 +44,15 @@
 //   - serial.write                - Write data (stub)
 //   - serial.close                - Close port (stub)
 //   - serial.listPorts            - List available ports (stub)
+//   - agent.runTask               - Run agent task
+//   - agent.listTasks             - List agent tasks
+//   - agent.getTaskStatus         - Get status of agent task
+//   - agent.createWidget          - Create agent widget
+//   - agent.updateWidgetVDOM      - Update widget VDOM
+//   - agent.startWorkflow         - Start agent workflow
+//   - agent.cancelWorkflow        - Cancel agent workflow
+//   - agent.getWorkflow           - Get agent workflow status and details
+//   - agent.submitWorkflowResponse - Submit workflow clarification response
 package server
 
 import (
@@ -377,6 +386,10 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 		err = s.handleAgentUpdateWidgetVDOM(req.Params)
 	case "agent.startWorkflow":
 		result, err = s.handleAgentStartWorkflow(req.Params)
+	case "agent.cancelWorkflow":
+		err = s.handleAgentCancelWorkflow(req.Params)
+	case "agent.getWorkflow":
+		result, err = s.handleAgentGetWorkflow(req.Params)
 	case "agent.submitWorkflowResponse":
 		err = s.handleAgentSubmitWorkflowResponse(req.Params)
 
