@@ -44,6 +44,9 @@
 //   - serial.write                - Write data (stub)
 //   - serial.close                - Close port (stub)
 //   - serial.listPorts            - List available ports (stub)
+//   - ai.generateCommand          - Generate command using AI assistant
+//   - ai.explainError             - Explain terminal error output
+//   - ai.chat                     - Chat with terminal assistant
 //   - agent.runTask               - Run agent task
 //   - agent.listTasks             - List agent tasks
 //   - agent.getTaskStatus         - Get status of agent task

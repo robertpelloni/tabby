@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.277] - 2026-11-04
+
+### Added
+
+- AI Protocol Unit Tests: Added `TestAIRPC` in `tabby-go/internal/server/server_test.go` covering `ai.generateCommand`, `ai.explainError`, and `ai.chat` over the JSON-RPC pipe.
+- Documented AI RPC endpoints in `tabby-go/internal/server/server.go` header.
+
+### Changed
+
+- Version bump to 1.0.277
+
 ## [1.0.276] - 2026-11-04
 
 ### Added

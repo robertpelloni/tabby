@@ -348,6 +348,89 @@ func TestAgentWorkflowRPC(t *testing.T) {
 	outWriter.Close()
 }
 
+// TestAIRPC verifies ai.generateCommand, ai.explainError, and ai.chat JSON-RPC methods
+func TestAIRPC(t *testing.T) {
+	inReader, inWriter := io.Pipe()
+	outReader, outWriter := io.Pipe()
+
+	srv := NewWithIO(inReader, outWriter)
+	go srv.Run()
+
+	decoder := json.NewDecoder(outReader)
+
+	// 1. ai.generateCommand
+	genReq := `{"jsonrpc": "2.0", "method": "ai.generateCommand", "params": {"prompt": "extract tar file"}, "id": 20}` + "\n"
+	io.WriteString(inWriter, genReq)
+
+	var genResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode ai.generateCommand response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 20 {
+			genResp = msg
+			break
+		}
+	}
+	if genResp["error"] != nil {
+		t.Fatalf("ai.generateCommand error: %v", genResp["error"])
+	}
+	genRes, ok := genResp["result"].(map[string]interface{})
+	if !ok || genRes["command"] != "tar -xvf archive.tar.gz" {
+		t.Errorf("Unexpected generateCommand result: %v", genResp)
+	}
+
+	// 2. ai.explainError
+	expReq := `{"jsonrpc": "2.0", "method": "ai.explainError", "params": {"command": "foo", "errorOutput": "command not found"}, "id": 21}` + "\n"
+	io.WriteString(inWriter, expReq)
+
+	var expResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode ai.explainError response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 21 {
+			expResp = msg
+			break
+		}
+	}
+	if expResp["error"] != nil {
+		t.Fatalf("ai.explainError error: %v", expResp["error"])
+	}
+	expRes, ok := expResp["result"].(map[string]interface{})
+	if !ok || !strings.Contains(expRes["explanation"].(string), "Command Not Found") {
+		t.Errorf("Unexpected explainError result: %v", expResp)
+	}
+
+	// 3. ai.chat
+	chatReq := `{"jsonrpc": "2.0", "method": "ai.chat", "params": {"message": "hello"}, "id": 22}` + "\n"
+	io.WriteString(inWriter, chatReq)
+
+	var chatResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode ai.chat response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 22 {
+			chatResp = msg
+			break
+		}
+	}
+	if chatResp["error"] != nil {
+		t.Fatalf("ai.chat error: %v", chatResp["error"])
+	}
+	chatRes, ok := chatResp["result"].(map[string]interface{})
+	if !ok || !strings.Contains(chatRes["response"].(string), "Hello!") {
+		t.Errorf("Unexpected chat result: %v", chatResp)
+	}
+
+	inWriter.Close()
+	outWriter.Close()
+}
+
 // TestSessionPersistenceRPC verifies session.save, session.load, and session.clear JSON-RPC methods
 func TestSessionPersistenceRPC(t *testing.T) {
 	tmpDir := t.TempDir()
