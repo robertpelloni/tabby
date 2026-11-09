@@ -5029,7 +5029,7 @@ function toggleSystemTrayMenu(event) {
 	menu.innerHTML = `
 		<div class="tray-header">
 			<span><span class="tray-status-dot"></span>Tabby Go</span>
-			<span id="tray-version-badge" style="font-size:10px;color:#aaa;">v1.0.274</span>
+			<span id="tray-version-badge" style="font-size:10px;color:#aaa;">v1.0.275</span>
 		</div>
 		<div class="tray-item" data-action="new-tab">
 			<span>⌘ New Terminal Tab</span>
@@ -5059,6 +5059,19 @@ function toggleSystemTrayMenu(event) {
 		</div>
 		<div class="tray-item" data-action="minimize">
 			<span>🗕 Minimize Window</span>
+		</div>
+		<div class="tray-divider"></div>
+		<div class="tray-item" data-action="zoom-in">
+			<span>🔍 Zoom In</span>
+			<span style="font-size:10px;color:#888;">Ctrl+=</span>
+		</div>
+		<div class="tray-item" data-action="zoom-out">
+			<span>🔍 Zoom Out</span>
+			<span style="font-size:10px;color:#888;">Ctrl+-</span>
+		</div>
+		<div class="tray-item" data-action="zoom-reset">
+			<span>🔍 Reset Zoom</span>
+			<span style="font-size:10px;color:#888;">Ctrl+0</span>
 		</div>
 		<div class="tray-divider"></div>
 		<div class="tray-item danger" data-action="stop-servers">
@@ -5109,8 +5122,27 @@ function toggleSystemTrayMenu(event) {
 		} else if (action === "center") {
 			WindowCenter();
 			showToast("Window centered", "info");
-		} else if (action === "minimize") WindowMinimise();
-		else if (action === "stop-servers") shutdownAllServers();
+		} else if (action === "minimize") {
+			WindowMinimise();
+		} else if (action === "zoom-in") {
+			fontSize = Math.min(32, fontSize + 1);
+			tabs.forEach((t) => {
+				t.term.options.fontSize = fontSize;
+			});
+			showToast("Font size: " + fontSize, "info");
+		} else if (action === "zoom-out") {
+			fontSize = Math.max(8, fontSize - 1);
+			tabs.forEach((t) => {
+				t.term.options.fontSize = fontSize;
+			});
+			showToast("Font size: " + fontSize, "info");
+		} else if (action === "zoom-reset") {
+			fontSize = 14;
+			tabs.forEach((t) => {
+				t.term.options.fontSize = fontSize;
+			});
+			showToast("Font size reset: 14", "info");
+		} else if (action === "stop-servers") shutdownAllServers();
 		else if (action === "quit") quitTabbyApplication();
 	};
 

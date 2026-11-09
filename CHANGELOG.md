@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.275] - 2026-11-04
+
+### Added
+
+- System Tray Font Zoom Controls: Added "Zoom In (Ctrl+=)", "Zoom Out (Ctrl+-)", and "Reset Zoom (Ctrl+0)" actions to the system tray popup menu in `tabby-go/wails-app/frontend`.
+
+### Changed
+
+- Version bump to 1.0.275
+
 ## [1.0.274] - 2026-11-04
 
 ### Added
