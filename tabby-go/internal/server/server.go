@@ -53,6 +53,9 @@
 //   - agent.cancelWorkflow        - Cancel agent workflow
 //   - agent.getWorkflow           - Get agent workflow status and details
 //   - agent.submitWorkflowResponse - Submit workflow clarification response
+//   - session.save                - Save current tab session state
+//   - session.load                - Load last saved session state
+//   - session.clear               - Clear saved session state
 package server
 
 import (
@@ -75,6 +78,7 @@ import (
 	"github.com/robertpelloni/tabby/tabby-go/pkg/pty"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/recovery"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/serial"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/session"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/sftp"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ssh"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/telnet"
@@ -392,6 +396,13 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 		result, err = s.handleAgentGetWorkflow(req.Params)
 	case "agent.submitWorkflowResponse":
 		err = s.handleAgentSubmitWorkflowResponse(req.Params)
+
+	case "session.save":
+		err = s.handleSessionSave(req.Params)
+	case "session.load":
+		result, err = s.handleSessionLoad()
+	case "session.clear":
+		err = s.handleSessionClear()
 
 	default:
 		s.sendError(req.ID, api.ErrorMethodNotFound, fmt.Sprintf("Method not found: %s", req.Method), nil)
@@ -1498,4 +1509,24 @@ func (s *Server) handleAgentGetTaskStatus(params interface{}) (*agent.Task, erro
 		return nil, fmt.Errorf("task not found: %s", p.ID)
 	}
 	return task, nil
+}
+
+// ---- Session Persistence Handlers ----
+
+func (s *Server) handleSessionSave(params interface{}) error {
+	var p struct {
+		Tabs []session.TabState `json:"tabs"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return session.SaveSession(p.Tabs)
+}
+
+func (s *Server) handleSessionLoad() (*session.SessionState, error) {
+	return session.LoadSession()
+}
+
+func (s *Server) handleSessionClear() error {
+	return session.ClearSession()
 }

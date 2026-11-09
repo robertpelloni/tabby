@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -341,6 +342,98 @@ func TestAgentWorkflowRPC(t *testing.T) {
 
 	if cancelResp["error"] != nil {
 		t.Errorf("cancelWorkflow returned error: %v", cancelResp["error"])
+	}
+
+	inWriter.Close()
+	outWriter.Close()
+}
+
+// TestSessionPersistenceRPC verifies session.save, session.load, and session.clear JSON-RPC methods
+func TestSessionPersistenceRPC(t *testing.T) {
+	tmpDir := t.TempDir()
+	originalAppData := os.Getenv("APPDATA")
+	if err := os.Setenv("APPDATA", tmpDir); err != nil {
+		t.Skip("Cannot set APPDATA")
+	}
+	defer func() {
+		if originalAppData != "" {
+			os.Setenv("APPDATA", originalAppData)
+		} else {
+			os.Unsetenv("APPDATA")
+		}
+	}()
+
+	inReader, inWriter := io.Pipe()
+	outReader, outWriter := io.Pipe()
+
+	srv := NewWithIO(inReader, outWriter)
+	go srv.Run()
+
+	decoder := json.NewDecoder(outReader)
+
+	// 1. Save session
+	saveReq := `{"jsonrpc": "2.0", "method": "session.save", "params": {"tabs": [{"title": "Test Tab", "shell": "/bin/bash", "active": true}]}, "id": 10}` + "\n"
+	io.WriteString(inWriter, saveReq)
+
+	var saveResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode save response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 10 {
+			saveResp = msg
+			break
+		}
+	}
+	if saveResp["error"] != nil {
+		t.Errorf("session.save returned error: %v", saveResp["error"])
+	}
+
+	// 2. Load session
+	loadReq := `{"jsonrpc": "2.0", "method": "session.load", "id": 11}` + "\n"
+	io.WriteString(inWriter, loadReq)
+
+	var loadResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode load response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 11 {
+			loadResp = msg
+			break
+		}
+	}
+	if loadResp["error"] != nil {
+		t.Errorf("session.load returned error: %v", loadResp["error"])
+	}
+	result, ok := loadResp["result"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("session.load result missing or not an object: %v", loadResp)
+	}
+	tabs, ok := result["tabs"].([]interface{})
+	if !ok || len(tabs) != 1 {
+		t.Fatalf("Expected 1 saved tab, got: %v", result["tabs"])
+	}
+
+	// 3. Clear session
+	clearReq := `{"jsonrpc": "2.0", "method": "session.clear", "id": 12}` + "\n"
+	io.WriteString(inWriter, clearReq)
+
+	var clearResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode clear response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 12 {
+			clearResp = msg
+			break
+		}
+	}
+	if clearResp["error"] != nil {
+		t.Errorf("session.clear returned error: %v", clearResp["error"])
 	}
 
 	inWriter.Close()

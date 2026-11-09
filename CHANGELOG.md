@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.271] - 2026-11-04
+
+### Added
+
+- Session Persistence Protocol RPCs: Exposed `session.save`, `session.load`, and `session.clear` over the JSON-RPC daemon server in `tabby-go/internal/server`.
+- Server RPC Session Tests: Added `TestSessionPersistenceRPC` in `tabby-go/internal/server/server_test.go` verifying save, load, and clear roundtrips over a duplex JSON-RPC pipe.
+
+### Changed
+
+- Version bump to 1.0.271
+
 ## [1.0.270] - 2026-11-04
 
 ### Added
