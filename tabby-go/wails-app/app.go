@@ -19,6 +19,7 @@ import (
 	"github.com/robertpelloni/tabby/tabby-go/pkg/telnet"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/keychain"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/vault"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/agent"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/audit"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/notification"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/updater"
@@ -27,16 +28,17 @@ import (
 
 // App struct holds all the application state and backend managers.
 type App struct {
-	ctx     context.Context
-	sshMgr   *ssh.Manager
-	sftpMgr  *sftp.Manager
-	ptyMgr   *pty.Manager
+	ctx       context.Context
+	sshMgr    *ssh.Manager
+	sftpMgr   *sftp.Manager
+	ptyMgr    *pty.Manager
 	serialMgr *serial.Manager
-	telnetMgr  *telnet.Manager
+	telnetMgr *telnet.Manager
 	notifMgr  *notification.Manager
 	keychain  *keychain.Keychain
 	updater   *updater.Checker
 	auditLog  *audit.Logger
+	agentMgr  *agent.Manager
 }
 
 // NewApp creates a new App application struct with all managers initialized.
@@ -50,6 +52,7 @@ func NewApp() *App {
 	a.notifMgr = notification.NewManager()
 	a.keychain = keychain.NewKeychain(vault.NewManager())
 	a.updater = updater.NewChecker("1.0.0")
+	a.agentMgr = agent.NewManager(a.emit)
 	return a
 }
 
@@ -285,7 +288,7 @@ func (a *App) GetPlatform() map[string]string {
 	return map[string]string{
 		"os":      runtime.GOOS,
 		"arch":    runtime.GOARCH,
-		"version":  "1.0.273",
+		"version":  "1.0.274",
 	}
 }
 
@@ -521,6 +524,44 @@ func (a *App) GetAuditLogPath() string {
 		return a.auditLog.GetPath()
 	}
 	return ""
+}
+
+// ==== Agent Workflow Methods ====
+
+// StartWorkflow initiates an autonomous multi-phase workflow.
+func (a *App) StartWorkflow(description string) (*agent.Workflow, error) {
+	if a.agentMgr == nil {
+		return nil, fmt.Errorf("agent manager not initialized")
+	}
+	return a.agentMgr.WorkflowMgr.StartWorkflow(context.Background(), description), nil
+}
+
+// CancelWorkflow interrupts an active workflow by its identifier.
+func (a *App) CancelWorkflow(id string) error {
+	if a.agentMgr == nil {
+		return fmt.Errorf("agent manager not initialized")
+	}
+	return a.agentMgr.WorkflowMgr.CancelWorkflow(id)
+}
+
+// GetWorkflow fetches the details and current execution status of a workflow.
+func (a *App) GetWorkflow(id string) (*agent.Workflow, error) {
+	if a.agentMgr == nil {
+		return nil, fmt.Errorf("agent manager not initialized")
+	}
+	wf, ok := a.agentMgr.WorkflowMgr.GetWorkflow(id)
+	if !ok {
+		return nil, fmt.Errorf("workflow not found: %s", id)
+	}
+	return wf, nil
+}
+
+// SubmitWorkflowResponse submits clarification or user input to a paused workflow.
+func (a *App) SubmitWorkflowResponse(id string, response string) error {
+	if a.agentMgr == nil {
+		return fmt.Errorf("agent manager not initialized")
+	}
+	return a.agentMgr.WorkflowMgr.SubmitResponse(id, response)
 }
 
 // ==== Lifecycle & Server Control ====

@@ -1,15 +1,16 @@
-# Session Handoff — Native App Test Suite (v1.0.273)
+# Session Handoff — Wails Agent Workflow Integration (v1.0.274)
 
 ## Completed Operations
 
-### 1. Native Application Tests (`tabby-go/pkg/nativeapp`)
-- Created unit tests in `tabby-go/pkg/nativeapp/nativeapp_test.go` verifying instance instantiation (`NewNativeApp`) and notification delivery without panics.
-- Validated clean execution across all 29 Go test packages.
+### 1. Wails Backend Agent Integration (`tabby-go/wails-app/app.go`)
+- Initialized `agentMgr *agent.Manager` in `App` struct via `agent.NewManager(a.emit)`.
+- Implemented and exposed `StartWorkflow`, `CancelWorkflow`, `GetWorkflow`, and `SubmitWorkflowResponse` methods.
+- Exported TypeScript typings and Wails bridge functions in `tabby-go/wails-app/frontend/wailsjs/go/main/App.d.ts` and `App.js`.
+- Re-built Vite production assets in `tabby-go/wails-app/frontend/dist`.
 
 ### 2. Versioning & Documentation
-- Bumped `VERSION.md` to `1.0.273`.
-- Synchronized `app.go` platform reporting and system tray badge to `1.0.273`.
-- Updated `CHANGELOG.md` and `HANDOFF.md`.
+- Bumped `VERSION.md` to `1.0.274`.
+- Updated `CHANGELOG.md`, `app.go`, and `HANDOFF.md`.
 
 ## Test Status
 - `npm test`: 11/11 tests pass.

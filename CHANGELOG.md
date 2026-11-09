@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.274] - 2026-11-04
+
+### Added
+
+- Wails Agent Workflow Engine Integration: Wired `pkg/agent` into `App` struct in `tabby-go/wails-app/app.go`, exposing `StartWorkflow`, `CancelWorkflow`, `GetWorkflow`, and `SubmitWorkflowResponse` with TypeScript definitions and bindings.
+
+### Changed
+
+- Version bump to 1.0.274
+
 ## [1.0.273] - 2026-11-04
 
 ### Added

@@ -289,3 +289,19 @@ export function TelnetResize(arg1, arg2, arg3) {
 export function TelnetWrite(arg1, arg2) {
   return window['go']['main']['App']['TelnetWrite'](arg1, arg2);
 }
+
+export function StartWorkflow(arg1) {
+  return window['go']['main']['App']['StartWorkflow'](arg1);
+}
+
+export function CancelWorkflow(arg1) {
+  return window['go']['main']['App']['CancelWorkflow'](arg1);
+}
+
+export function GetWorkflow(arg1) {
+  return window['go']['main']['App']['GetWorkflow'](arg1);
+}
+
+export function SubmitWorkflowResponse(arg1, arg2) {
+  return window['go']['main']['App']['SubmitWorkflowResponse'](arg1, arg2);
+}

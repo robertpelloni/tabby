@@ -152,3 +152,11 @@ export function TelnetConnect(arg1:string,arg2:number):Promise<telnet.TelnetConn
 export function TelnetResize(arg1:string,arg2:number,arg3:number):Promise<void>;
 
 export function TelnetWrite(arg1:string,arg2:string):Promise<void>;
+
+export function StartWorkflow(arg1:string):Promise<any>;
+
+export function CancelWorkflow(arg1:string):Promise<void>;
+
+export function GetWorkflow(arg1:string):Promise<any>;
+
+export function SubmitWorkflowResponse(arg1:string,arg2:string):Promise<void>;
