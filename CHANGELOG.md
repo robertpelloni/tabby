@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.270] - 2026-11-04
+
+### Added
+
+- Last Tab Closes Window Behavior: Wired `LastTabClosesWindow` setting in Wails frontend `Tab.close()`, invoking `quitTabbyApplication()` to cleanly shut down active servers and terminate the application when the final tab is closed.
+
+### Changed
+
+- Version bump to 1.0.270
+
 ## [1.0.269] - 2026-11-04
 
 ### Added
