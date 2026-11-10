@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.282] - 2026-11-04
+
+### Added
+
+- Window Size Bounds & Recovery: Enforced minimum window bounds (800x500 via `WindowSetMinSize`) in `tabby-go/wails-app/frontend/src/main.js` to safeguard terminal viewports and settings grids from collapsing. Added "Reset Window Size" action (`WindowSetSize(1024, 680)` + `WindowCenter()`) in both Command Palette and System Tray popup menu.
+
+### Changed
+
+- Version bump to 1.0.282
+
 ## [1.0.281] - 2026-11-04
 
 ### Added

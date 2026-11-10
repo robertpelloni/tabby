@@ -103,6 +103,8 @@ import {
 	WindowUnfullscreen,
 	WindowIsFullscreen,
 	WindowCenter,
+	WindowSetMinSize,
+	WindowSetSize,
 	WindowReloadApp,
 	WindowSetDarkTheme,
 	WindowSetLightTheme,
@@ -378,6 +380,15 @@ async function init() {
 			}
 			setTimeout(updateMaximizeBtn, 100);
 		};
+	}
+
+	// Enforce minimum window size constraint to prevent viewport collapse
+	if (typeof WindowSetMinSize === "function") {
+		try {
+			WindowSetMinSize(800, 500);
+		} catch (e) {
+			console.warn("Failed to set minimum window size:", e);
+		}
 	}
 
 	// Handle maximize/restore state
@@ -2479,6 +2490,20 @@ const PALETTE_COMMANDS = [
 		action: () => {
 			WindowCenter();
 			showToast("Window centered", "info");
+		},
+	},
+
+	{
+		id: "reset-window-size",
+		label: "Reset Window Size (1024x680)",
+		icon: "📐",
+		shortcut: "",
+		action: () => {
+			if (typeof WindowSetSize === "function") {
+				WindowSetSize(1024, 680);
+				if (typeof WindowCenter === "function") WindowCenter();
+				showToast("Window size reset to 1024x680", "info");
+			}
 		},
 	},
 
@@ -5080,6 +5105,9 @@ function toggleSystemTrayMenu(event) {
 		<div class="tray-item" data-action="center">
 			<span>🎯 Center Window</span>
 		</div>
+		<div class="tray-item" data-action="reset-size">
+			<span>📐 Reset Window Size</span>
+		</div>
 		<div class="tray-item" data-action="minimize">
 			<span>🗕 Minimize Window</span>
 		</div>
@@ -5149,6 +5177,12 @@ function toggleSystemTrayMenu(event) {
 		} else if (action === "center") {
 			WindowCenter();
 			showToast("Window centered", "info");
+		} else if (action === "reset-size") {
+			if (typeof WindowSetSize === "function") {
+				WindowSetSize(1024, 680);
+				if (typeof WindowCenter === "function") WindowCenter();
+				showToast("Window size reset to 1024x680", "info");
+			}
 		} else if (action === "minimize") {
 			WindowMinimise();
 		} else if (action === "reload-app") {
