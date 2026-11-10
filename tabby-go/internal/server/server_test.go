@@ -3,6 +3,9 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -262,4 +265,399 @@ func TestInvalidJSON(t *testing.T) {
 	if response["error"] == nil {
 		t.Errorf("Expected error for invalid JSON")
 	}
+}
+
+// TestAgentWorkflowRPC verifies startWorkflow, getWorkflow, and cancelWorkflow RPC methods
+func TestAgentWorkflowRPC(t *testing.T) {
+	inReader, inWriter := io.Pipe()
+	outReader, outWriter := io.Pipe()
+
+	srv := NewWithIO(inReader, outWriter)
+	go srv.Run()
+
+	decoder := json.NewDecoder(outReader)
+
+	// 1. Start workflow
+	startReq := `{"jsonrpc": "2.0", "method": "agent.startWorkflow", "params": {"description": "Test Workflow"}, "id": 1}` + "\n"
+	io.WriteString(inWriter, startReq)
+
+	var startResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode JSON-RPC output: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 1 {
+			startResp = msg
+			break
+		}
+	}
+
+	wfResult, ok := startResp["result"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("Workflow result is invalid: %v", startResp)
+	}
+
+	wfID, ok := wfResult["id"].(string)
+	if !ok || wfID == "" {
+		t.Fatalf("Workflow ID missing from result: %v", wfResult)
+	}
+
+	// 2. Get workflow details
+	getReq := fmt.Sprintf(`{"jsonrpc": "2.0", "method": "agent.getWorkflow", "params": {"id": "%s"}, "id": 2}`, wfID) + "\n"
+	io.WriteString(inWriter, getReq)
+
+	var getResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode JSON-RPC output: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 2 {
+			getResp = msg
+			break
+		}
+	}
+
+	getWf, ok := getResp["result"].(map[string]interface{})
+	if !ok || getWf["id"] != wfID {
+		t.Errorf("getWorkflow returned unexpected result: %v", getResp)
+	}
+
+	// 3. Cancel workflow
+	cancelReq := fmt.Sprintf(`{"jsonrpc": "2.0", "method": "agent.cancelWorkflow", "params": {"id": "%s"}, "id": 3}`, wfID) + "\n"
+	io.WriteString(inWriter, cancelReq)
+
+	var cancelResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode JSON-RPC output: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 3 {
+			cancelResp = msg
+			break
+		}
+	}
+
+	if cancelResp["error"] != nil {
+		t.Errorf("cancelWorkflow returned error: %v", cancelResp["error"])
+	}
+
+	inWriter.Close()
+	outWriter.Close()
+}
+
+func TestSettingsRPC(t *testing.T) {
+	inReader, inWriter := io.Pipe()
+	outReader, outWriter := io.Pipe()
+
+	srv := NewWithIO(inReader, outWriter)
+	go func() {
+		_ = srv.Run()
+	}()
+
+	decoder := json.NewDecoder(outReader)
+
+	// 1. settings.listColorSchemes
+	listReq := `{"jsonrpc": "2.0", "method": "settings.listColorSchemes", "id": 20}` + "\n"
+	io.WriteString(inWriter, listReq)
+
+	var listResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode listColorSchemes response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 20 {
+			listResp = msg
+			break
+		}
+	}
+	if listResp["error"] != nil {
+		t.Errorf("settings.listColorSchemes returned error: %v", listResp["error"])
+	}
+	schemes, ok := listResp["result"].([]interface{})
+	if !ok || len(schemes) == 0 {
+		t.Fatalf("expected non-empty color scheme list, got: %v", listResp["result"])
+	}
+
+	// 2. settings.get
+	getReq := `{"jsonrpc": "2.0", "method": "settings.get", "id": 21}` + "\n"
+	io.WriteString(inWriter, getReq)
+
+	var getResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode settings.get response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 21 {
+			getResp = msg
+			break
+		}
+	}
+	if getResp["error"] != nil {
+		t.Errorf("settings.get returned error: %v", getResp["error"])
+	}
+	settingsMap, ok := getResp["result"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("settings.get result missing or invalid: %v", getResp["result"])
+	}
+	if _, ok := settingsMap["font_size"]; !ok {
+		t.Errorf("settings.get result missing font_size property: %v", settingsMap)
+	}
+
+	// 3. settings.reset
+	resetReq := `{"jsonrpc": "2.0", "method": "settings.reset", "id": 22}` + "\n"
+	io.WriteString(inWriter, resetReq)
+
+	var resetResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode settings.reset response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 22 {
+			resetResp = msg
+			break
+		}
+	}
+	if resetResp["error"] != nil {
+		t.Errorf("settings.reset returned error: %v", resetResp["error"])
+	}
+
+	inWriter.Close()
+	outWriter.Close()
+}
+
+// TestAuditRPC verifies audit.log and audit.getPath JSON-RPC methods
+func TestAuditRPC(t *testing.T) {
+	inReader, inWriter := io.Pipe()
+	outReader, outWriter := io.Pipe()
+
+	srv := NewWithIO(inReader, outWriter)
+	go srv.Run()
+
+	decoder := json.NewDecoder(outReader)
+
+	// 1. audit.getPath
+	pathReq := `{"jsonrpc": "2.0", "method": "audit.getPath", "id": 30}` + "\n"
+	io.WriteString(inWriter, pathReq)
+
+	var pathResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode audit.getPath response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 30 {
+			pathResp = msg
+			break
+		}
+	}
+	if pathResp["error"] != nil {
+		t.Fatalf("audit.getPath error: %v", pathResp["error"])
+	}
+	pathRes, ok := pathResp["result"].(string)
+	if !ok || pathRes == "" {
+		t.Errorf("Expected valid log path, got: %v", pathResp)
+	}
+
+	// 2. audit.log
+	logReq := `{"jsonrpc": "2.0", "method": "audit.log", "params": {"type": "connect", "protocol": "ssh", "host": "127.0.0.1", "port": 22}, "id": 31}` + "\n"
+	io.WriteString(inWriter, logReq)
+
+	var logResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode audit.log response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 31 {
+			logResp = msg
+			break
+		}
+	}
+	if logResp["error"] != nil {
+		t.Fatalf("audit.log error: %v", logResp["error"])
+	}
+
+	inWriter.Close()
+	outWriter.Close()
+}
+
+// TestAIRPC verifies ai.generateCommand, ai.explainError, and ai.chat JSON-RPC methods
+func TestAIRPC(t *testing.T) {
+	inReader, inWriter := io.Pipe()
+	outReader, outWriter := io.Pipe()
+
+	srv := NewWithIO(inReader, outWriter)
+	go srv.Run()
+
+	decoder := json.NewDecoder(outReader)
+
+	// 1. ai.generateCommand
+	genReq := `{"jsonrpc": "2.0", "method": "ai.generateCommand", "params": {"prompt": "extract tar file"}, "id": 20}` + "\n"
+	io.WriteString(inWriter, genReq)
+
+	var genResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode ai.generateCommand response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 20 {
+			genResp = msg
+			break
+		}
+	}
+	if genResp["error"] != nil {
+		t.Fatalf("ai.generateCommand error: %v", genResp["error"])
+	}
+	genRes, ok := genResp["result"].(map[string]interface{})
+	if !ok || genRes["command"] != "tar -xvf archive.tar.gz" {
+		t.Errorf("Unexpected generateCommand result: %v", genResp)
+	}
+
+	// 2. ai.explainError
+	expReq := `{"jsonrpc": "2.0", "method": "ai.explainError", "params": {"command": "foo", "errorOutput": "command not found"}, "id": 21}` + "\n"
+	io.WriteString(inWriter, expReq)
+
+	var expResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode ai.explainError response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 21 {
+			expResp = msg
+			break
+		}
+	}
+	if expResp["error"] != nil {
+		t.Fatalf("ai.explainError error: %v", expResp["error"])
+	}
+	expRes, ok := expResp["result"].(map[string]interface{})
+	if !ok || !strings.Contains(expRes["explanation"].(string), "Command Not Found") {
+		t.Errorf("Unexpected explainError result: %v", expResp)
+	}
+
+	// 3. ai.chat
+	chatReq := `{"jsonrpc": "2.0", "method": "ai.chat", "params": {"message": "hello"}, "id": 22}` + "\n"
+	io.WriteString(inWriter, chatReq)
+
+	var chatResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode ai.chat response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 22 {
+			chatResp = msg
+			break
+		}
+	}
+	if chatResp["error"] != nil {
+		t.Fatalf("ai.chat error: %v", chatResp["error"])
+	}
+	chatRes, ok := chatResp["result"].(map[string]interface{})
+	if !ok || !strings.Contains(chatRes["response"].(string), "Hello!") {
+		t.Errorf("Unexpected chat result: %v", chatResp)
+	}
+
+	inWriter.Close()
+	outWriter.Close()
+}
+
+// TestSessionPersistenceRPC verifies session.save, session.load, and session.clear JSON-RPC methods
+func TestSessionPersistenceRPC(t *testing.T) {
+	tmpDir := t.TempDir()
+	originalAppData := os.Getenv("APPDATA")
+	if err := os.Setenv("APPDATA", tmpDir); err != nil {
+		t.Skip("Cannot set APPDATA")
+	}
+	defer func() {
+		if originalAppData != "" {
+			os.Setenv("APPDATA", originalAppData)
+		} else {
+			os.Unsetenv("APPDATA")
+		}
+	}()
+
+	inReader, inWriter := io.Pipe()
+	outReader, outWriter := io.Pipe()
+
+	srv := NewWithIO(inReader, outWriter)
+	go srv.Run()
+
+	decoder := json.NewDecoder(outReader)
+
+	// 1. Save session
+	saveReq := `{"jsonrpc": "2.0", "method": "session.save", "params": {"tabs": [{"title": "Test Tab", "shell": "/bin/bash", "active": true}]}, "id": 10}` + "\n"
+	io.WriteString(inWriter, saveReq)
+
+	var saveResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode save response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 10 {
+			saveResp = msg
+			break
+		}
+	}
+	if saveResp["error"] != nil {
+		t.Errorf("session.save returned error: %v", saveResp["error"])
+	}
+
+	// 2. Load session
+	loadReq := `{"jsonrpc": "2.0", "method": "session.load", "id": 11}` + "\n"
+	io.WriteString(inWriter, loadReq)
+
+	var loadResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode load response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 11 {
+			loadResp = msg
+			break
+		}
+	}
+	if loadResp["error"] != nil {
+		t.Errorf("session.load returned error: %v", loadResp["error"])
+	}
+	result, ok := loadResp["result"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("session.load result missing or not an object: %v", loadResp)
+	}
+	tabs, ok := result["tabs"].([]interface{})
+	if !ok || len(tabs) != 1 {
+		t.Fatalf("Expected 1 saved tab, got: %v", result["tabs"])
+	}
+
+	// 3. Clear session
+	clearReq := `{"jsonrpc": "2.0", "method": "session.clear", "id": 12}` + "\n"
+	io.WriteString(inWriter, clearReq)
+
+	var clearResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode clear response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 12 {
+			clearResp = msg
+			break
+		}
+	}
+	if clearResp["error"] != nil {
+		t.Errorf("session.clear returned error: %v", clearResp["error"])
+	}
+
+	inWriter.Close()
+	outWriter.Close()
 }

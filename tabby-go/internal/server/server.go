@@ -44,6 +44,27 @@
 //   - serial.write                - Write data (stub)
 //   - serial.close                - Close port (stub)
 //   - serial.listPorts            - List available ports (stub)
+//   - ai.generateCommand          - Generate command using AI assistant
+//   - ai.explainError             - Explain terminal error output
+//   - ai.chat                     - Chat with terminal assistant
+//   - agent.runTask               - Run agent task
+//   - agent.listTasks             - List agent tasks
+//   - agent.getTaskStatus         - Get status of agent task
+//   - agent.createWidget          - Create agent widget
+//   - agent.updateWidgetVDOM      - Update widget VDOM
+//   - agent.startWorkflow         - Start agent workflow
+//   - agent.cancelWorkflow        - Cancel agent workflow
+//   - agent.getWorkflow           - Get agent workflow status and details
+//   - agent.submitWorkflowResponse - Submit workflow clarification response
+//   - session.save                - Save current tab session state
+//   - session.load                - Load last saved session state
+//   - session.clear               - Clear saved session state
+//   - audit.log                   - Record an audit event
+//   - audit.getPath               - Get audit log file path
+//   - settings.get                - Get current settings
+//   - settings.set                - Save updated settings
+//   - settings.reset              - Reset settings to defaults
+//   - settings.listColorSchemes   - List available color schemes
 package server
 
 import (
@@ -60,12 +81,15 @@ import (
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ai"
 	tabbysync "github.com/robertpelloni/tabby/tabby-go/pkg/sync"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/api"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/audit"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/config"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/knownhosts"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/notification"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/pty"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/recovery"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/serial"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/session"
+	"github.com/robertpelloni/tabby/tabby-go/pkg/settings"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/sftp"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/ssh"
 	"github.com/robertpelloni/tabby/tabby-go/pkg/telnet"
@@ -85,6 +109,7 @@ type Server struct {
 	notifMgr     *notification.Manager
 	recoveryMgr  *recovery.Manager
 	configMgr    *config.Manager
+	auditLog     *audit.Logger
 	reader       *bufio.Reader
 	writer       io.Writer
 	mu           sync.Mutex
@@ -112,6 +137,12 @@ func New() *Server {
 		s.sendNotification("notifications.changed", notifs)
 	})
 	s.configMgr = config.NewManager()
+
+	logDir, err := settings.ConfigDir()
+	if err != nil {
+		logDir = os.TempDir()
+	}
+	s.auditLog, _ = audit.NewLogger(logDir)
 
 	// Start polling the config file from the standard path and emit host:config-change IPC
 	configPath := config.GetConfigPath()
@@ -142,6 +173,12 @@ func NewWithIO(in io.Reader, out io.Writer) *Server {
 	s.notifMgr = notification.NewManager()
 	s.recoveryMgr = recovery.NewManager()
 	s.configMgr = config.NewManager()
+
+	logDir, err := settings.ConfigDir()
+	if err != nil {
+		logDir = os.TempDir()
+	}
+	s.auditLog, _ = audit.NewLogger(logDir)
 
 	// Start polling the config file from the standard path and emit host:config-change IPC
 	configPath := config.GetConfigPath()
@@ -377,8 +414,47 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 		err = s.handleAgentUpdateWidgetVDOM(req.Params)
 	case "agent.startWorkflow":
 		result, err = s.handleAgentStartWorkflow(req.Params)
+	case "agent.cancelWorkflow":
+		err = s.handleAgentCancelWorkflow(req.Params)
+	case "agent.getWorkflow":
+		result, err = s.handleAgentGetWorkflow(req.Params)
 	case "agent.submitWorkflowResponse":
 		err = s.handleAgentSubmitWorkflowResponse(req.Params)
+
+	case "session.save":
+		err = s.handleSessionSave(req.Params)
+	case "session.load":
+		result, err = s.handleSessionLoad()
+	case "session.clear":
+		err = s.handleSessionClear()
+
+	// ---- Audit ----
+	case "audit.log":
+		var ev audit.Event
+		if err = reMarshal(req.Params, &ev); err == nil {
+			if s.auditLog != nil {
+				err = s.auditLog.Log(ev)
+			}
+		}
+	case "audit.getPath":
+		if s.auditLog != nil {
+			result = s.auditLog.GetPath()
+		} else {
+			result = ""
+		}
+
+	// ---- Settings ----
+	case "settings.get":
+		result, err = settings.LoadSettings()
+	case "settings.set":
+		var newSettings settings.Settings
+		if err = reMarshal(req.Params, &newSettings); err == nil {
+			err = settings.SaveSettings(newSettings)
+		}
+	case "settings.reset":
+		err = settings.ResetSettings()
+	case "settings.listColorSchemes":
+		result = settings.ListColorSchemes()
 
 	default:
 		s.sendError(req.ID, api.ErrorMethodNotFound, fmt.Sprintf("Method not found: %s", req.Method), nil)
@@ -1485,4 +1561,24 @@ func (s *Server) handleAgentGetTaskStatus(params interface{}) (*agent.Task, erro
 		return nil, fmt.Errorf("task not found: %s", p.ID)
 	}
 	return task, nil
+}
+
+// ---- Session Persistence Handlers ----
+
+func (s *Server) handleSessionSave(params interface{}) error {
+	var p struct {
+		Tabs []session.TabState `json:"tabs"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return session.SaveSession(p.Tabs)
+}
+
+func (s *Server) handleSessionLoad() (*session.SessionState, error) {
+	return session.LoadSession()
+}
+
+func (s *Server) handleSessionClear() error {
+	return session.ClearSession()
 }

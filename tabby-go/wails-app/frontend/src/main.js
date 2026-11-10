@@ -99,12 +99,23 @@ import {
 	WindowUnmaximise,
 	WindowIsMaximised,
 	WindowToggleMaximise,
+	WindowFullscreen,
+	WindowUnfullscreen,
+	WindowIsFullscreen,
+	WindowCenter,
+	WindowSetMinSize,
+	WindowSetSize,
+	WindowReloadApp,
+	WindowSetDarkTheme,
+	WindowSetLightTheme,
 	Quit,
 	ClipboardSetText,
 	ClipboardGetText,
 } from "../wailsjs/runtime/runtime";
 
 // ===== GLOBALS =====
+
+let alwaysOnTop = false;
 
 const COLOR_SCHEMES = {};
 
@@ -167,6 +178,28 @@ function b64ToBytes(b64) {
 	const bytes = new Uint8Array(binary.length);
 	for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 	return bytes;
+}
+
+// Format raw byte buffer into a clean hex dump view with ASCII representation
+function formatHexDump(bytes, startOffset = 0) {
+	let output = "";
+	for (let i = 0; i < bytes.length; i += 16) {
+		const chunk = bytes.slice(i, Math.min(i + 16, bytes.length));
+		const hexParts = [];
+		let asciiParts = "";
+		for (let j = 0; j < 16; j++) {
+			if (j < chunk.length) {
+				const b = chunk[j];
+				hexParts.push(b.toString(16).padStart(2, "0").toUpperCase());
+				asciiParts += b >= 32 && b <= 126 ? String.fromCharCode(b) : ".";
+			} else {
+				hexParts.push("  ");
+			}
+		}
+		const offset = (startOffset + i).toString(16).padStart(4, "0").toUpperCase();
+		output += `\x1b[36m${offset}\x1b[0m  \x1b[33m${hexParts.slice(0, 8).join(" ")}\x1b[0m  \x1b[33m${hexParts.slice(8).join(" ")}\x1b[0m  |\x1b[32m${asciiParts}\x1b[0m|\r\n`;
+	}
+	return output;
 }
 
 // ===== INIT =====
@@ -306,9 +339,17 @@ async function init() {
 	const btnClose = document.getElementById("btn-close");
 	const btnMaximize = document.getElementById("btn-maximize");
 	const btnMinimize = document.getElementById("btn-minimize");
+	const btnSystemTray = document.getElementById("btn-system-tray");
+
+	if (btnSystemTray) {
+		btnSystemTray.onclick = (e) => {
+			e.stopPropagation();
+			toggleSystemTrayMenu(e);
+		};
+	}
 
 	if (btnClose) {
-		btnClose.onclick = () => Quit();
+		btnClose.onclick = () => quitTabbyApplication();
 	}
 	if (btnMaximize) {
 		btnMaximize.onclick = () => {
@@ -318,6 +359,7 @@ async function init() {
 				} else {
 					WindowMaximise();
 				}
+				setTimeout(updateMaximizeBtn, 100);
 			});
 		};
 	}
@@ -325,11 +367,36 @@ async function init() {
 		btnMinimize.onclick = () => WindowMinimise();
 	}
 
+	const titlebarDrag = document.getElementById("titlebar-drag");
+	if (titlebarDrag) {
+		titlebarDrag.ondblclick = () => {
+			if (typeof WindowToggleMaximise === "function") {
+				WindowToggleMaximise();
+			} else {
+				WindowIsMaximised().then((isMaximised) => {
+					if (isMaximised) WindowUnmaximise();
+					else WindowMaximise();
+				}).catch(() => {});
+			}
+			setTimeout(updateMaximizeBtn, 100);
+		};
+	}
+
+	// Enforce minimum window size constraint to prevent viewport collapse
+	if (typeof WindowSetMinSize === "function") {
+		try {
+			WindowSetMinSize(800, 500);
+		} catch (e) {
+			console.warn("Failed to set minimum window size:", e);
+		}
+	}
+
 	// Handle maximize/restore state
 	const updateMaximizeBtn = () => {
 		WindowIsMaximised().then((isMaximised) => {
 			const btn = document.getElementById("btn-maximize");
 			if (btn) {
+				btn.title = isMaximised ? "Restore" : "Maximize";
 				btn.innerHTML = isMaximised
 					? '<svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="4" height="4" stroke="currentColor" fill="none" stroke-width="1"/><rect x="6" y="6" width="4" height="4" stroke="currentColor" fill="none" stroke-width="1"/></svg>'
 					: '<svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" stroke="currentColor" fill="none" stroke-width="1"/></svg>';
@@ -400,9 +467,15 @@ function applyColorScheme(name) {
 	if (isSchemeLight(name)) {
 		document.body.classList.add("light-theme");
 		document.body.classList.remove("dark-theme");
+		try {
+			if (typeof WindowSetLightTheme === "function") WindowSetLightTheme();
+		} catch (e) {}
 	} else {
 		document.body.classList.add("dark-theme");
 		document.body.classList.remove("light-theme");
+		try {
+			if (typeof WindowSetDarkTheme === "function") WindowSetDarkTheme();
+		} catch (e) {}
 	}
 	renderColorSchemePreview(name);
 }
@@ -743,6 +816,18 @@ async function doSerialConnect() {
 
 	const parity = document.getElementById("serial-parity").value;
 
+	const flowControl = document.getElementById("serial-flow-control")
+		? document.getElementById("serial-flow-control").value
+		: "none";
+
+	const hexMode = document.getElementById("serial-hex-mode")
+		? document.getElementById("serial-hex-mode").checked
+		: false;
+
+	const logging = document.getElementById("serial-logging")
+		? document.getElementById("serial-logging").checked
+		: false;
+
 	if (!port) {
 		showToast("Select a serial port", "error");
 		return;
@@ -770,6 +855,8 @@ async function doSerialConnect() {
 			dataBits,
 			stopBits,
 			parity,
+			flowControl,
+			logging,
 		});
 
 		setTabStatus(tab, "connected");
@@ -784,13 +871,45 @@ async function doSerialConnect() {
 
 		tab.serialBaud = baud;
 
-		tab.sessionData = JSON.stringify({ type: "serial", port, baudRate: baud });
+		tab.serialHexMode = hexMode;
+
+		tab.serialOffset = 0;
+
+		tab.loggingEnabled = logging || tab.loggingEnabled;
+
+		tab.sessionData = JSON.stringify({
+			type: "serial",
+			port,
+			baudRate: baud,
+			dataBits,
+			stopBits,
+			parity,
+			flowControl,
+			hexMode,
+			logging,
+		});
 
 		tab.setTitle(port.split("/").pop().split("\\").pop());
 
+		if (tab.serialHexMode) {
+			tab.term.writeln("\x1b[1;36m[Hex View Enabled - Serial Port " + port + "]\x1b[0m");
+		}
+
 		tab.serialDataHandler = (params) => {
-			if ((params.serialId || params.SerialID) === tab.serialId)
-				tab.term.write(b64ToBytes(params.data || params.Data));
+			if ((params.serialId || params.SerialID) === tab.serialId) {
+				const rawBytes = b64ToBytes(params.data || params.Data);
+				if (tab.serialHexMode) {
+					const hexFormatted = formatHexDump(rawBytes, tab.serialOffset || 0);
+					tab.serialOffset = (tab.serialOffset || 0) + rawBytes.length;
+					tab.term.write(hexFormatted);
+				} else {
+					tab.term.write(rawBytes);
+				}
+				if (tab.loggingEnabled) {
+					tab.logBuffer.push(new TextDecoder().decode(rawBytes));
+				}
+				tab.lastActivity = Date.now();
+			}
 		};
 
 		window.__serialDataHandlers = window.__serialDataHandlers || [];
@@ -802,7 +921,7 @@ async function doSerialConnect() {
 				setTabStatus(tab, "disconnected");
 				tab.term.writeln(`
 
-[1;33m[Serial port closed][0m`);
+\x1b[1;33m[Serial port closed]\x1b[0m`);
 				tab.setTitle(tab.title + " [disconnected]");
 			}
 		};
@@ -829,7 +948,7 @@ async function doSerialConnect() {
 				id: "serial-" + Date.now(),
 				type: "serial",
 				name: port + " @ " + baud,
-				options: { port, baudRate: baud, dataBits, stopBits, parity },
+				options: { port, baudRate: baud, dataBits, stopBits, parity, flowControl, hexMode, logging },
 				createdAt: new Date().toISOString(),
 				updatedAt: new Date().toISOString(),
 			});
@@ -1774,10 +1893,17 @@ function buildToolbar(tab) {
 
 	if (tab.isSSH) {
 		html +=
-			'<button class="toolbar-btn" onclick="openSFTPBrowser(getActiveTab().sshConnectionId)" title="SFTP">U0001f4c2</button>';
+			'<button class="toolbar-btn" onclick="openSFTPBrowser(getActiveTab().sshConnectionId)" title="SFTP">📁</button>';
 
 		html +=
-			'<button class="toolbar-btn" onclick="openForwardDialog(getActiveTab().sshConnectionId)" title="Forward">U0001f504</button>';
+			'<button class="toolbar-btn" onclick="openForwardDialog(getActiveTab().sshConnectionId)" title="Forward">🔄</button>';
+	}
+
+	if (tab.isSerial) {
+		html +=
+			'<button class="toolbar-btn" onclick="toggleSerialHexMode(getActiveTab())" title="Toggle Hex View Mode (HEX/ASCII)" style="' +
+			(tab.serialHexMode ? "color:#4ade80;font-weight:bold;" : "") +
+			'">HEX</button>';
 	}
 
 	html +=
@@ -1861,6 +1987,18 @@ function toggleBroadcast() {
 		}, 3000);
 	}
 	showToast(broadcastMode ? "Broadcast ON" : "Broadcast OFF", "info");
+}
+
+function toggleSerialHexMode(tab) {
+	if (!tab || !tab.isSerial) return;
+	tab.serialHexMode = !tab.serialHexMode;
+	if (tab.serialHexMode) {
+		tab.term.writeln("\r\n\x1b[1;36m[Hex View Enabled]\x1b[0m");
+	} else {
+		tab.term.writeln("\r\n\x1b[1;33m[Hex View Disabled - Raw ASCII/ANSI stream]\x1b[0m");
+	}
+	updateToolbar(tab);
+	showToast(tab.serialHexMode ? "Serial Hex View ON" : "Serial Hex View OFF", "info");
 }
 
 // ===== SESSION LOG =====
@@ -2161,6 +2299,7 @@ const PALETTE_COMMANDS = [
 		id: "zoom-in",
 		label: "Increase Font Size",
 		icon: "+",
+		shortcut: "Ctrl+=",
 		action: () => {
 			fontSize = Math.min(32, fontSize + 1);
 			tabs.forEach((t) => {
@@ -2174,6 +2313,7 @@ const PALETTE_COMMANDS = [
 		id: "zoom-out",
 		label: "Decrease Font Size",
 		icon: "-",
+		shortcut: "Ctrl+-",
 		action: () => {
 			fontSize = Math.max(8, fontSize - 1);
 			tabs.forEach((t) => {
@@ -2187,6 +2327,7 @@ const PALETTE_COMMANDS = [
 		id: "zoom-reset",
 		label: "Reset Font Size",
 		icon: "0",
+		shortcut: "Ctrl+0",
 		action: () => {
 			fontSize = 14;
 			tabs.forEach((t) => {
@@ -2234,6 +2375,18 @@ const PALETTE_COMMANDS = [
 		icon: "S",
 		action: () => {
 			saveSession();
+			showToast("Session state saved", "info");
+		},
+	},
+
+	{
+		id: "clear-session",
+		label: "Clear Saved Session State",
+		icon: "🗑",
+		action: () => {
+			ClearSessionState()
+				.then(() => showToast("Saved session state cleared", "info"))
+				.catch((err) => showToast("Failed to clear session: " + err, "error"));
 		},
 	},
 
@@ -2292,9 +2445,83 @@ const PALETTE_COMMANDS = [
 	},
 
 	{
+		id: "toggle-fullscreen",
+		label: "Toggle Fullscreen",
+		icon: "⛶",
+		shortcut: "F11",
+		action: () => {
+			WindowIsFullscreen().then((isFs) => {
+				if (isFs) WindowUnfullscreen();
+				else WindowFullscreen();
+			}).catch(() => {
+				WindowIsMaximised().then((m) => (m ? WindowUnmaximise() : WindowMaximise()));
+			});
+		},
+	},
+
+	{
+		id: "toggle-maximize",
+		label: "Toggle Maximize / Restore",
+		icon: "🗖",
+		action: () => {
+			if (typeof WindowToggleMaximise === "function") {
+				WindowToggleMaximise();
+			} else {
+				WindowIsMaximised().then((m) => (m ? WindowUnmaximise() : WindowMaximise())).catch(() => {});
+			}
+			setTimeout(updateMaximizeBtn, 100);
+		},
+	},
+
+	{
+		id: "minimize-window",
+		label: "Minimize Window",
+		icon: "🗕",
+		shortcut: "Ctrl+Shift+M",
+		action: () => {
+			WindowMinimise();
+		},
+	},
+
+	{
+		id: "center-window",
+		label: "Center Window on Screen",
+		icon: "🎯",
+		action: () => {
+			WindowCenter();
+			showToast("Window centered", "info");
+		},
+	},
+
+	{
+		id: "reset-window-size",
+		label: "Reset Window Size (1024x680)",
+		icon: "📐",
+		shortcut: "Ctrl+Shift+0",
+		action: () => {
+			resetWindowSize();
+		},
+	},
+
+	{
+		id: "reload-window",
+		label: "Reload Window & UI",
+		icon: "🔄",
+		shortcut: "Ctrl+R",
+		action: () => {
+			if (typeof WindowReloadApp === "function") {
+				WindowReloadApp();
+			} else {
+				window.location.reload();
+			}
+		},
+	},
+
+	{
 		id: "always-on-top",
 		label: "Toggle Always on Top",
 		icon: "📌",
+		shortcut: "Ctrl+Shift+A",
 		action: () => {
 			toggleAlwaysOnTop();
 		},
@@ -2465,7 +2692,11 @@ function filterCommandPalette() {
 				"</span>" +
 				'<span class="palette-label">' +
 				cmd.label +
-				"</span></div>",
+				"</span>" +
+				(cmd.shortcut
+					? '<span class="palette-shortcut">' + cmd.shortcut + "</span>"
+					: "") +
+				"</div>",
 		)
 		.join("");
 
@@ -2531,58 +2762,60 @@ async function reloadColorSchemes() {
 
 // ===== SSH CONFIG IMPORT =====
 
-async function importSSHConfig() {
+async function importSSHConfig(overwriteExisting = false) {
 	try {
+		showToast("Reading ~/.ssh/config...", "info");
 		const result = await ImportSSHConfig();
 
 		if (result && result.length > 0) {
 			let imported = 0;
-
+			let updated = 0;
 			let skipped = 0;
 
-			for (var i = 0; i < result.length; i++) {
-				var host = result[i];
+			for (let i = 0; i < result.length; i++) {
+				const host = result[i];
+				const opts = host.options || host.Options || {};
+				const h = opts.host || opts.Host || "";
+				const p = opts.port || opts.Port || 22;
+				const u = opts.user || opts.User || "root";
+				const profileName = host.name || (u + "@" + h);
 
-				var opts = host.options || host.Options || {};
-
-				var h = opts.host || opts.Host || "";
-
-				var p = opts.port || opts.Port || 22;
-
-				var u = opts.user || opts.User || "root";
-
-				var name = u + "@" + h;
-
-				var exists = savedProfiles.find(
-					(pr) => pr.name === name && pr.type === "ssh",
+				const existingIdx = savedProfiles.findIndex(
+					(pr) => (pr.name === profileName || (pr.options && pr.options.host === h && pr.options.port === p && pr.options.user === u)) && pr.type === "ssh",
 				);
 
-				if (exists) {
-					skipped++;
+				const profileOpts = {
+					host: h,
+					port: p,
+					user: u,
+					auth:
+						(opts.privateKeys && opts.privateKeys.length) || (opts.PrivateKeys && opts.PrivateKeys.length)
+							? "publicKey"
+							: "agent",
+					privateKeys: opts.privateKeys || opts.PrivateKeys || [],
+					jumpHost: opts.jumpHost || opts.JumpHost || "",
+					proxyJump: opts.proxyJump || opts.ProxyJump || "",
+					proxyCommand: opts.proxyCommand || opts.ProxyCommand || "",
+				};
+
+				if (existingIdx !== -1) {
+					if (overwriteExisting) {
+						savedProfiles[existingIdx].options = Object.assign(savedProfiles[existingIdx].options, profileOpts);
+						savedProfiles[existingIdx].updatedAt = new Date().toISOString();
+						updated++;
+					} else {
+						skipped++;
+					}
 					continue;
 				}
 
 				savedProfiles.push({
 					id: "ssh-import-" + Date.now() + "-" + imported,
-
 					type: "ssh",
-
-					name: name,
-
-					options: {
-						host: h,
-						port: p,
-						user: u,
-						auth:
-							opts.privateKeys && opts.privateKeys.length
-								? "publicKey"
-								: "agent",
-						privateKeys: opts.privateKeys || opts.PrivateKeys || [],
-						jumpHost: opts.jumpHost || opts.JumpHost || "",
-					},
-
+					name: profileName,
+					group: "Imported SSH",
+					options: profileOpts,
 					createdAt: new Date().toISOString(),
-
 					updatedAt: new Date().toISOString(),
 				});
 
@@ -2590,18 +2823,17 @@ async function importSSHConfig() {
 			}
 
 			await SaveProfiles(savedProfiles);
-
 			renderProfiles();
 
-			showToast(
-				"Imported " +
-					imported +
-					" hosts" +
-					(skipped ? ", skipped " + skipped + " duplicates" : ""),
-				"success",
-			);
+			const msgParts = [];
+			if (imported > 0) msgParts.push(`${imported} added`);
+			if (updated > 0) msgParts.push(`${updated} updated`);
+			if (skipped > 0) msgParts.push(`${skipped} skipped`);
+			const summary = msgParts.join(", ") || "No changes";
+
+			showToast(`SSH Config: ${summary}`, "success");
 		} else {
-			showToast("No SSH hosts found in config", "info");
+			showToast("No SSH hosts found in ~/.ssh/config", "info");
 		}
 	} catch (err) {
 		showToast("SSH config import failed: " + err, "error");
@@ -3807,6 +4039,7 @@ function importProfiles() {
 // ===== PROFILES =====
 
 function renderProfiles() {
+	updateDashboardStats();
 	const section = document.getElementById("profiles-section");
 	const list = document.getElementById("profiles-list");
 	const editor = document.getElementById("profiles-editor-list");
@@ -3889,6 +4122,94 @@ function renderProfiles() {
 			};
 		});
 	}
+	renderGroupManagerList();
+}
+
+function renderGroupManagerList() {
+	const list = document.getElementById("group-manager-list");
+	if (!list) return;
+
+	const groups = getProfileGroups();
+	const groupNames = Object.keys(groups).sort();
+
+	if (groupNames.length === 0 || (groupNames.length === 1 && groupNames[0] === "Ungrouped" && groups["Ungrouped"].length === 0)) {
+		list.innerHTML = '<div style="color:#888;font-size:12px;text-align:center;padding:8px;">No profile groups exist yet.</div>';
+		return;
+	}
+
+	let html = "";
+	groupNames.forEach((groupName) => {
+		const count = groups[groupName] ? groups[groupName].length : 0;
+		const isDefault = groupName === "Ungrouped";
+
+		html += `
+		<div class="group-manager-item" style="display:flex;align-items:center;justify-content:space-between;background:#1e1e1e;padding:6px 10px;border-radius:4px;border:1px solid #333;">
+			<div style="display:flex;align-items:center;gap:6px;overflow:hidden;">
+				<span style="font-size:13px;">📁</span>
+				<span style="font-size:12px;font-weight:500;color:#eee;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">${groupName}</span>
+				<span style="font-size:11px;color:#888;">(${count} profile${count !== 1 ? 's' : ''})</span>
+			</div>
+			<div style="display:flex;gap:4px;">
+				${!isDefault ? `<button class="btn-icon group-rename-btn" data-group="${groupName}" title="Rename Group" style="font-size:11px;padding:2px 6px;">✎</button>` : ''}
+				${!isDefault ? `<button class="btn-icon group-delete-btn" data-group="${groupName}" title="Delete Group (moves profiles to Ungrouped)" style="font-size:11px;padding:2px 6px;color:#f87171;">✕</button>` : ''}
+			</div>
+		</div>`;
+	});
+
+	list.innerHTML = html;
+
+	list.querySelectorAll(".group-rename-btn").forEach((btn) => {
+		btn.onclick = (e) => {
+			e.stopPropagation();
+			const oldName = btn.dataset.group;
+			const newName = prompt(`Enter new name for group "${oldName}":`, oldName);
+			if (newName && newName.trim() && newName.trim() !== oldName) {
+				renameProfileGroup(oldName, newName.trim());
+			}
+		};
+	});
+
+	list.querySelectorAll(".group-delete-btn").forEach((btn) => {
+		btn.onclick = (e) => {
+			e.stopPropagation();
+			const groupName = btn.dataset.group;
+			if (confirm(`Delete group "${groupName}"? Member profiles will be moved to Ungrouped.`)) {
+				deleteProfileGroup(groupName);
+			}
+		};
+	});
+}
+
+function renameProfileGroup(oldName, newName) {
+	let changed = 0;
+	savedProfiles.forEach((p) => {
+		if ((p.group || "").trim() === oldName.trim()) {
+			p.group = newName.trim();
+			p.updatedAt = new Date().toISOString();
+			changed++;
+		}
+	});
+
+	if (changed > 0) {
+		SaveProfiles(savedProfiles).catch(() => {});
+		renderProfiles();
+		showToast(`Renamed group to "${newName}" (${changed} profiles updated)`, "success");
+	}
+}
+
+function deleteProfileGroup(groupName) {
+	let changed = 0;
+	savedProfiles.forEach((p) => {
+		if ((p.group || "").trim() === groupName.trim()) {
+			p.group = "";
+			p.updatedAt = new Date().toISOString();
+			changed++;
+		}
+	});
+
+	SaveProfiles(savedProfiles).catch(() => {});
+	renderProfiles();
+	showToast(`Deleted group "${groupName}"`, "info");
 }
 
 async function connectProfile(profile) {
@@ -3990,20 +4311,37 @@ function buildUI() {
         <div id="welcome">
  <div class="welcome-screen">
  <div class="tabby-logo"><span class="logo-accent">⌘</span> Tabby <small>go</small></div>
- <p style="color:#777;font-size:14px;margin:8px 0 24px;">A modern terminal for a modern age</p>
- <div class="quick-connect-grid">
- <div class="quick-connect-btn" onclick="newTab()"><span class="qc-icon">⌘</span><div><div class="qc-name">Local Shell</div><div class="qc-desc">Open a terminal</div></div></div>
- <div class="quick-connect-btn" onclick="openSSHDialog()"><span class="qc-icon">🔐</span><div><div class="qc-name">SSH Connect</div><div class="qc-desc">Connect to a remote host</div></div></div>
- <div class="quick-connect-btn" onclick="openSerialDialog()"><span class="qc-icon">📡</span><div><div class="qc-name">Serial Port</div><div class="qc-desc">Connect to hardware</div></div></div>
- <div class="quick-connect-btn" onclick="openTelnetDialog()"><span class="qc-icon">🌐</span><div><div class="qc-name">Telnet</div><div class="qc-desc">Connect to a telnet server</div></div></div>
+ <p style="color:#777;font-size:14px;margin:8px 0 18px;">Agentic, Block-based, Collaborative Workspace</p>
+
+ <div class="dashboard-banner">
+    <div class="banner-stat"><span class="stat-badge">PROT: 272</span><span class="stat-label">Core Protocol</span></div>
+    <div class="banner-stat"><span class="stat-badge" id="dash-active-tabs">0 Tabs</span><span class="stat-label">Active Sessions</span></div>
+    <div class="banner-stat"><span class="stat-badge" id="dash-saved-profiles">Profiles</span><span class="stat-label">Saved Endpoints</span></div>
+    <div class="banner-stat"><span class="stat-badge" style="color:#4ec9b0;">● Online</span><span class="stat-label">Go Daemon</span></div>
  </div>
- <div class="shortcuts" style="margin-top:40px;">
+
+ <div class="quick-connect-grid">
+ <div class="quick-connect-btn" onclick="newTab()" title="Spawn local pseudo-terminal shell"><span class="qc-icon">⌘</span><div><div class="qc-name">Local Shell <span class="tooltip-badge" title="Launch a native PTY local shell session">ℹ</span></div><div class="qc-desc">Launch local PTY terminal</div></div></div>
+ <div class="quick-connect-btn" onclick="openSSHDialog()" title="Establish encrypted SSH connection"><span class="qc-icon">🔐</span><div><div class="qc-name">SSH Connect <span class="tooltip-badge" title="Connect to remote Linux/UNIX host via SSH">ℹ</span></div><div class="qc-desc">Secure shell remote host</div></div></div>
+ <div class="quick-connect-btn" onclick="openSerialDialog()" title="Connect to hardware serial COM/TTY port"><span class="qc-icon">📡</span><div><div class="qc-name">Serial Port <span class="tooltip-badge" title="Direct serial communication over COM / TTY">ℹ</span></div><div class="qc-desc">Hardware UART / COM bus</div></div></div>
+ <div class="quick-connect-btn" onclick="openTelnetDialog()" title="Connect to remote telnet host"><span class="qc-icon">🌐</span><div><div class="qc-name">Telnet <span class="tooltip-badge" title="Standard unencrypted or legacy network socket terminal">ℹ</span></div><div class="qc-desc">Legacy network socket</div></div></div>
+ </div>
+
+ <div class="dashboard-server-actions" style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+    <button class="btn-secondary" onclick="toggleSettings()" title="Open unified configuration dashboard (Ctrl+,)"><span style="margin-right:6px;">⚙</span> Dashboard &amp; Settings</button>
+    <button class="btn-secondary" onclick="toggleCommandPalette()" title="Search commands &amp; actions (Ctrl+Shift+P)"><span style="margin-right:6px;">🔍</span> Command Palette</button>
+    <button class="btn-secondary" onclick="showNotificationCenter()" title="View notifications and background events"><span style="margin-right:6px;">🔔</span> Activity Center</button>
+    <button class="btn-secondary btn-shutdown" onclick="shutdownAllServers()" title="Safely disconnect all active sessions and stop background workers" style="color:#f44747;border-color:#5a2d2d;"><span style="margin-right:6px;">🛑</span> Stop All Servers</button>
+    <button class="btn-secondary btn-quit" onclick="quitTabbyApplication()" title="Terminate all sessions and exit Tabby"><span style="margin-right:6px;">⏻</span> Quit Tabby</button>
+ </div>
+
+ <div class="shortcuts" style="margin-top:28px;">
  <div class="shortcut"><kbd>Ctrl+Shift+T</kbd> New Tab</div>
  <div class="shortcut"><kbd>Ctrl+W</kbd> Close Tab</div>
  <div class="shortcut"><kbd>Ctrl+Tab</kbd> Next Tab</div>
  <div class="shortcut"><kbd>Ctrl+Shift+P</kbd> Command Palette</div>
  <div class="shortcut"><kbd>Ctrl+Shift+F</kbd> Find</div>
- <div class="shortcut"><kbd>Ctrl+</kbd> Split Vertical</div>
+ <div class="shortcut"><kbd>Ctrl+\</kbd> Split Vertical</div>
  <div class="shortcut"><kbd>Ctrl+,</kbd> Settings</div>
  </div>
  </div>
@@ -4012,40 +4350,95 @@ function buildUI() {
 
         <div id="settings-header">
 
-            <h2>⚙ Settings</h2>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <h2 style="margin:0;font-size:15px;color:#e0e0e0;">⚙ Dashboard &amp; Settings</h2>
+                <span class="badge-pill" style="font-size:10px;padding:2px 7px;border-radius:10px;background:#0e639c;color:#fff;font-weight:600;">Unified</span>
+            </div>
 
-            <button id="settings-close" class="btn-icon">×</button>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <button id="settings-close" class="btn-icon" title="Close Settings">×</button>
+            </div>
 
+        </div>
+
+        <div id="settings-search-wrapper" style="padding:10px 16px;border-bottom:1px solid #2b2b2b;background:#181818;">
+            <div style="position:relative;display:flex;align-items:center;">
+                <span style="position:absolute;left:10px;color:#888;font-size:12px;pointer-events:none;">🔍</span>
+                <input type="text" id="settings-search-input" placeholder="Search preferences, commands &amp; parameters..." style="width:100%;padding:6px 10px 6px 30px;background:#242424;border:1px solid #3a3a3a;border-radius:4px;color:#eee;font-size:12px;outline:none;" />
+            </div>
         </div>
 
         <div id="settings-tabs">
 
-            <button class="settings-tab active" data-tab="appearance">🎨 Appearance</button>
+            <button class="settings-tab active" data-tab="all" title="View all preferences unified on one scrollable dashboard">🌟 All Preferences</button>
 
-            <button class="settings-tab" data-tab="terminal">⌨ Terminal</button>
+            <button class="settings-tab" data-tab="startup" title="General application settings, window framing, dock, and tray">🚀 General &amp; System</button>
 
-            <button class="settings-tab" data-tab="clipboard">📋 Clipboard</button>
+            <button class="settings-tab" data-tab="appearance" title="Visual themes, fonts, colors, and custom CSS styling">🎨 Appearance &amp; Display</button>
 
-            <button class="settings-tab" data-tab="mouse">🖱 Mouse</button>
+            <button class="settings-tab" data-tab="terminal" title="Terminal behavior, shell, clipboard, mouse, and tabs">⌨ Terminal &amp; Behavior</button>
 
-            <button class="settings-tab" data-tab="tabs">📑 Tabs</button>
-
-            <button class="settings-tab" data-tab="startup">🚀 Startup</button>
-
-            <button class="settings-tab" data-tab="ssh">🔐 SSH</button>
-
-            <button class="settings-tab" data-tab="serial">📡 Serial</button>
-
-            <button class="settings-tab" data-tab="profiles">📁 Profiles</button>
+            <button class="settings-tab" data-tab="connections" title="SSH, hardware Serial ports, and saved profiles">🌐 Connections &amp; Profiles</button>
 
         </div>
 
         <div id="settings-content">
 
-            <!-- Appearance -->
+            <!-- Section 1: General & System -->
+            <div class="settings-page active" id="settings-startup" data-category="startup">
+                <div class="settings-category-header">
+                    <span class="category-icon">🚀</span>
+                    <div>
+                        <div class="category-title">General &amp; System</div>
+                        <div class="category-desc">Application lifecycle, window presentation, system tray integration, and telemetry</div>
+                    </div>
+                </div>
+                <h3>Startup</h3>
 
-            <div class="settings-page active" id="settings-appearance">
+                <div class="setting-group"><label>Auto-open Terminal on Start</label><div class="toggle-container"><input type="checkbox" id="s-auto-open" checked><label for="s-auto-open" class="toggle-label"></label></div></div>
 
+                <div class="setting-group"><label>Restore Tabs on Restart</label><div class="toggle-container"><input type="checkbox" id="s-recover-tabs" checked><label for="s-recover-tabs" class="toggle-label"></label></div></div>
+
+                <h3>Window</h3>
+
+                <div class="setting-group"><label>Window Frame</label>
+
+                    <select id="s-frame"><option value="thin">Thin</option><option value="none">None (Borderless)</option><option value="native">Native</option></select>
+
+                </div>
+
+                <div class="setting-group"><label>Quake-style Dock</label>
+
+                    <select id="s-dock"><option value="off">Off</option><option value="bottom">Bottom</option><option value="top">Top</option><option value="left">Left</option><option value="right">Right</option></select>
+
+                </div>
+
+                <div class="setting-group"><label>Hide Dock on Blur</label><div class="toggle-container"><input type="checkbox" id="s-dock-hide-blur"><label for="s-dock-hide-blur" class="toggle-label"></label></div></div>
+
+                <div class="setting-group"><label>Dock Always on Top</label><div class="toggle-container"><input type="checkbox" id="s-dock-on-top" checked><label for="s-dock-on-top" class="toggle-label"></label></div></div>
+
+                <div class="setting-group"><label>Hide Tray Icon</label><div class="toggle-container"><input type="checkbox" id="s-hide-tray"><label for="s-hide-tray" class="toggle-label"></label></div></div>
+
+                <h3>Misc</h3>
+
+                <div class="setting-group"><label>Language</label><input type="text" id="s-language" placeholder="Auto"></div>
+
+                <div class="setting-group"><label>Enable Analytics</label><div class="toggle-container"><input type="checkbox" id="s-analytics" checked><label for="s-analytics" class="toggle-label"></label></div></div>
+
+                <div class="setting-group"><label>Automatic Updates</label><div class="toggle-container"><input type="checkbox" id="s-auto-updates" checked><label for="s-auto-updates" class="toggle-label"></label></div></div>
+
+                <div class="setting-group"><label>Experimental Features</label><div class="toggle-container"><input type="checkbox" id="s-experimental"><label for="s-experimental" class="toggle-label"></label></div></div>
+            </div>
+
+            <!-- Section 2: Appearance & Display -->
+            <div class="settings-page" id="settings-appearance" data-category="appearance">
+                <div class="settings-category-header">
+                    <span class="category-icon">🎨</span>
+                    <div>
+                        <div class="category-title">Appearance &amp; Display</div>
+                        <div class="category-desc">Color palettes, typography, rendering engines, cursor dynamics, and custom CSS</div>
+                    </div>
+                </div>
                 <h3>Color Scheme</h3>
 
                 <div class="setting-group"><label>Terminal Color Scheme</label><select id="s-color-scheme"></select></div>
@@ -4127,13 +4520,17 @@ function buildUI() {
                 <h3>Custom CSS</h3>
 
                 <div class="setting-group"><textarea id="s-css" rows="4" placeholder="/* Custom CSS */"></textarea></div>
-
             </div>
 
-            <!-- Terminal -->
-
-            <div class="settings-page" id="settings-terminal">
-
+            <!-- Section 3: Terminal & Behavior -->
+            <div class="settings-page" id="settings-terminal" data-category="terminal">
+                <div class="settings-category-header">
+                    <span class="category-icon">⌨</span>
+                    <div>
+                        <div class="category-title">Terminal &amp; Behavior</div>
+                        <div class="category-desc">Shell environments, scrollback buffers, clipboard handling, mouse gestures, and tab layout</div>
+                    </div>
+                </div>
                 <h3>Shell</h3>
 
                 <div class="setting-group"><label>Default Shell</label>
@@ -4167,13 +4564,7 @@ function buildUI() {
                 <div class="setting-group"><label>Set Tabby as %COMSPEC%</label><div class="toggle-container"><input type="checkbox" id="s-set-comspec"><label for="s-set-comspec" class="toggle-label"></label></div></div>
 
                 <h3>Toolbar</h3>
-
-            </div>
-
-            <!-- Clipboard -->
-
-            <div class="settings-page" id="settings-clipboard">
-
+                <hr class="settings-divider">
                 <h3>Clipboard</h3>
 
                 <div class="setting-group"><label>Copy on Select</label><div class="toggle-container"><input type="checkbox" id="s-copy-on-select"><label for="s-copy-on-select" class="toggle-label"></label></div></div>
@@ -4189,13 +4580,7 @@ function buildUI() {
                 <div class="setting-group"><label>Replace Line Breaks with Spaces on Paste</label><div class="toggle-container"><input type="checkbox" id="s-replace-newlines"><label for="s-replace-newlines" class="toggle-label"></label></div></div>
 
                 <div class="setting-group"><label>Trim Whitespace and Newlines</label><div class="toggle-container"><input type="checkbox" id="s-trim-whitespace" checked><label for="s-trim-whitespace" class="toggle-label"></label></div></div>
-
-            </div>
-
-            <!-- Mouse -->
-
-            <div class="settings-page" id="settings-mouse">
-
+                <hr class="settings-divider">
                 <h3>Mouse</h3>
 
                 <div class="setting-group"><label>Right Click</label>
@@ -4207,13 +4592,7 @@ function buildUI() {
                 <div class="setting-group"><label>Paste on Middle-Click</label><div class="toggle-container"><input type="checkbox" id="s-paste-middle-click" checked><label for="s-paste-middle-click" class="toggle-label"></label></div></div>
 
                 <div class="setting-group"><label>Word Separators</label><input type="text" id="s-word-separator" value=" ()[]{}'&quot;"></div>
-
-            </div>
-
-            <!-- Tabs -->
-
-            <div class="settings-page" id="settings-tabs">
-
+                <hr class="settings-divider">
                 <h3>Tabs</h3>
 
                 <div class="setting-group"><label>Tab Position</label>
@@ -4233,55 +4612,17 @@ function buildUI() {
                 <div class="setting-group"><label>Pane Resize Step</label><input type="number" id="s-pane-resize-step" min="0.01" max="1.0" step="0.01" value="0.1"></div>
 
                 <div class="setting-group"><label>Focus Follows Mouse</label><div class="toggle-container"><input type="checkbox" id="s-focus-follows-mouse"><label for="s-focus-follows-mouse" class="toggle-label"></label></div></div>
-
             </div>
 
-            <!-- Startup -->
-
-            <div class="settings-page" id="settings-startup">
-
-                <h3>Startup</h3>
-
-                <div class="setting-group"><label>Auto-open Terminal on Start</label><div class="toggle-container"><input type="checkbox" id="s-auto-open" checked><label for="s-auto-open" class="toggle-label"></label></div></div>
-
-                <div class="setting-group"><label>Restore Tabs on Restart</label><div class="toggle-container"><input type="checkbox" id="s-recover-tabs" checked><label for="s-recover-tabs" class="toggle-label"></label></div></div>
-
-                <h3>Window</h3>
-
-                <div class="setting-group"><label>Window Frame</label>
-
-                    <select id="s-frame"><option value="thin">Thin</option><option value="none">None (Borderless)</option><option value="native">Native</option></select>
-
+            <!-- Section 4: Connections & Profiles -->
+            <div class="settings-page" id="settings-connections" data-category="connections">
+                <div class="settings-category-header">
+                    <span class="category-icon">🌐</span>
+                    <div>
+                        <div class="category-title">Connections &amp; Profiles</div>
+                        <div class="category-desc">SSH options, hardware Serial COM interfaces, and persistent host configurations</div>
+                    </div>
                 </div>
-
-                <div class="setting-group"><label>Quake-style Dock</label>
-
-                    <select id="s-dock"><option value="off">Off</option><option value="bottom">Bottom</option><option value="top">Top</option><option value="left">Left</option><option value="right">Right</option></select>
-
-                </div>
-
-                <div class="setting-group"><label>Hide Dock on Blur</label><div class="toggle-container"><input type="checkbox" id="s-dock-hide-blur"><label for="s-dock-hide-blur" class="toggle-label"></label></div></div>
-
-                <div class="setting-group"><label>Dock Always on Top</label><div class="toggle-container"><input type="checkbox" id="s-dock-on-top" checked><label for="s-dock-on-top" class="toggle-label"></label></div></div>
-
-                <div class="setting-group"><label>Hide Tray Icon</label><div class="toggle-container"><input type="checkbox" id="s-hide-tray"><label for="s-hide-tray" class="toggle-label"></label></div></div>
-
-                <h3>Misc</h3>
-
-                <div class="setting-group"><label>Language</label><input type="text" id="s-language" placeholder="Auto"></div>
-
-                <div class="setting-group"><label>Enable Analytics</label><div class="toggle-container"><input type="checkbox" id="s-analytics" checked><label for="s-analytics" class="toggle-label"></label></div></div>
-
-                <div class="setting-group"><label>Automatic Updates</label><div class="toggle-container"><input type="checkbox" id="s-auto-updates" checked><label for="s-auto-updates" class="toggle-label"></label></div></div>
-
-                <div class="setting-group"><label>Experimental Features</label><div class="toggle-container"><input type="checkbox" id="s-experimental"><label for="s-experimental" class="toggle-label"></label></div></div>
-
-            </div>
-
-            <!-- SSH -->
-
-            <div class="settings-page" id="settings-ssh">
-
                 <h3>SSH</h3>
 
                 <div class="setting-group"><label>Warn When Closing Active Connections</label><div class="toggle-container"><input type="checkbox" id="s-ssh-warn-close"><label for="s-ssh-warn-close" class="toggle-label"></label></div></div>
@@ -4303,13 +4644,7 @@ function buildUI() {
                 <h3>X11 Forwarding</h3>
 
                 <div class="setting-group"><label>Override X11 Display</label><input type="text" id="s-ssh-x11" placeholder="Auto-detect"></div>
-
-            </div>
-
-            <!-- Serial -->
-
-            <div class="settings-page" id="settings-serial">
-
+                <hr class="settings-divider">
                 <h3>Serial Port Defaults</h3>
 
                 <div class="setting-group"><label>Baud Rate</label>
@@ -4349,17 +4684,27 @@ function buildUI() {
                     <select id="s-serial-flow"><option value="none" selected>None</option><option value="hardware">Hardware (RTS/CTS)</option><option value="software">Software (XON/XOFF)</option></select>
 
                 </div>
-
-            </div>
-
-            <div class="settings-page" id="settings-profiles">
-
+                <hr class="settings-divider">
                 <h3>Saved Profiles</h3>
 
                 <div id="profiles-editor-list" style="margin-bottom:12px;"></div>
 
-                <button class="btn-primary" id="btn-add-profile" style="width:100%;margin-bottom:8px;">+ Add SSH Profile</button>
+                <div style="display:flex;gap:8px;margin-bottom:16px;">
+                    <button class="btn-secondary" id="btn-manage-groups" style="flex:1;">📁 Manage Profile Groups</button>
+                    <button class="btn-primary" id="btn-add-profile" style="flex:1;">+ Add SSH Profile</button>
+                </div>
 
+                <div id="group-manager-panel" style="display:none;background:#252526;border:1px solid #3c3c3c;border-radius:6px;padding:12px;margin-bottom:16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-weight:600;font-size:13px;">📁 Profile Groups Manager</span>
+                        <button class="btn-icon" id="btn-close-group-manager" title="Close">✕</button>
+                    </div>
+                    <div style="display:flex;gap:6px;margin-bottom:10px;">
+                        <input type="text" id="new-group-name-input" placeholder="New group name..." style="flex:1;background:#1e1e1e;border:1px solid #3c3c3c;color:#ccc;padding:4px 8px;border-radius:4px;font-size:12px;">
+                        <button class="btn-secondary" id="btn-create-group" style="padding:4px 10px;font-size:12px;">Create</button>
+                    </div>
+                    <div id="group-manager-list" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;"></div>
+                </div>
             </div>
 
         </div>
@@ -4407,7 +4752,7 @@ function buildUI() {
 
 	renderProfiles();
 
-	// Settings tab navigation
+	// Settings tab navigation & unified filter
 
 	document.querySelectorAll(".settings-tab").forEach((btn) => {
 		btn.onclick = () => {
@@ -4415,17 +4760,59 @@ function buildUI() {
 				.querySelectorAll(".settings-tab")
 				.forEach((b) => b.classList.remove("active"));
 
-			document
-				.querySelectorAll(".settings-page")
-				.forEach((p) => p.classList.remove("active"));
-
 			btn.classList.add("active");
+			const tabName = btn.dataset.tab;
 
-			document
-				.getElementById(`settings-${btn.dataset.tab}`)
-				.classList.add("active");
+			if (tabName === "all") {
+				// Show all consolidated sections
+				document
+					.querySelectorAll(".settings-page")
+					.forEach((p) => p.classList.add("active"));
+			} else {
+				document
+					.querySelectorAll(".settings-page")
+					.forEach((p) => {
+						if (p.id === `settings-${tabName}`) {
+							p.classList.add("active");
+						} else {
+							p.classList.remove("active");
+						}
+					});
+			}
 		};
 	});
+
+	// Live Search in Settings Dashboard
+	const searchInput = document.getElementById("settings-search-input");
+	if (searchInput) {
+		searchInput.oninput = () => {
+			const query = searchInput.value.trim().toLowerCase();
+			const pages = document.querySelectorAll(".settings-page");
+			const tabs = document.querySelectorAll(".settings-tab");
+
+			if (query) {
+				// Automatically switch to showing all sections for search results
+				tabs.forEach((t) => t.classList.toggle("active", t.dataset.tab === "all"));
+				pages.forEach((page) => {
+					let hasVisibleInPage = false;
+					const groups = page.querySelectorAll(".setting-group");
+					groups.forEach((group) => {
+						const text = group.textContent.toLowerCase();
+						const matches = text.includes(query);
+						group.style.display = matches ? "" : "none";
+						if (matches) hasVisibleInPage = true;
+					});
+					page.classList.toggle("active", hasVisibleInPage);
+				});
+			} else {
+				// Restore all setting groups visibility
+				document.querySelectorAll(".setting-group").forEach((g) => (g.style.display = ""));
+				// Trigger the currently active tab
+				const activeTab = document.querySelector(".settings-tab.active") || document.querySelector(".settings-tab[data-tab='all']");
+				if (activeTab) activeTab.click();
+			}
+		};
+	}
 
 	// Live-update sliders
 
@@ -4562,6 +4949,47 @@ function buildUI() {
 
 	document.getElementById("btn-add-profile").onclick = () => addProfile();
 
+	const btnManageGroups = document.getElementById("btn-manage-groups");
+	const groupManagerPanel = document.getElementById("group-manager-panel");
+	const btnCloseGroupManager = document.getElementById("btn-close-group-manager");
+	const btnCreateGroup = document.getElementById("btn-create-group");
+	const newGroupNameInput = document.getElementById("new-group-name-input");
+
+	if (btnManageGroups && groupManagerPanel) {
+		btnManageGroups.onclick = () => {
+			const isVisible = groupManagerPanel.style.display !== "none";
+			groupManagerPanel.style.display = isVisible ? "none" : "block";
+			if (!isVisible) {
+				renderGroupManagerList();
+				if (newGroupNameInput) newGroupNameInput.focus();
+			}
+		};
+	}
+
+	if (btnCloseGroupManager && groupManagerPanel) {
+		btnCloseGroupManager.onclick = () => {
+			groupManagerPanel.style.display = "none";
+		};
+	}
+
+	if (btnCreateGroup && newGroupNameInput) {
+		const handleCreateGroup = () => {
+			const groupName = newGroupNameInput.value.trim();
+			if (!groupName) {
+				showToast("Enter a group name", "error");
+				return;
+			}
+			newGroupNameInput.value = "";
+			// Create a placeholder profile or update datalist
+			showToast(`Group "${groupName}" ready for profiles`, "info");
+			renderGroupManagerList();
+		};
+		btnCreateGroup.onclick = handleCreateGroup;
+		newGroupNameInput.onkeydown = (e) => {
+			if (e.key === "Enter") handleCreateGroup();
+		};
+	}
+
 	document.getElementById("edit-profile-save").onclick = () =>
 		saveProfileEdit();
 
@@ -4571,7 +4999,18 @@ function buildUI() {
 	document.getElementById("tab-search-input").oninput = () => filterTabs();
 
 	document.getElementById("tab-search-input").onkeydown = (e) => {
-		if (e.key === "Escape") toggleTabSearch();
+		if (e.key === "Escape") {
+			toggleTabSearch();
+		} else if (e.key === "Enter") {
+			const firstItem = document.querySelector("#tab-search-results .tab-search-item");
+			if (firstItem && firstItem.dataset.tabId) {
+				const tab = tabs.find((t) => t.id === firstItem.dataset.tabId);
+				if (tab) {
+					tab.activate();
+					toggleTabSearch();
+				}
+			}
+		}
 	};
 
 	document.getElementById("btn-reset").onclick = () => doResetSettings();
@@ -4579,11 +5018,14 @@ function buildUI() {
 
 // ===== SETTINGS APPLY/SAVE =====
 
-// Inject descriptions below each setting in the settings panel
+// Inject descriptions below each setting in the settings panel and add interactive tooltip markers
 function applySettingDescriptions() {
-	// Remove any existing descriptions first
+	// Remove any existing descriptions & tooltip badges first
 	document
 		.querySelectorAll(".setting-description")
+		.forEach((el) => el.remove());
+	document
+		.querySelectorAll(".setting-tooltip-marker")
 		.forEach((el) => el.remove());
 
 	Object.entries(SETTING_DESCRIPTIONS).forEach(([id, desc]) => {
@@ -4598,6 +5040,16 @@ function applySettingDescriptions() {
 		}
 		if (!group) return;
 
+		// Add tooltip marker icon next to the label if present
+		const label = group.querySelector("label");
+		if (label && !label.querySelector(".setting-tooltip-marker")) {
+			const badge = document.createElement("span");
+			badge.className = "tooltip-badge setting-tooltip-marker";
+			badge.title = desc;
+			badge.textContent = "ℹ";
+			label.appendChild(badge);
+		}
+
 		const descEl = document.createElement("div");
 		descEl.className = "setting-description";
 		descEl.textContent = desc;
@@ -4605,8 +5057,171 @@ function applySettingDescriptions() {
 	});
 }
 
+// Toggle system tray menu popup
+function toggleSystemTrayMenu(event) {
+	const existing = document.getElementById("system-tray-dropdown");
+	if (existing) {
+		existing.remove();
+		return;
+	}
+
+	const menu = document.createElement("div");
+	menu.id = "system-tray-dropdown";
+	menu.className = "system-tray-menu";
+
+	const activeCount = tabs.length;
+	menu.innerHTML = `
+		<div class="tray-header">
+			<span><span class="tray-status-dot"></span>Tabby Go</span>
+			<span id="tray-version-badge" style="font-size:10px;color:#aaa;">v1.0.280</span>
+		</div>
+		<div class="tray-item" data-action="new-tab">
+			<span>⌘ New Terminal Tab</span>
+			<span style="font-size:10px;color:#888;">Ctrl+Shift+T</span>
+		</div>
+		<div class="tray-item" data-action="command-palette">
+			<span>🔍 Command Palette</span>
+			<span style="font-size:10px;color:#888;">Ctrl+Shift+P</span>
+		</div>
+		<div class="tray-item" data-action="settings">
+			<span>⚙ Settings &amp; Dashboard</span>
+			<span style="font-size:10px;color:#888;">Ctrl+,</span>
+		</div>
+		<div class="tray-divider"></div>
+		<div class="tray-item" data-action="toggle-always-on-top">
+			<span>${alwaysOnTop ? "✓ Always on Top" : "📌 Pin Always on Top"}</span>
+			<span style="font-size:10px;color:#888;">${alwaysOnTop ? "Enabled" : "Disabled"}</span>
+		</div>
+		<div class="tray-item" data-action="toggle-fullscreen">
+			<span>⛶ Toggle Fullscreen</span>
+		</div>
+		<div class="tray-item" data-action="toggle-maximize">
+			<span>🗖 Toggle Maximize</span>
+		</div>
+		<div class="tray-item" data-action="center">
+			<span>🎯 Center Window</span>
+		</div>
+		<div class="tray-item" data-action="reset-size">
+			<span>📐 Reset Window Size</span>
+			<span style="font-size:10px;color:#888;">Ctrl+Shift+0</span>
+		</div>
+		<div class="tray-item" data-action="minimize">
+			<span>🗕 Minimize Window</span>
+		</div>
+		<div class="tray-item" data-action="reload-app">
+			<span>🔄 Reload Window</span>
+			<span style="font-size:10px;color:#888;">Ctrl+R</span>
+		</div>
+		<div class="tray-divider"></div>
+		<div class="tray-item" data-action="zoom-in">
+			<span>🔍 Zoom In</span>
+			<span style="font-size:10px;color:#888;">Ctrl+=</span>
+		</div>
+		<div class="tray-item" data-action="zoom-out">
+			<span>🔍 Zoom Out</span>
+			<span style="font-size:10px;color:#888;">Ctrl+-</span>
+		</div>
+		<div class="tray-item" data-action="zoom-reset">
+			<span>🔍 Reset Zoom</span>
+			<span style="font-size:10px;color:#888;">Ctrl+0</span>
+		</div>
+		<div class="tray-divider"></div>
+		<div class="tray-item danger" data-action="stop-servers">
+			<span>🛑 Stop All Servers (${activeCount} active)</span>
+		</div>
+		<div class="tray-item danger" data-action="quit">
+			<span>⏻ Quit Tabby</span>
+		</div>
+	`;
+
+	const rect = event.currentTarget.getBoundingClientRect();
+	menu.style.right = `${window.innerWidth - rect.right}px`;
+	menu.style.top = `${rect.bottom + 6}px`;
+
+	document.body.appendChild(menu);
+
+	GetPlatform().then((plat) => {
+		const badge = document.getElementById("tray-version-badge");
+		if (badge && plat && plat.version) {
+			badge.textContent = `v${plat.version}`;
+		}
+	}).catch(() => {});
+
+	menu.onclick = (e) => {
+		const item = e.target.closest(".tray-item");
+		if (!item) return;
+		const action = item.dataset.action;
+		menu.remove();
+
+		if (action === "new-tab") newTab();
+		else if (action === "command-palette") toggleCommandPalette();
+		else if (action === "settings") toggleSettings();
+		else if (action === "toggle-always-on-top") toggleAlwaysOnTop();
+		else if (action === "toggle-fullscreen") {
+			WindowIsFullscreen().then((isFs) => {
+				if (isFs) WindowUnfullscreen();
+				else WindowFullscreen();
+			}).catch(() => {
+				WindowIsMaximised().then((m) => (m ? WindowUnmaximise() : WindowMaximise()));
+			});
+		} else if (action === "toggle-maximize") {
+			if (typeof WindowToggleMaximise === "function") {
+				WindowToggleMaximise();
+			} else {
+				WindowIsMaximised().then((m) => (m ? WindowUnmaximise() : WindowMaximise())).catch(() => {});
+			}
+			setTimeout(updateMaximizeBtn, 100);
+		} else if (action === "center") {
+			WindowCenter();
+			showToast("Window centered", "info");
+		} else if (action === "reset-size") {
+			resetWindowSize();
+		} else if (action === "minimize") {
+			WindowMinimise();
+		} else if (action === "reload-app") {
+			if (typeof WindowReloadApp === "function") WindowReloadApp();
+			else window.location.reload();
+		} else if (action === "zoom-in") {
+			fontSize = Math.min(32, fontSize + 1);
+			tabs.forEach((t) => {
+				t.term.options.fontSize = fontSize;
+			});
+			showToast("Font size: " + fontSize, "info");
+		} else if (action === "zoom-out") {
+			fontSize = Math.max(8, fontSize - 1);
+			tabs.forEach((t) => {
+				t.term.options.fontSize = fontSize;
+			});
+			showToast("Font size: " + fontSize, "info");
+		} else if (action === "zoom-reset") {
+			fontSize = 14;
+			tabs.forEach((t) => {
+				t.term.options.fontSize = fontSize;
+			});
+			showToast("Font size reset: 14", "info");
+		} else if (action === "stop-servers") shutdownAllServers();
+		else if (action === "quit") quitTabbyApplication();
+	};
+
+	setTimeout(() => {
+		const dismiss = (ev) => {
+			if (!menu.contains(ev.target)) {
+				menu.remove();
+				document.removeEventListener("click", dismiss);
+			}
+		};
+		document.addEventListener("click", dismiss);
+	}, 10);
+}
+
 function applySettingsToUI() {
 	const s = settings;
+
+	// Toggle tray widget visibility based on settings
+	const trayBtn = document.getElementById("btn-system-tray");
+	if (trayBtn) {
+		trayBtn.style.display = s.HideTray ? "none" : "flex";
+	}
 
 	const set = (id, val) => {
 		const el = document.getElementById(id);
@@ -5014,6 +5629,18 @@ GetUsername()
 	})
 	.catch(() => {});
 
+function resetWindowSize() {
+	if (typeof WindowSetSize === "function") {
+		try {
+			WindowSetSize(1024, 680);
+			if (typeof WindowCenter === "function") WindowCenter();
+			showToast("Window size reset to 1024x680", "info");
+		} catch (e) {
+			console.warn("Failed to reset window size:", e);
+		}
+	}
+}
+
 function doResetSettings() {
 	ResetSettings()
 		.then(() => {
@@ -5047,8 +5674,6 @@ function hideSettings() {
 }
 
 // ===== WINDOW CONTROLS =====
-
-let alwaysOnTop = false;
 
 async function toggleAlwaysOnTop() {
 	alwaysOnTop = !alwaysOnTop;
@@ -5254,7 +5879,8 @@ class Tab {
 		this.ptyId = null;
 		this.title = "Shell";
 		this.userRenamed = false;
-		this.shell = shell || defaultShell;
+		let s = typeof shell === "string" ? shell : (typeof defaultShell === "string" ? defaultShell : "");
+		this.shell = s || "/bin/sh";
 		this.workingDir = "";
 		this.exited = false;
 		this.status = "disconnected";
@@ -5546,7 +6172,13 @@ class Tab {
 				this.lastActivity = Date.now();
 			} else if (this.isSerial && serid && serid === this.serialId) {
 				const bytes = b64ToBytes(params.data);
-				this.term.write(bytes);
+				if (this.serialHexMode) {
+					const hexFormatted = formatHexDump(bytes, this.serialOffset || 0);
+					this.serialOffset = (this.serialOffset || 0) + bytes.length;
+					this.term.write(hexFormatted);
+				} else {
+					this.term.write(bytes);
+				}
 				if (this.loggingEnabled)
 					this.logBuffer.push(new TextDecoder().decode(bytes));
 				this.lastActivity = Date.now();
@@ -5638,6 +6270,9 @@ class Tab {
 		this.wrapper.classList.add("active");
 		this.tabEl.classList.add("active");
 		activeTabId = this.id;
+		if (this.title) {
+			SetWindowTitle(`Tabby — ${this.title}`);
+		}
 		updateToolbar(this);
 
 		this.term.focus();
@@ -5702,9 +6337,15 @@ class Tab {
 			if (tabs.length > 0) tabs[Math.min(idx, tabs.length - 1)].activate();
 			else {
 				activeTabId = null;
+				SetWindowTitle("Tabby");
 				const w = document.getElementById("welcome");
 				if (w) w.style.display = "flex";
 			}
+		}
+
+		if (tabs.length === 0 && settings.LastTabClosesWindow) {
+			quitTabbyApplication();
+			return;
 		}
 
 		saveSession();
@@ -6443,8 +7084,20 @@ async function reconnectTab(tab) {
 				);
 
 				tab.serialDataHandler = (params) => {
-					if ((params.serialId || params.SerialID) === tab.serialId)
-						tab.term.write(b64ToBytes(params.data || params.Data));
+					if ((params.serialId || params.SerialID) === tab.serialId) {
+						const rawBytes = b64ToBytes(params.data || params.Data);
+						if (tab.serialHexMode) {
+							const hexFormatted = formatHexDump(rawBytes, tab.serialOffset || 0);
+							tab.serialOffset = (tab.serialOffset || 0) + rawBytes.length;
+							tab.term.write(hexFormatted);
+						} else {
+							tab.term.write(rawBytes);
+						}
+						if (tab.loggingEnabled) {
+							tab.logBuffer.push(new TextDecoder().decode(rawBytes));
+						}
+						tab.lastActivity = Date.now();
+					}
 				};
 
 				window.__serialDataHandlers = window.__serialDataHandlers || [];
@@ -6859,9 +7512,71 @@ function bindGlobalKeys() {
 			exportProfiles();
 		}
 
-		if (ctrl && shift && e.key === "B") {
+		if (ctrl && shift && (e.key === "B" || e.key === "b")) {
 			e.preventDefault();
 			toggleBroadcast();
+		}
+
+		if (e.key === "F11") {
+			e.preventDefault();
+			WindowIsFullscreen().then((isFs) => {
+				if (isFs) WindowUnfullscreen();
+				else WindowFullscreen();
+			}).catch(() => {
+				WindowIsMaximised().then((m) => (m ? WindowUnmaximise() : WindowMaximise()));
+			});
+			return;
+		}
+
+		if (ctrl && shift && (e.key === "M" || e.key === "m")) {
+			e.preventDefault();
+			WindowMinimise();
+			return;
+		}
+
+		if (ctrl && shift && (e.key === "A" || e.key === "a")) {
+			e.preventDefault();
+			toggleAlwaysOnTop();
+			return;
+		}
+
+		if (ctrl && (e.key === "=" || e.key === "+")) {
+			e.preventDefault();
+			fontSize = Math.min(32, fontSize + 1);
+			tabs.forEach((t) => {
+				t.term.options.fontSize = fontSize;
+				t.fitAddon.fit();
+			});
+			showToast("Font: " + fontSize, "info");
+			return;
+		}
+
+		if (ctrl && (e.key === "-" || e.key === "_")) {
+			e.preventDefault();
+			fontSize = Math.max(8, fontSize - 1);
+			tabs.forEach((t) => {
+				t.term.options.fontSize = fontSize;
+				t.fitAddon.fit();
+			});
+			showToast("Font: " + fontSize, "info");
+			return;
+		}
+
+		if (ctrl && shift && (e.key === "0" || e.key === ")")) {
+			e.preventDefault();
+			resetWindowSize();
+			return;
+		}
+
+		if (ctrl && !shift && e.key === "0") {
+			e.preventDefault();
+			fontSize = 14;
+			tabs.forEach((t) => {
+				t.term.options.fontSize = fontSize;
+				t.fitAddon.fit();
+			});
+			showToast("Font: 14", "info");
+			return;
 		}
 
 		if (ctrl && !shift && e.key === "\\") {
@@ -7022,3 +7737,64 @@ window.addEventListener("beforeunload", () => {
 });
 
 init();
+
+
+// ===== APPLICATION LIFECYCLE & SERVER SHUTDOWN =====
+
+window.shutdownAllServers = async function() {
+	if (!confirm("Are you sure you want to disconnect all active sessions and stop background daemons?")) {
+		return;
+	}
+	try {
+		const openTabs = [...tabs];
+		for (const t of openTabs) {
+			try {
+				t.close();
+			} catch (e) {
+				console.warn("Error closing tab during shutdown:", e);
+			}
+		}
+		if (window.go && window.go.main && window.go.main.App && window.go.main.App.ShutdownServers) {
+			await window.go.main.App.ShutdownServers();
+		}
+		showToast("All background servers and terminal sessions have been stopped.", "info");
+		updateDashboardStats();
+	} catch (err) {
+		console.error("Failed to shutdown servers:", err);
+		showToast("Failed to stop servers: " + err, "error");
+	}
+};
+
+window.quitTabbyApplication = async function() {
+	if (tabs.length > 0) {
+		if (!confirm(`You have ${tabs.length} active tab(s). Exit Tabby and terminate all sessions?`)) {
+			return;
+		}
+	}
+	try {
+		for (const t of [...tabs]) {
+			try {
+				t.close();
+			} catch (_) {}
+		}
+		if (window.go && window.go.main && window.go.main.App && window.go.main.App.QuitApplication) {
+			await window.go.main.App.QuitApplication();
+		} else {
+			Quit();
+		}
+	} catch (err) {
+		console.warn("Quit handler fallback:", err);
+		Quit();
+	}
+};
+
+function updateDashboardStats() {
+	const tabsStat = document.getElementById("dash-active-tabs");
+	if (tabsStat) {
+		tabsStat.textContent = `${tabs.length} Tab${tabs.length === 1 ? "" : "s"}`;
+	}
+	const profilesStat = document.getElementById("dash-saved-profiles");
+	if (profilesStat) {
+		profilesStat.textContent = `${savedProfiles.length} Profile${savedProfiles.length === 1 ? "" : "s"}`;
+	}
+}

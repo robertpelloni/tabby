@@ -73,6 +73,8 @@ export function PTYSpawn(arg1:api.PTYSpawnParams):Promise<api.PTYSpawnResult>;
 
 export function PTYWrite(arg1:string,arg2:string):Promise<void>;
 
+export function QuitApplication():Promise<void>;
+
 export function ResetSettings():Promise<void>;
 
 export function SFTPChmod(arg1:string,arg2:string,arg3:number):Promise<void>;
@@ -131,6 +133,8 @@ export function SelectDirectory(arg1:string):Promise<string>;
 
 export function SerialClose(arg1:string):Promise<void>;
 
+export function ShutdownServers():Promise<void>;
+
 export function SerialListPorts():Promise<Array<api.SerialPortInfo>>;
 
 export function SerialOpen(arg1:api.SerialOpenParams):Promise<api.SerialOpenResult>;
@@ -148,3 +152,11 @@ export function TelnetConnect(arg1:string,arg2:number):Promise<telnet.TelnetConn
 export function TelnetResize(arg1:string,arg2:number,arg3:number):Promise<void>;
 
 export function TelnetWrite(arg1:string,arg2:string):Promise<void>;
+
+export function StartWorkflow(arg1:string):Promise<any>;
+
+export function CancelWorkflow(arg1:string):Promise<void>;
+
+export function GetWorkflow(arg1:string):Promise<any>;
+
+export function SubmitWorkflowResponse(arg1:string,arg2:string):Promise<void>;

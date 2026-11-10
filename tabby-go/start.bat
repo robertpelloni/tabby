@@ -45,6 +45,10 @@ if errorlevel 1 ( echo  [FAIL] %NATIVE% & exit /b 1 )
 for %%f in (%NATIVE%) do echo  [OK]   %%~zf bytes
 echo  [3/3] %WAILS% (Wails GUI)...
 cd wails-app
+if not exist frontend\dist (
+    echo  [BUILD] Building frontend assets with Vite...
+    cd frontend && call npm run build && cd ..
+)
 go build -buildvcs=false -o ..\%WAILS% .
 if errorlevel 1 ( cd .. & echo  [FAIL] %WAILS% & exit /b 1 )
 cd ..
