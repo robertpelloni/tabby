@@ -1,14 +1,14 @@
-# Session Handoff — Wails Window Size Bounds & Recovery (v1.0.282)
+# Session Handoff — Window Size Recovery Shortcut (v1.0.283)
 
 ## Completed Operations
 
-### 1. Window Sizing & Bounds Refinements (`tabby-go/wails-app/frontend/src/main.js`)
-- Enforced minimum window bounds (800x500 via `WindowSetMinSize`) during initialization to ensure terminal viewports and settings grids never collapse below legible dimensions.
-- Added "Reset Window Size (1024x680)" action to the Command Palette and Desktop System Tray menu using `WindowSetSize(1024, 680)` + `WindowCenter()`.
+### 1. Window Size Shortcut & UX Refinements (`tabby-go/wails-app/frontend/src/main.js`)
+- Bound `Ctrl+Shift+0` in `bindGlobalKeys` to invoke `resetWindowSize()`, instantly resetting window bounds to 1024x680 and centering on screen.
+- Updated shortcut badges in the Command Palette and System Tray popup menu.
 - Re-built and bundled Vite production assets in `tabby-go/wails-app/frontend/dist`.
 
 ### 2. Versioning & Documentation
-- Bumped `VERSION.md` to `1.0.282`.
+- Bumped `VERSION.md` to `1.0.283`.
 - Updated `CHANGELOG.md` and `HANDOFF.md`.
 
 ## Test Status

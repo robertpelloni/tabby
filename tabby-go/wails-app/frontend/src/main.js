@@ -2497,13 +2497,9 @@ const PALETTE_COMMANDS = [
 		id: "reset-window-size",
 		label: "Reset Window Size (1024x680)",
 		icon: "📐",
-		shortcut: "",
+		shortcut: "Ctrl+Shift+0",
 		action: () => {
-			if (typeof WindowSetSize === "function") {
-				WindowSetSize(1024, 680);
-				if (typeof WindowCenter === "function") WindowCenter();
-				showToast("Window size reset to 1024x680", "info");
-			}
+			resetWindowSize();
 		},
 	},
 
@@ -5107,6 +5103,7 @@ function toggleSystemTrayMenu(event) {
 		</div>
 		<div class="tray-item" data-action="reset-size">
 			<span>📐 Reset Window Size</span>
+			<span style="font-size:10px;color:#888;">Ctrl+Shift+0</span>
 		</div>
 		<div class="tray-item" data-action="minimize">
 			<span>🗕 Minimize Window</span>
@@ -5178,11 +5175,7 @@ function toggleSystemTrayMenu(event) {
 			WindowCenter();
 			showToast("Window centered", "info");
 		} else if (action === "reset-size") {
-			if (typeof WindowSetSize === "function") {
-				WindowSetSize(1024, 680);
-				if (typeof WindowCenter === "function") WindowCenter();
-				showToast("Window size reset to 1024x680", "info");
-			}
+			resetWindowSize();
 		} else if (action === "minimize") {
 			WindowMinimise();
 		} else if (action === "reload-app") {
@@ -5635,6 +5628,18 @@ GetUsername()
 		if (el && !el.value) el.value = u;
 	})
 	.catch(() => {});
+
+function resetWindowSize() {
+	if (typeof WindowSetSize === "function") {
+		try {
+			WindowSetSize(1024, 680);
+			if (typeof WindowCenter === "function") WindowCenter();
+			showToast("Window size reset to 1024x680", "info");
+		} catch (e) {
+			console.warn("Failed to reset window size:", e);
+		}
+	}
+}
 
 function doResetSettings() {
 	ResetSettings()
@@ -7557,7 +7562,13 @@ function bindGlobalKeys() {
 			return;
 		}
 
-		if (ctrl && e.key === "0") {
+		if (ctrl && shift && (e.key === "0" || e.key === ")")) {
+			e.preventDefault();
+			resetWindowSize();
+			return;
+		}
+
+		if (ctrl && !shift && e.key === "0") {
 			e.preventDefault();
 			fontSize = 14;
 			tabs.forEach((t) => {

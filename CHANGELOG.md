@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.283] - 2026-11-04
+
+### Added
+
+- Window Size Recovery Shortcut: Bound `Ctrl+Shift+0` to `resetWindowSize()` in global keyboard shortcuts (`bindGlobalKeys`) in `tabby-go/wails-app/frontend/src/main.js` and added corresponding shortcut badges in both the Command Palette and Desktop System Tray menu.
+
+### Changed
+
+- Version bump to 1.0.283
+
 ## [1.0.282] - 2026-11-04
 
 ### Added
