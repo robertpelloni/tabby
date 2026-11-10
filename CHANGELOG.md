@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.280] - 2026-11-04
+
+### Added
+
+- Wails Lifecycle Server Teardown Hook: Wired `a.ShutdownServers()` inside `onBeforeClose(ctx context.Context)` in `tabby-go/wails-app/app.go` ensuring background SSH and Telnet connections terminate cleanly on native window closure.
+
+### Changed
+
+- Version bump to 1.0.280
+
 ## [1.0.279] - 2026-11-04
 
 ### Added

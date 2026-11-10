@@ -288,7 +288,7 @@ func (a *App) GetPlatform() map[string]string {
 	return map[string]string{
 		"os":      runtime.GOOS,
 		"arch":    runtime.GOARCH,
-		"version":  "1.0.279",
+		"version":  "1.0.280",
 	}
 }
 
@@ -482,6 +482,7 @@ func (a *App) ClearNotifications() {
 // onBeforeClose is called when the window is about to close.
 // It can prevent the window from closing by returning true.
 func (a *App) onBeforeClose(ctx context.Context) bool {
+	_ = a.ShutdownServers()
 	return false
 }
 
