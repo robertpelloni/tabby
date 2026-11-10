@@ -348,6 +348,89 @@ func TestAgentWorkflowRPC(t *testing.T) {
 	outWriter.Close()
 }
 
+func TestSettingsRPC(t *testing.T) {
+	inReader, inWriter := io.Pipe()
+	outReader, outWriter := io.Pipe()
+
+	srv := NewWithIO(inReader, outWriter)
+	go func() {
+		_ = srv.Run()
+	}()
+
+	decoder := json.NewDecoder(outReader)
+
+	// 1. settings.listColorSchemes
+	listReq := `{"jsonrpc": "2.0", "method": "settings.listColorSchemes", "id": 20}` + "\n"
+	io.WriteString(inWriter, listReq)
+
+	var listResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode listColorSchemes response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 20 {
+			listResp = msg
+			break
+		}
+	}
+	if listResp["error"] != nil {
+		t.Errorf("settings.listColorSchemes returned error: %v", listResp["error"])
+	}
+	schemes, ok := listResp["result"].([]interface{})
+	if !ok || len(schemes) == 0 {
+		t.Fatalf("expected non-empty color scheme list, got: %v", listResp["result"])
+	}
+
+	// 2. settings.get
+	getReq := `{"jsonrpc": "2.0", "method": "settings.get", "id": 21}` + "\n"
+	io.WriteString(inWriter, getReq)
+
+	var getResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode settings.get response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 21 {
+			getResp = msg
+			break
+		}
+	}
+	if getResp["error"] != nil {
+		t.Errorf("settings.get returned error: %v", getResp["error"])
+	}
+	settingsMap, ok := getResp["result"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("settings.get result missing or invalid: %v", getResp["result"])
+	}
+	if _, ok := settingsMap["font_size"]; !ok {
+		t.Errorf("settings.get result missing font_size property: %v", settingsMap)
+	}
+
+	// 3. settings.reset
+	resetReq := `{"jsonrpc": "2.0", "method": "settings.reset", "id": 22}` + "\n"
+	io.WriteString(inWriter, resetReq)
+
+	var resetResp map[string]interface{}
+	for {
+		var msg map[string]interface{}
+		if err := decoder.Decode(&msg); err != nil {
+			t.Fatalf("Failed to decode settings.reset response: %v", err)
+		}
+		if id, ok := msg["id"].(float64); ok && id == 22 {
+			resetResp = msg
+			break
+		}
+	}
+	if resetResp["error"] != nil {
+		t.Errorf("settings.reset returned error: %v", resetResp["error"])
+	}
+
+	inWriter.Close()
+	outWriter.Close()
+}
+
 // TestAuditRPC verifies audit.log and audit.getPath JSON-RPC methods
 func TestAuditRPC(t *testing.T) {
 	inReader, inWriter := io.Pipe()

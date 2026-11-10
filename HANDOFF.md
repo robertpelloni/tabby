@@ -1,14 +1,13 @@
-# Session Handoff — Window Size Recovery Shortcut (v1.0.283)
+# Session Handoff — Settings JSON-RPC Protocol (v1.0.284)
 
 ## Completed Operations
 
-### 1. Window Size Shortcut & UX Refinements (`tabby-go/wails-app/frontend/src/main.js`)
-- Bound `Ctrl+Shift+0` in `bindGlobalKeys` to invoke `resetWindowSize()`, instantly resetting window bounds to 1024x680 and centering on screen.
-- Updated shortcut badges in the Command Palette and System Tray popup menu.
-- Re-built and bundled Vite production assets in `tabby-go/wails-app/frontend/dist`.
+### 1. Settings Protocol Daemon Endpoints (`tabby-go/internal/server`)
+- Exposed `settings.get`, `settings.set`, `settings.reset`, and `settings.listColorSchemes` over JSON-RPC 2.0 backed by `tabby-go/pkg/settings`.
+- Added unit test suite `TestSettingsRPC` in `tabby-go/internal/server/server_test.go` verifying query, update, reset, and palette discovery.
 
 ### 2. Versioning & Documentation
-- Bumped `VERSION.md` to `1.0.283`.
+- Bumped `VERSION.md` to `1.0.284`.
 - Updated `CHANGELOG.md` and `HANDOFF.md`.
 
 ## Test Status

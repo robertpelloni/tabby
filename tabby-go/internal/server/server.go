@@ -61,6 +61,10 @@
 //   - session.clear               - Clear saved session state
 //   - audit.log                   - Record an audit event
 //   - audit.getPath               - Get audit log file path
+//   - settings.get                - Get current settings
+//   - settings.set                - Save updated settings
+//   - settings.reset              - Reset settings to defaults
+//   - settings.listColorSchemes   - List available color schemes
 package server
 
 import (
@@ -438,6 +442,19 @@ func (s *Server) handleRequest(req api.JSONRPCRequest) {
 		} else {
 			result = ""
 		}
+
+	// ---- Settings ----
+	case "settings.get":
+		result, err = settings.LoadSettings()
+	case "settings.set":
+		var newSettings settings.Settings
+		if err = reMarshal(req.Params, &newSettings); err == nil {
+			err = settings.SaveSettings(newSettings)
+		}
+	case "settings.reset":
+		err = settings.ResetSettings()
+	case "settings.listColorSchemes":
+		result = settings.ListColorSchemes()
 
 	default:
 		s.sendError(req.ID, api.ErrorMethodNotFound, fmt.Sprintf("Method not found: %s", req.Method), nil)

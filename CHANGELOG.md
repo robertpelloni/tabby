@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.284] - 2026-11-04
+
+### Added
+
+- Settings Daemon Protocol RPCs: Exposed `settings.get`, `settings.set`, `settings.reset`, and `settings.listColorSchemes` over JSON-RPC 2.0 in `tabby-go/internal/server`.
+- Settings Protocol Tests: Added `TestSettingsRPC` in `tabby-go/internal/server/server_test.go` covering full roundtrip settings retrieval, updates, defaults reset, and color schemes enumeration over the JSON-RPC pipe.
+
+### Changed
+
+- Version bump to 1.0.284
+
 ## [1.0.283] - 2026-11-04
 
 ### Added
