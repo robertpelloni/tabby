@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.281] - 2026-11-04
+
+### Added
+
+- Settings & Color Scheme Unit Tests: Added comprehensive unit test suites for `tabby-go/pkg/settings` (`settings_test.go`) and `tabby-go/pkg/colorscheme` (`colorscheme_test.go`).
+- Test Coverage Verification: Verified default preferences, platform overrides (Windows ConPTY, macOS/Linux defaults), settings file persistence and reset operations, 190+ community/built-in color schemes, luminance calculations (`IsLight`), and xterm theme mapping.
+
+### Changed
+
+- Version bump to 1.0.281
+
 ## [1.0.280] - 2026-11-04
 
 ### Added
