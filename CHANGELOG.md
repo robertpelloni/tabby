@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.285] - 2026-11-04
+
+### Added
+
+- Native & Backend Version Alignment: Synchronized `--version` CLI flags and Sentry Release reporting across `tabby-go/cmd/tabby-backend/main.go` and `tabby-go/cmd/tabby-native/main.go` with the global project versioning baseline.
+
+### Changed
+
+- Version bump to 1.0.285
+
 ## [1.0.284] - 2026-11-04
 
 ### Added
