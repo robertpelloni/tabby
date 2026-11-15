@@ -42,6 +42,8 @@ crowdin.yml
 build/
 tabby-go/vendor/
 tabby-go/wails-app/build/bin/
+tabby-go/wails-app/bin/
+*.exe
 
 # Jules session logs
 .jules/sessions/

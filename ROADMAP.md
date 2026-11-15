@@ -39,9 +39,9 @@ Build a complete, self-contained Wails Go application with feature parity to the
 
 ### Remaining
 
-* **Serial Terminal enhancements**: Hex view mode, advanced flow control, connection logging
-* **Profile Group Management**: Full group editor UI (rename, delete groups)
-* **SSH Config Import polish**: Better error handling, merge strategy
+* **Serial Terminal enhancements**: Hex view mode, advanced flow control, connection logging. ✅
+* **Profile Group Management**: Full group editor UI (rename, delete groups). ✅
+* **SSH Config Import polish**: Better error handling, merge strategy. ✅
 
 ### Goal
 
@@ -80,7 +80,7 @@ Completely overhaul the traditional continuous text stream (`xterm.js`) into an 
     * Multi-cursor editing (`Alt+Click`, `Cmd+D`).
     * Intelligent fuzzy-search Tab completion.
     * Real-time syntax highlighting and error validation (red squiggles).
-3. **Block Actions**: Implement UI for:
+3. **Block Actions**: Implement UI for: ✅
     * Copying command/output of a specific block.
     * Filtering/searching within a block.
     * Generating shareable web links for a block.
@@ -142,8 +142,9 @@ Ensure every legacy feature is fully wired up, tested, and comprehensively repre
 1. **SFTP File Manager UI**: Full bidirectional file browser, drag-and-drop file transfer, progress indicators, directory tree browsing.
 2. **SSH Features**: Port forwarding management UI, Jump host chain management UI, SSH config file import polish.
 3. **Terminal Features**: Split pane management improvements, custom shell profile configuration polish, terminal broadcast input (send to all tabs).
-4. **Settings UI**: All config options represented with proper descriptions/tooltips, import/export configuration, profile group management.
-5. **Serial Terminal**: Hex view mode, advanced flow control settings, connection logging.
+4. **Settings UI**: All config options represented with proper descriptions/tooltips, import/export configuration, profile group management, consolidated dashboard view with real-time keyword search.
+5. **System Tray & Lifecycle**: Titlebar tray widget with instant popup menu, server shutdown controls, and window presentation actions.
+6. **Serial Terminal**: Hex view mode, advanced flow control settings, connection logging. ✅
 
 ## Phase 7: Universal Frontends
 

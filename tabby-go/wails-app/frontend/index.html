@@ -23,6 +23,13 @@
       </div>
       <div class="titlebar-center" id="titlebar-drag"></div>
       <div class="titlebar-right">
+        <!-- System Tray Menu Trigger Widget -->
+        <button class="titlebar-btn" id="btn-system-tray" title="System Tray / Server Control">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+            <circle cx="8" cy="8" r="3" fill="#4ec9b0" />
+            <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z" fill="currentColor"/>
+          </svg>
+        </button>
         <button class="titlebar-btn" id="btn-minimize" title="Minimize">
           <svg width="12" height="12" viewBox="0 0 12 12">
             <rect x="2" y="9" width="8" height="1" fill="currentColor" />
@@ -275,7 +282,8 @@
           <button
             class="btn-secondary"
             style="font-size: 11px"
-            onclick="importSSHConfig()"
+            onclick="importSSHConfig(event.shiftKey)"
+            title="Click to import ~/.ssh/config. Shift-click to overwrite/update existing profiles."
           >
             Import ~/.ssh/config
           </button>
@@ -334,6 +342,32 @@
             <option value="even">Even</option>
             <option value="odd">Odd</option>
           </select>
+        </div>
+        <div class="setting-group">
+          <label>Flow Control <span class="tooltip-badge" title="Configure hardware RTS/CTS or software XON/XOFF flow control protocol for serial communication.">ℹ</span></label>
+          <select id="serial-flow-control">
+            <option value="none" selected>None</option>
+            <option value="hardware">Hardware (RTS/CTS)</option>
+            <option value="software">Software (XON/XOFF)</option>
+          </select>
+        </div>
+        <div class="setting-group">
+          <label>Hex View Mode <span class="tooltip-badge" title="Display incoming and outgoing serial bytes as hexadecimal dumps with ASCII sidebars.">ℹ</span></label>
+          <div class="toggle-container">
+            <input type="checkbox" id="serial-hex-mode" /><label
+              for="serial-hex-mode"
+              class="toggle-label"
+            ></label>
+          </div>
+        </div>
+        <div class="setting-group">
+          <label>Session Logging <span class="tooltip-badge" title="Record incoming and outgoing serial communication to a session log file for auditing and debugging.">ℹ</span></label>
+          <div class="toggle-container">
+            <input type="checkbox" id="serial-logging" /><label
+              for="serial-logging"
+              class="toggle-label"
+            ></label>
+          </div>
         </div>
 
         <div class="setting-group">

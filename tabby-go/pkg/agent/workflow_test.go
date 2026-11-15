@@ -54,3 +54,27 @@ Clarify:
 		}
 	}
 }
+
+func TestWorkflowManager_Cancel(t *testing.T) {
+	mgr := NewWorkflowManager(nil)
+	ctx := context.Background()
+
+	wf := mgr.StartWorkflow(ctx, "Test Cancellable Workflow")
+	if wf.ID == "" {
+		t.Error("Workflow ID should not be empty")
+	}
+
+	err := mgr.CancelWorkflow(wf.ID)
+	if err != nil {
+		t.Fatalf("Failed to cancel workflow: %v", err)
+	}
+
+	current, ok := mgr.GetWorkflow(wf.ID)
+	if !ok {
+		t.Fatalf("Workflow not found")
+	}
+
+	if current.Status != StatusCancelled {
+		t.Errorf("Expected status %v, got %v", StatusCancelled, current.Status)
+	}
+}

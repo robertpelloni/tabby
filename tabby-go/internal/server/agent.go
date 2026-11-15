@@ -49,3 +49,27 @@ func (s *Server) handleAgentSubmitWorkflowResponse(params interface{}) error {
 	}
 	return s.agentMgr.WorkflowMgr.SubmitResponse(p.ID, p.Response)
 }
+
+func (s *Server) handleAgentCancelWorkflow(params interface{}) error {
+	var p struct {
+		ID string `json:"id"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return fmt.Errorf("invalid params: %w", err)
+	}
+	return s.agentMgr.WorkflowMgr.CancelWorkflow(p.ID)
+}
+
+func (s *Server) handleAgentGetWorkflow(params interface{}) (*agent.Workflow, error) {
+	var p struct {
+		ID string `json:"id"`
+	}
+	if err := reMarshal(params, &p); err != nil {
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	wf, ok := s.agentMgr.WorkflowMgr.GetWorkflow(p.ID)
+	if !ok {
+		return nil, fmt.Errorf("workflow not found: %s", p.ID)
+	}
+	return wf, nil
+}

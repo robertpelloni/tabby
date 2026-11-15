@@ -244,11 +244,14 @@ type SerialOpenParams struct {
 	StopBits    int    `json:"stopBits,omitempty"`    // 1,2 (default 1)
 	Parity      string `json:"parity,omitempty"`      // "none","even","odd" (default "none")
 	FlowControl string `json:"flowControl,omitempty"` // "none","hardware","software" (default "none")
+	Logging     bool   `json:"logging,omitempty"`     // whether to record connection session log
+	LogDir      string `json:"logDir,omitempty"`      // custom directory for serial log files
 }
 
 // SerialOpenResult is returned after opening a serial port
 type SerialOpenResult struct {
-	ID string `json:"id"`
+	ID      string `json:"id"`
+	LogPath string `json:"logPath,omitempty"`
 }
 
 // SerialListPortsResult is returned when listing available serial ports

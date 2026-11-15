@@ -1,6 +1,7 @@
 ---
 appId: org.tabby
 productName: Tabby
+electronVersion: 38.0.0
 compression: normal
 npmRebuild: false
 protocols:

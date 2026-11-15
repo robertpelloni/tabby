@@ -1,5 +1,542 @@
 # Changelog
 
+## [1.0.285] - 2026-11-04
+
+### Added
+
+- Native & Backend Version Alignment: Synchronized `--version` CLI flags and Sentry Release reporting across `tabby-go/cmd/tabby-backend/main.go` and `tabby-go/cmd/tabby-native/main.go` with the global project versioning baseline.
+
+### Changed
+
+- Version bump to 1.0.285
+
+## [1.0.284] - 2026-11-04
+
+### Added
+
+- Settings Daemon Protocol RPCs: Exposed `settings.get`, `settings.set`, `settings.reset`, and `settings.listColorSchemes` over JSON-RPC 2.0 in `tabby-go/internal/server`.
+- Settings Protocol Tests: Added `TestSettingsRPC` in `tabby-go/internal/server/server_test.go` covering full roundtrip settings retrieval, updates, defaults reset, and color schemes enumeration over the JSON-RPC pipe.
+
+### Changed
+
+- Version bump to 1.0.284
+
+## [1.0.283] - 2026-11-04
+
+### Added
+
+- Window Size Recovery Shortcut: Bound `Ctrl+Shift+0` to `resetWindowSize()` in global keyboard shortcuts (`bindGlobalKeys`) in `tabby-go/wails-app/frontend/src/main.js` and added corresponding shortcut badges in both the Command Palette and Desktop System Tray menu.
+
+### Changed
+
+- Version bump to 1.0.283
+
+## [1.0.282] - 2026-11-04
+
+### Added
+
+- Window Size Bounds & Recovery: Enforced minimum window bounds (800x500 via `WindowSetMinSize`) in `tabby-go/wails-app/frontend/src/main.js` to safeguard terminal viewports and settings grids from collapsing. Added "Reset Window Size" action (`WindowSetSize(1024, 680)` + `WindowCenter()`) in both Command Palette and System Tray popup menu.
+
+### Changed
+
+- Version bump to 1.0.282
+
+## [1.0.281] - 2026-11-04
+
+### Added
+
+- Settings & Color Scheme Unit Tests: Added comprehensive unit test suites for `tabby-go/pkg/settings` (`settings_test.go`) and `tabby-go/pkg/colorscheme` (`colorscheme_test.go`).
+- Test Coverage Verification: Verified default preferences, platform overrides (Windows ConPTY, macOS/Linux defaults), settings file persistence and reset operations, 190+ community/built-in color schemes, luminance calculations (`IsLight`), and xterm theme mapping.
+
+### Changed
+
+- Version bump to 1.0.281
+
+## [1.0.280] - 2026-11-04
+
+### Added
+
+- Wails Lifecycle Server Teardown Hook: Wired `a.ShutdownServers()` inside `onBeforeClose(ctx context.Context)` in `tabby-go/wails-app/app.go` ensuring background SSH and Telnet connections terminate cleanly on native window closure.
+
+### Changed
+
+- Version bump to 1.0.280
+
+## [1.0.279] - 2026-11-04
+
+### Added
+
+- Audit Logging Protocol Endpoints: Exposed `audit.log` and `audit.getPath` over JSON-RPC in `tabby-go/internal/server`.
+- Server RPC Audit Tests: Added `TestAuditRPC` in `tabby-go/internal/server/server_test.go` verifying audit event writing and log file path querying.
+
+### Changed
+
+- Version bump to 1.0.279
+
+## [1.0.278] - 2026-11-04
+
+### Added
+
+- Window Reload & OS Theme Sync: Added "Reload Window" (`WindowReloadApp`) to system tray and command palette, and wired OS window frame theme synchronization (`WindowSetLightTheme` / `WindowSetDarkTheme`) on color scheme updates in `tabby-go/wails-app/frontend`.
+
+### Changed
+
+- Version bump to 1.0.278
+
+## [1.0.277] - 2026-11-04
+
+### Added
+
+- AI Protocol Unit Tests: Added `TestAIRPC` in `tabby-go/internal/server/server_test.go` covering `ai.generateCommand`, `ai.explainError`, and `ai.chat` over the JSON-RPC pipe.
+- Documented AI RPC endpoints in `tabby-go/internal/server/server.go` header.
+
+### Changed
+
+- Version bump to 1.0.277
+
+## [1.0.276] - 2026-11-04
+
+### Added
+
+- AI Unit Test Suite: Added comprehensive unit tests in `tabby-go/pkg/ai/ai_test.go` covering `GenerateCommand`, `ExplainError`, and `Chat`.
+- Fixed command generation prompt precedence for process kill requests.
+
+### Changed
+
+- Version bump to 1.0.276
+
+## [1.0.275] - 2026-11-04
+
+### Added
+
+- System Tray Font Zoom Controls: Added "Zoom In (Ctrl+=)", "Zoom Out (Ctrl+-)", and "Reset Zoom (Ctrl+0)" actions to the system tray popup menu in `tabby-go/wails-app/frontend`.
+
+### Changed
+
+- Version bump to 1.0.275
+
+## [1.0.274] - 2026-11-04
+
+### Added
+
+- Wails Agent Workflow Engine Integration: Wired `pkg/agent` into `App` struct in `tabby-go/wails-app/app.go`, exposing `StartWorkflow`, `CancelWorkflow`, `GetWorkflow`, and `SubmitWorkflowResponse` with TypeScript definitions and bindings.
+
+### Changed
+
+- Version bump to 1.0.274
+
+## [1.0.273] - 2026-11-04
+
+### Added
+
+- Native App Test Suite: Added unit tests in `tabby-go/pkg/nativeapp/nativeapp_test.go` covering initialization and notification routing for the experimental native frontend.
+
+### Changed
+
+- Version bump to 1.0.273
+
+## [1.0.272] - 2026-11-04
+
+### Added
+
+- Window Toggle Maximize Controls: Added "Toggle Maximize" action to the system tray popup and command palette, alongside instant maximize button visual synchronization on double-click of the titlebar.
+
+### Changed
+
+- Version bump to 1.0.272
+
+## [1.0.271] - 2026-11-04
+
+### Added
+
+- Session Persistence Protocol RPCs: Exposed `session.save`, `session.load`, and `session.clear` over the JSON-RPC daemon server in `tabby-go/internal/server`.
+- Server RPC Session Tests: Added `TestSessionPersistenceRPC` in `tabby-go/internal/server/server_test.go` verifying save, load, and clear roundtrips over a duplex JSON-RPC pipe.
+
+### Changed
+
+- Version bump to 1.0.271
+
+## [1.0.270] - 2026-11-04
+
+### Added
+
+- Last Tab Closes Window Behavior: Wired `LastTabClosesWindow` setting in Wails frontend `Tab.close()`, invoking `quitTabbyApplication()` to cleanly shut down active servers and terminate the application when the final tab is closed.
+
+### Changed
+
+- Version bump to 1.0.270
+
+## [1.0.269] - 2026-11-04
+
+### Added
+
+- Agent Workflow Protocol RPCs: Exposed `agent.cancelWorkflow` and `agent.getWorkflow` over the JSON-RPC server in `tabby-go/internal/server`.
+- Server RPC Unit Tests: Added `TestAgentWorkflowRPC` in `tabby-go/internal/server/server_test.go` verifying workflow start, status retrieval, and cancellation over the JSON-RPC pipe.
+
+### Changed
+
+- Version bump to 1.0.269
+
+## [1.0.268] - 2026-11-04
+
+### Added
+
+- Command Palette Shortcut Badges: Displayed keyboard shortcut badges (`<span class="palette-shortcut">`) next to command items with dark/light theme styling in `tabby-go/wails-app/frontend`.
+
+### Changed
+
+- Version bump to 1.0.268
+
+## [1.0.267] - 2026-11-04
+
+### Added
+
+- CI Wails Frontend Build Gate: Added `Build Wails frontend` step (`cd tabby-go/wails-app/frontend && npm install && npm run build`) into `.github/workflows/build.yml` to validate Wails UI production bundling during CI.
+
+### Changed
+
+- Version bump to 1.0.267
+
+## [1.0.266] - 2026-11-04
+
+### Added
+
+- Tab Search Keyboard Navigation: Added `Enter` key handling in tab search input to instantly switch to the first matched tab and dismiss the search bar.
+
+### Changed
+
+- Version bump to 1.0.266
+
+## [1.0.265] - 2026-11-04
+
+### Added
+
+- Agentic Workflow Cancellation: Added `StatusCancelled` task status, context cancellation lifecycle to `Workflow`, and `CancelWorkflow` method to `WorkflowManager` in `tabby-go/pkg/agent`.
+
+### Changed
+
+- Version bump to 1.0.265
+
+## [1.0.264] - 2026-11-04
+
+### Added
+
+- Titlebar Close Confirmation: Wired `btn-close` click handler to `quitTabbyApplication()` to safeguard running sessions and ensure background servers disconnect before closing.
+
+### Changed
+
+- Version bump to 1.0.264
+
+## [1.0.263] - 2026-11-04
+
+### Added
+
+- Hotkey Parsing Unit Tests: Added `test/core/hotkeysUtil.test.mjs` verifying key mapping (`getKeyName`) for modifiers, mouse, wheel, and alphanumeric codes, as well as strict canonical ordering (`getKeystrokeName`) from `tabby-core/src/services/hotkeys.util.ts`.
+
+### Changed
+
+- Version bump to 1.0.263
+
+## [1.0.262] - 2026-11-04
+
+### Added
+
+- Core Utility Unit Testing: Added `test/core/resettableTimeout.test.mjs` verifying callback execution, timer clearing, and timer rescheduling for `ResettableTimeout` from `tabby-core/src/utils.ts`.
+
+### Changed
+
+- Version bump to 1.0.262
+
+## [1.0.261] - 2026-11-04
+
+### Added
+
+- Terminal Font Zoom Keybindings: Bound `Ctrl+=` (zoom in), `Ctrl+-` (zoom out), and `Ctrl+0` (zoom reset) into global keyboard handler, with shortcut markers in the Command Palette.
+
+### Changed
+
+- Version bump to 1.0.261
+
+## [1.0.260] - 2026-11-04
+
+### Added
+
+- Center Window Action: Imported `WindowCenter` runtime function and added Center Window on Screen action to Command Palette and System Tray dropdown.
+
+### Changed
+
+- Version bump to 1.0.260
+
+## [1.0.259] - 2026-11-04
+
+### Added
+
+- Titlebar Maximize Refinements: Added dynamic tooltip guidance (`title="Restore"` vs `"Maximize"`) and immediate asynchronous state updating to `btn-maximize`.
+
+### Changed
+
+- Version bump to 1.0.259
+
+## [1.0.258] - 2026-11-04
+
+### Added
+
+- Session State Controls: Added "Clear Saved Session State" action to Command Palette invoking `ClearSessionState()` with toast feedback, and toast notification on "Save Session State".
+
+### Changed
+
+- Version bump to 1.0.258
+
+## [1.0.257] - 2026-11-04
+
+### Added
+
+- Module ESM Optimization: Added `"type": "module"` to `tabby-core/package.json` to eliminate Node.js typeless module warnings during test runs and optimize ESM loader resolution.
+
+### Changed
+
+- Version bump to 1.0.257
+
+## [1.0.256] - 2026-11-04
+
+### Added
+
+- Dynamic System Tray Version: Updated `GetPlatform()` version response in Go backend to `1.0.256` and wired asynchronous dynamic badge updating (`#tray-version-badge`) in `toggleSystemTrayMenu`.
+
+### Changed
+
+- Version bump to 1.0.256
+
+## [1.0.255] - 2026-11-04
+
+### Added
+
+- Server Teardown Implementation: Implemented `CloseAll()` routines in `ssh` and `telnet` packages to enumerate and cleanly disconnect active connections. Wired into `ShutdownServers()` and `QuitApplication()` in `tabby-go/wails-app/app.go`.
+
+### Changed
+
+- Version bump to 1.0.255
+
+## [1.0.254] - 2026-11-04
+
+### Added
+
+- Build Pipeline Validation: Executed end-to-end `tabby-go/build.sh` pipeline on Linux, compiling Vite production assets and generating the cross-compiled desktop binary `tabby-go/wails-app/bin/tabby-wails.exe` (19MB).
+
+### Changed
+
+- Version bump to 1.0.254
+
+## [1.0.253] - 2026-11-04
+
+### Added
+
+- Core Utility Unit Tests: Added `test/core/utils.test.mjs` verifying `TAB_COLORS` palette constants, `ResettableTimeout` lifecycle execution/cancellation, and `serializeFunction` FIFO asynchronous execution.
+
+### Changed
+
+- Version bump to 1.0.253
+
+## [1.0.252] - 2026-11-04
+
+### Added
+
+- Desktop Window Title Sync: Automatically synchronize native operating system window title (`SetWindowTitle`) on tab activation and restore cleanly to "Tabby" when all tabs are closed.
+
+### Changed
+
+- Version bump to 1.0.252
+
+## [1.0.251] - 2026-11-04
+
+### Added
+
+- Window Management Hotkeys: Integrated global keyboard shortcuts in Wails desktop app: `F11` (Toggle Fullscreen), `Ctrl+Shift+M` (Minimize Window), and `Ctrl+Shift+A` (Toggle Always on Top).
+- Command Palette Window Actions: Registered Fullscreen, Minimize, and Always on Top commands with shortcut badges in the Command Palette.
+
+### Changed
+
+- Version bump to 1.0.251
+
+## [1.0.250] - 2026-11-04
+
+### Added
+
+- Go Wails Backend Lifecycle: Implemented `ShutdownServers()` and `QuitApplication()` methods on `App` struct in `tabby-go/wails-app/app.go` ensuring background sessions are closed gracefully before application exit.
+- Direct UTF8Splitter Testing: Connected `test/core/utfSplitter.test.mjs` directly to `tabby-core/src/utfSplitter.js` verifying module boundary buffering and splitting.
+
+### Changed
+
+- Version bump to 1.0.250
+- Hoisted `alwaysOnTop` global state in Wails frontend to prevent any runtime reference ordering errors.
+
+## [1.0.249] - 2026-11-04
+
+### Added
+
+- Always on Top Window Control: Integrated `toggleAlwaysOnTop` into the desktop titlebar system tray dropdown menu with real-time state feedback (Enabled/Disabled) using Wails runtime `WindowSetAlwaysOnTop`.
+
+### Changed
+
+- Version bump to 1.0.249
+
+## [1.0.248] - 2026-11-04
+
+### Added
+
+- CI/CD Pipeline Automation: Integrated `npm test` unit tests and `tabby-go` backend test suite (`go test ./...`) into the `Lint` validation gate in `.github/workflows/build.yml` using `actions/setup-go@v5`.
+
+### Changed
+
+- Version bump to 1.0.248
+
+## [1.0.247] - 2026-11-04
+
+### Added
+
+- Unit Testing Framework: Configured `npm test` utilizing Node.js built-in test runner for rapid, zero-dependency unit testing across core TypeScript and JavaScript utilities.
+- Core Utilities Test Suite: Created `test/core/utfSplitter.test.mjs` verifying multi-byte character boundary buffering, fragmented stream handling, and buffer flushing for `UTF8Splitter`.
+
+### Changed
+
+- Version bump to 1.0.247
+
+## [1.0.246] - 2026-11-04
+
+### Added
+
+- Automated Release Workflow: Verified and documented the tagged release workflow (`.github/workflows/release.yml`) triggering on `v*` tags with `action-automatic-releases`.
+
+### Changed
+
+- Version bump to 1.0.246
+
+## [1.0.245] - 2026-11-04
+
+### Added
+
+- Wails Window Runtime Controls: Integrated `WindowFullscreen`, `WindowUnfullscreen`, and `WindowIsFullscreen` into system tray actions with automatic fallback to maximize/unmaximize.
+
+### Changed
+
+- Version bump to 1.0.245
+
+## [1.0.244] - 2026-11-04
+
+### Added
+
+- Electron Version Synchronization: Explicitly defined `electronVersion: 38.0.0` in `electron-builder.yml` to ensure build consistency with `package.json` devDependency `"electron": "38"`.
+- Trailing Host Wildcard SSH Fix: Handled edge cases in `ImportSSHConfigAsProfiles` ensuring preceding profiles are saved before encountering `Host *` blocks at the end of files.
+
+### Changed
+
+- Version bump to 1.0.244
+
+## [1.0.243] - 2026-11-04
+
+### Added
+
+- Titlebar Double-Click Toggle: Added double-click event listener to the custom titlebar drag handle (`#titlebar-drag`) to dynamically toggle window maximize/restore via Wails runtime.
+
+### Changed
+
+- Version bump to 1.0.243
+
+## [1.0.242] - 2026-11-04
+
+### Added
+
+- Unified Build Script: Added `tabby-go/build.sh` providing automated test running, frontend Vite asset bundling, and cross-platform compilation of the Wails Go binary.
+- Documentation: Updated `DEPLOY.md` to document the unified build workflow for both Unix (`build.sh`) and Windows (`start.bat`).
+
+### Changed
+
+- Version bump to 1.0.242
+
+## [1.0.241] - 2026-11-04
+
+### Added
+
+- Cloud Sync Testing: Added unit test suite `TestSyncPushAndPull` in `tabby-go/pkg/sync/sync_test.go` covering Push, Pull, and initial empty state fallback.
+- Block Actions UI Documentation: Formally validated and marked Phase 2 Block Actions UI features (Copy Command, Copy Output, Filter/Search, Share, Keyboard Navigation) as complete in `TODO.md` and `ROADMAP.md`.
+
+### Changed
+
+- Version bump to 1.0.241
+
+## [1.0.240] - 2026-11-04
+
+### Added
+
+- Enhanced OpenSSH Config Parser: Added quote-trimming on configuration values, automatic skipping of wildcard catch-all blocks (`Host *`), path normalization for `IdentityFile`, and support for `ProxyJump`.
+- Unit Tests for SSH Config Importer: Added `TestImportSSHConfigAsProfiles` in `tabby-go/pkg/profile/profile_test.go`.
+- Merge Strategy for SSH Import: Supported merge strategies in frontend `importSSHConfig(overwriteExisting)`: skip duplicates by default or update existing profiles with Shift-click, displaying granular counts of added, updated, and skipped profiles.
+
+### Changed
+
+- Version bump to 1.0.240
+
+## [1.0.239] - 2026-11-04
+
+### Added
+
+- Profile Group Manager: Added dedicated Profile Groups Management panel under "Saved Profiles" in the settings dashboard.
+- Profile Groups Actions: Added UI capabilities to create new groups, rename groups (automatically updating all matching profile references), and delete groups (safely re-assigning members to Ungrouped).
+- Default Shell Hardening: Added fallback type verification for `this.shell` in the terminal tab constructor to prevent invocation failures on non-string inputs.
+
+### Changed
+
+- Version bump to 1.0.239
+
+## [1.0.238] - 2026-11-04
+
+### Added
+
+- Serial Terminal Flow Control: Support for Hardware RTS/CTS, Software XON/XOFF, and None options in `tabby-go/pkg/serial` and frontend connection dialog.
+- Serial Terminal Hex View Mode: Two-column hex dump with printable ASCII sidebar, supporting dynamic toggling directly via `HEX` toolbar button.
+- Serial Session Logging: Ability to capture incoming/outgoing serial data to disk in timestamped `.log` files in `~/.tabby/serial-logs/` and live session log buffer viewer.
+- Serial Unit Tests: Added comprehensive unit tests in `tabby-go/pkg/serial/serial_test.go` verifying mode construction, flow control handshake settings, lifecycle management, and session log streaming.
+
+### Changed
+
+- Version bump to 1.0.238
+- Updated `tabby-go/pkg/api/types.go` with `FlowControl`, `Logging`, and `LogPath` fields for serial sessions.
+
+## [1.0.237] - 2026-11-04
+
+### Changed
+
+- Version bump to 1.0.237
+- Enhanced desktop custom titlebar with an integrated System Tray / Server Control menu widget
+- Dynamic visibility for system tray trigger linked to user's `HideTray` preference
+- Cleaned up build scripts in `tabby-go/start.bat` to automatically build frontend Vite assets before compiling Wails Go binary
+
+### Added
+
+- Interactive System Tray popover menu featuring:
+  * Tabby Go core version and protocol status
+  * New Terminal Tab (`Ctrl+Shift+T`)
+  * Command Palette (`Ctrl+Shift+P`)
+  * Dashboard & Settings panel (`Ctrl+,`)
+  * Toggle Fullscreen & Minimize window controls
+  * Safe 'Stop All Servers' with active count indicator and 'Quit Tabby'
+- Exported `ShutdownServers` and `QuitApplication` methods into Wails JS bindings
+
+## [1.0.236] - 2026-11-03
+
+### Changed
+
+- Version bump to 1.0.236
+- Consolidated fragmented settings and dashboard pages into high-value domains: General & System, Appearance & Display, Terminal & Behavior, and Connections & Profiles
+- Expanded dashboard settings panel with real-time live keyword search filtering across all configuration options
+
+### Added
+
+- Interactive guidance tooltip markers (ℹ) next to every configuration label in the settings dashboard
+- Real-time welcome dashboard status badges (active sessions, profiles count, protocol status)
+- Prominent server management actions: 'Stop All Servers' and 'Quit Tabby' with confirmation safeguards
+- Go Wails backend lifecycle handlers `ShutdownServers` and `QuitApplication` for graceful connection termination
+
 ## [1.0.235] - 2026-07-13
 
 ### Changed

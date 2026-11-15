@@ -99,10 +99,19 @@ func ImportSSHConfigAsProfiles(path string) ([]ConnectionProfile, error) {
 		keyword := strings.ToLower(parts[0])
 		value := strings.Join(parts[1:], " ")
 
+		// Trim optional surrounding quotes
+		value = strings.Trim(value, `"'`)
+
 		switch keyword {
 		case "host":
 			if current != nil {
 				imported = append(imported, *current)
+				current = nil
+				currentOpts = nil
+			}
+			// Skip generic catch-all patterns like Host * or empty hosts
+			if value == "*" || value == "" {
+				continue
 			}
 			currentOpts = &SSHProfileOptions{Host: value, Port: 22, Auth: "agent"}
 			current = &ConnectionProfile{
@@ -119,7 +128,10 @@ func ImportSSHConfigAsProfiles(path string) ([]ConnectionProfile, error) {
 			}
 		case "port":
 			if currentOpts != nil {
-				fmt.Sscanf(value, "%d", &currentOpts.Port)
+				var p int
+				if _, err := fmt.Sscanf(value, "%d", &p); err == nil && p > 0 {
+					currentOpts.Port = p
+				}
 			}
 		case "user":
 			if currentOpts != nil {
@@ -128,10 +140,12 @@ func ImportSSHConfigAsProfiles(path string) ([]ConnectionProfile, error) {
 		case "identityfile":
 			if currentOpts != nil {
 				if strings.HasPrefix(value, "~/") {
-					home, _ := os.UserHomeDir()
-					value = filepath.Join(home, value[2:])
+					if home, err := os.UserHomeDir(); err == nil {
+						value = filepath.Join(home, value[2:])
+					}
 				}
-				currentOpts.PrivateKeys = append(currentOpts.PrivateKeys, value)
+				cleanPath := filepath.Clean(value)
+				currentOpts.PrivateKeys = append(currentOpts.PrivateKeys, cleanPath)
 				currentOpts.Auth = "publicKey"
 			}
 		case "proxycommand":
@@ -140,21 +154,29 @@ func ImportSSHConfigAsProfiles(path string) ([]ConnectionProfile, error) {
 			}
 		case "forwardagent":
 			if currentOpts != nil {
-				currentOpts.AgentForward = value == "yes"
+				currentOpts.AgentForward = strings.ToLower(value) == "yes"
 			}
 		case "serveraliveinterval":
 			if currentOpts != nil {
-				fmt.Sscanf(value, "%d", &currentOpts.KeepaliveInterval)
+				var interval int
+				if _, err := fmt.Sscanf(value, "%d", &interval); err == nil {
+					currentOpts.KeepaliveInterval = interval
+				}
 			}
 		case "serveralivecountmax":
 			if currentOpts != nil {
-				fmt.Sscanf(value, "%d", &currentOpts.KeepaliveCountMax)
+				var count int
+				if _, err := fmt.Sscanf(value, "%d", &count); err == nil {
+					currentOpts.KeepaliveCountMax = count
+				}
 			}
 		case "connecttimeout":
 			if currentOpts != nil {
-				fmt.Sscanf(value, "%d", &currentOpts.ReadyTimeout)
+				var timeout int
+				if _, err := fmt.Sscanf(value, "%d", &timeout); err == nil {
+					currentOpts.ReadyTimeout = timeout
+				}
 			}
-
 		case "proxyjump":
 			if currentOpts != nil {
 				currentOpts.ProxyJump = value

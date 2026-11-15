@@ -130,6 +130,10 @@ export function PTYWrite(arg1, arg2) {
   return window['go']['main']['App']['PTYWrite'](arg1, arg2);
 }
 
+export function QuitApplication() {
+  return window['go']['main']['App']['QuitApplication']();
+}
+
 export function ResetSettings() {
   return window['go']['main']['App']['ResetSettings']();
 }
@@ -246,6 +250,10 @@ export function SerialClose(arg1) {
   return window['go']['main']['App']['SerialClose'](arg1);
 }
 
+export function ShutdownServers() {
+  return window['go']['main']['App']['ShutdownServers']();
+}
+
 export function SerialListPorts() {
   return window['go']['main']['App']['SerialListPorts']();
 }
@@ -280,4 +288,20 @@ export function TelnetResize(arg1, arg2, arg3) {
 
 export function TelnetWrite(arg1, arg2) {
   return window['go']['main']['App']['TelnetWrite'](arg1, arg2);
+}
+
+export function StartWorkflow(arg1) {
+  return window['go']['main']['App']['StartWorkflow'](arg1);
+}
+
+export function CancelWorkflow(arg1) {
+  return window['go']['main']['App']['CancelWorkflow'](arg1);
+}
+
+export function GetWorkflow(arg1) {
+  return window['go']['main']['App']['GetWorkflow'](arg1);
+}
+
+export function SubmitWorkflowResponse(arg1, arg2) {
+  return window['go']['main']['App']['SubmitWorkflowResponse'](arg1, arg2);
 }

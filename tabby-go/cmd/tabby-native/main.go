@@ -22,7 +22,7 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Println("tabby-native v1.0.231-nightly.2 (BTK)")
+		fmt.Println("tabby-native v1.0.285 (BTK)")
 		os.Exit(0)
 	}
 

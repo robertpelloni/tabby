@@ -20,6 +20,7 @@ const (
 	StatusRunning   TaskStatus = "running"
 	StatusCompleted TaskStatus = "completed"
 	StatusFailed    TaskStatus = "failed"
+	StatusCancelled TaskStatus = "cancelled"
 )
 
 // Task represents an autonomous task being executed by the agent
